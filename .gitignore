@@ -11,3 +11,23 @@ dist/
 __pycache__/
 *.pyc
 *.pyo
+
+# Executable build files
+DedicatedServerAutomation.spec
+build_executable.py
+version_info.txt
+portable/
+*.exe
+*.msi
+*.dmg
+
+# Build logs and cache
+*.log
+.pyinstaller/
+warn-*.txt
+xref-*.html
+
+# Temporary files
+*.tmp
+*.temp
+temp/
