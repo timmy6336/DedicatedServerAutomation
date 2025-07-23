@@ -33,6 +33,7 @@ def download_steamcmd():
         print("SteamCMD downloaded and extracted.")
     else:
         print("SteamCMD already present.")
+    return True
 
 def install_or_update_palworld_server():
     pal_exe = os.path.join(SERVER_DIR, 'PalServer.exe')

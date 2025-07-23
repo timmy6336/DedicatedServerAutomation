@@ -48,10 +48,11 @@ QPushButton {
     background-color: #0078d4;
     color: white;
     border: none;
-    border-radius: 6px;
-    padding: 10px 20px;
-    font-size: 14px;
+    border-radius: 8px;
+    padding: 15px 25px;
+    font-size: 16px;
     font-weight: 500;
+    min-width: 150px;
 }
 QPushButton:hover {
     background-color: #106ebe;
@@ -133,12 +134,12 @@ class Colors:
 
 # Layout constants
 class Layout:
-    MARGIN_LARGE = 30
-    MARGIN_MEDIUM = 20
-    MARGIN_SMALL = 10
-    SPACING_LARGE = 20
-    SPACING_MEDIUM = 15
-    SPACING_SMALL = 10
+    MARGIN_LARGE = 40
+    MARGIN_MEDIUM = 25
+    MARGIN_SMALL = 15
+    SPACING_LARGE = 25
+    SPACING_MEDIUM = 20
+    SPACING_SMALL = 15
     BORDER_RADIUS_LARGE = 12
     BORDER_RADIUS_MEDIUM = 8
     BORDER_RADIUS_SMALL = 6

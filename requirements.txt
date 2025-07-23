@@ -4,3 +4,4 @@ pyinstaller
 requests
 python-dotenv
 miniupnpc
+psutil
