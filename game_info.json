@@ -1,0 +1,22 @@
+[
+
+  {
+    "name": "Palworld",
+    "summary": "Palworld is a multiplayer, open-world survival crafting game where you can befriend and collect mysterious creatures called \"Pal\" in a vast world! Make your Pals fight, build, farm, and work in factories.",
+    "genres": [
+      "Shooter",
+      "Role-playing (RPG)",
+      "Hack and slash/Beat 'em up",
+      "Adventure",
+      "Indie"
+    ],
+    "platforms": [
+      "Xbox Series X|S",
+      "PC (Microsoft Windows)",
+      "PlayStation 5",
+      "Mac",
+      "Xbox One"
+    ],
+    "image": "//images.igdb.com/igdb/image/upload/t_thumb/co7n02.jpg"
+  }
+]
