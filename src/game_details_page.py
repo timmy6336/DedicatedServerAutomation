@@ -1,4 +1,5 @@
 import os
+import platform
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton, QScrollArea, QHBoxLayout
 from PyQt5.QtGui import QPixmap, QFont
 from PyQt5.QtCore import Qt, QTimer
@@ -188,36 +189,92 @@ class GameDetailsPage(QWidget):
         layout.addWidget(info_widget)
     
     def add_start_button(self, layout):
-        """Add the start dedicated server button"""
+        """Add the start server button (setup or direct start based on installation status)"""
         # Button container to control positioning
         button_container = QWidget()
         button_layout = QHBoxLayout()
         button_layout.setContentsMargins(0, Layout.MARGIN_MEDIUM, 0, 0)
         
-        start_button = QPushButton("Start Dedicated Server")
-        start_button.setFont(QFont('Segoe UI', 16, QFont.Bold))
-        start_button.setStyleSheet(f"""
-            QPushButton {{
-                background-color: #28a745;
-                color: white;
-                border: none;
-                border-radius: {Layout.BORDER_RADIUS_MEDIUM}px;
-                padding: 20px 40px;
-                font-size: 18px;
-                font-weight: bold;
-                min-width: 250px;
-                min-height: 60px;
-            }}
-            QPushButton:hover {{
-                background-color: #218838;
-            }}
-            QPushButton:pressed {{
-                background-color: #1e7e34;
-            }}
-        """)
+        # Check if server files are already installed
+        if self.game and self.is_server_installed(self.game.name):
+            # Check if server is currently running
+            server_info = get_server_status_info(self.game.name)
+            is_running = server_info.get('is_running', False)
+            
+            if is_running:
+                # Server is running - show disabled button
+                start_button = QPushButton("Server Running")
+                start_button.setFont(QFont('Segoe UI', 16, QFont.Bold))
+                start_button.setStyleSheet(f"""
+                    QPushButton {{
+                        background-color: #6c757d;
+                        color: white;
+                        border: none;
+                        border-radius: {Layout.BORDER_RADIUS_MEDIUM}px;
+                        padding: 20px 40px;
+                        font-size: 18px;
+                        font-weight: bold;
+                        min-width: 250px;
+                        min-height: 60px;
+                    }}
+                    QPushButton:disabled {{
+                        background-color: #6c757d;
+                        color: #adb5bd;
+                    }}
+                """)
+                start_button.setEnabled(False)
+                start_button.setToolTip("Server is already running")
+            else:
+                # Server is installed but not running - show start button
+                start_button = QPushButton("Start Server")
+                start_button.setFont(QFont('Segoe UI', 16, QFont.Bold))
+                start_button.setStyleSheet(f"""
+                    QPushButton {{
+                        background-color: #28a745;
+                        color: white;
+                        border: none;
+                        border-radius: {Layout.BORDER_RADIUS_MEDIUM}px;
+                        padding: 20px 40px;
+                        font-size: 18px;
+                        font-weight: bold;
+                        min-width: 250px;
+                        min-height: 60px;
+                    }}
+                    QPushButton:hover {{
+                        background-color: #218838;
+                    }}
+                    QPushButton:pressed {{
+                        background-color: #1e7e34;
+                    }}
+                """)
+                start_button.clicked.connect(self.start_server_directly)
+        else:
+            # Server needs setup - show setup button
+            start_button = QPushButton("Start Dedicated Server Setup")
+            start_button.setFont(QFont('Segoe UI', 16, QFont.Bold))
+            start_button.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: #007bff;
+                    color: white;
+                    border: none;
+                    border-radius: {Layout.BORDER_RADIUS_MEDIUM}px;
+                    padding: 20px 40px;
+                    font-size: 18px;
+                    font-weight: bold;
+                    min-width: 250px;
+                    min-height: 60px;
+                }}
+                QPushButton:hover {{
+                    background-color: #0056b3;
+                }}
+                QPushButton:pressed {{
+                    background-color: #004085;
+                }}
+            """)
+            start_button.clicked.connect(self.start_server_setup)
         
-        # Connect button (no functionality yet)
-        start_button.clicked.connect(self.start_server)
+        # Store reference to the button for status updates
+        self.start_button = start_button
         
         button_layout.addWidget(start_button)
         button_layout.addStretch()
@@ -225,7 +282,7 @@ class GameDetailsPage(QWidget):
         
         layout.addWidget(button_container)
     
-    def start_server(self):
+    def start_server_setup(self):
         """Open the dedicated server setup window"""
         if self.game and self.game.name.lower() == "palworld":
             # Import here to avoid circular imports
@@ -236,7 +293,34 @@ class GameDetailsPage(QWidget):
             self.setup_window.show()
         else:
             print(f"Server setup not yet implemented for {self.game.name if self.game else 'Unknown Game'}")
-            # Could show a message box here for other games
+    
+    def start_server_directly(self):
+        """Start the server directly without setup (when files are already installed)"""
+        if self.game and self.game.name.lower() == "palworld":
+            try:
+                # Import the server start function
+                import sys
+                parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                sys.path.insert(0, os.path.join(parent_dir, "scripts"))
+                from scripts.palworld_server_startup_script import start_palworld_server
+                
+                print("Starting Palworld server...")
+                success = start_palworld_server()
+                if success:
+                    print("✅ Palworld server started successfully!")
+                else:
+                    print("❌ Failed to start Palworld server")
+            except Exception as e:
+                print(f"❌ Error starting server: {str(e)}")
+        else:
+            print(f"Direct server start not yet implemented for {self.game.name if self.game else 'Unknown Game'}")
+
+    def start_server(self):
+        """Legacy method - redirects to appropriate start method"""
+        if self.game and self.is_server_installed(self.game.name):
+            self.start_server_directly()
+        else:
+            self.start_server_setup()
     
     def update_game(self, game):
         """Update the page with a new game"""
@@ -257,6 +341,33 @@ class GameDetailsPage(QWidget):
         
         # Restart the status timer for the new game
         self.setup_status_timer()
+    
+    def is_server_installed(self, game_name):
+        """Check if the server files are already installed for the given game"""
+        if game_name.lower() == "palworld":
+            return self.is_palworld_server_installed()
+        # Add more games here as needed
+        return False
+    
+    def is_palworld_server_installed(self):
+        """Check if Palworld server files are installed"""
+        # Use the same paths as the startup script
+        if platform.system().lower() == 'windows':
+            steamcmd_dir = os.path.expandvars(r'%USERPROFILE%\SteamCMD')
+            server_dir = os.path.expandvars(r'%USERPROFILE%\Steam\steamapps\common\Palworld Dedicated Server')
+        else:
+            steamcmd_dir = os.path.expanduser('~/SteamCMD')
+            server_dir = os.path.expanduser('~/Steam/steamapps/common/Palworld Dedicated Server')
+        
+        # Check if SteamCMD is installed
+        steamcmd_exe = os.path.join(steamcmd_dir, 'steamcmd.exe' if platform.system().lower() == 'windows' else 'steamcmd.sh')
+        steamcmd_installed = os.path.exists(steamcmd_exe)
+        
+        # Check if Palworld server is installed
+        pal_exe = os.path.join(server_dir, 'PalServer.exe' if platform.system().lower() == 'windows' else 'PalServer')
+        server_installed = os.path.exists(pal_exe)
+        
+        return steamcmd_installed and server_installed
 
     def add_server_status(self, layout):
         """Add server status section"""
@@ -365,6 +476,77 @@ class GameDetailsPage(QWidget):
             error_detail.setStyleSheet(f"color: {Colors.TEXT_SECONDARY};")
             error_detail.setWordWrap(True)
             self.status_content_layout.addWidget(error_detail)
+        
+        # Update button state based on server status
+        self.update_button_state()
+
+    def update_button_state(self):
+        """Update the start button based on current server status"""
+        if not hasattr(self, 'start_button') or not self.start_button or not self.game:
+            return
+            
+        # Only update if server files are installed (otherwise it's always the setup button)
+        if self.is_server_installed(self.game.name):
+            try:
+                status_info = get_server_status_info(self.game.name)
+                is_running = status_info.get('is_running', False)
+                
+                if is_running:
+                    # Server is running - disable button
+                    self.start_button.setText("Server Running")
+                    self.start_button.setEnabled(False)
+                    self.start_button.setToolTip("Server is already running")
+                    self.start_button.setStyleSheet(f"""
+                        QPushButton {{
+                            background-color: #6c757d;
+                            color: white;
+                            border: none;
+                            border-radius: {Layout.BORDER_RADIUS_MEDIUM}px;
+                            padding: 20px 40px;
+                            font-size: 18px;
+                            font-weight: bold;
+                            min-width: 250px;
+                            min-height: 60px;
+                        }}
+                        QPushButton:disabled {{
+                            background-color: #6c757d;
+                            color: #adb5bd;
+                        }}
+                    """)
+                else:
+                    # Server is not running - enable button
+                    self.start_button.setText("Start Server")
+                    self.start_button.setEnabled(True)
+                    self.start_button.setToolTip("")
+                    self.start_button.setStyleSheet(f"""
+                        QPushButton {{
+                            background-color: #28a745;
+                            color: white;
+                            border: none;
+                            border-radius: {Layout.BORDER_RADIUS_MEDIUM}px;
+                            padding: 20px 40px;
+                            font-size: 18px;
+                            font-weight: bold;
+                            min-width: 250px;
+                            min-height: 60px;
+                        }}
+                        QPushButton:hover {{
+                            background-color: #218838;
+                        }}
+                        QPushButton:pressed {{
+                            background-color: #1e7e34;
+                        }}
+                    """)
+                    # Reconnect the click handler (in case it was disconnected)
+                    try:
+                        self.start_button.clicked.disconnect()
+                    except TypeError:
+                        # No connections to disconnect
+                        pass
+                    self.start_button.clicked.connect(self.start_server_directly)
+                    
+            except Exception as e:
+                print(f"Error updating button state: {e}")
 
     def setup_status_timer(self):
         """Set up timer to refresh server status every 10 seconds"""

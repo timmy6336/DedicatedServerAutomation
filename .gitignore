@@ -3,3 +3,11 @@
 .env
 steamcmd/
 palworld_server/
+
+# PyInstaller build artifacts
+build/
+dist/
+*.spec
+__pycache__/
+*.pyc
+*.pyo

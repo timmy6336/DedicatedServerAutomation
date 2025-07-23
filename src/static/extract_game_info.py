@@ -45,7 +45,12 @@ def get_igdb_game_info(game_name):
         }
         # Load existing list
         import json
-        json_path = "game_info.json"
+        import os
+        
+        # Get the path relative to the script's current directory
+        script_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        json_path = os.path.join(script_dir, "game_info.json")
+        
         try:
             with open(json_path, "r") as f:
                 game_list = json.load(f)

@@ -15,8 +15,8 @@ class Game:
         try:
             # Get the directory where the script is located
             script_dir = os.path.dirname(os.path.abspath(__file__))
-            # Go up one level to the parent directory where game_info.json is located
-            json_path = os.path.join(os.path.dirname(script_dir), "game_info.json")
+            # Look for game_info.json in the same directory as the script
+            json_path = os.path.join(script_dir, "game_info.json")
             
             with open(json_path, "r") as f:
                 game_list = json.load(f)
