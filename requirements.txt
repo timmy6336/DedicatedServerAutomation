@@ -1,4 +1,6 @@
 # pyqt5
 pyqt5
-# pyinstaller for packaging
 pyinstaller
+requests
+python-dotenv
+miniupnpc

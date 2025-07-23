@@ -1,6 +1,6 @@
+import shutil
 import os
 import subprocess
-import sys
 import urllib.request
 import zipfile
 import requests
@@ -8,10 +8,16 @@ import platform
 import subprocess
 import miniupnpc
 import subprocess
+import socket
 
 STEAMCMD_URL = "https://steamcdn-a.akamaihd.net/client/installer/steamcmd.zip"
-STEAMCMD_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../steamcmd'))
-SERVER_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../palworld_server'))
+# Use standard Steam locations
+if platform.system().lower() == 'windows':
+    STEAMCMD_DIR = os.path.expandvars(r'%USERPROFILE%\SteamCMD')
+    SERVER_DIR = os.path.expandvars(r'%USERPROFILE%\Steam\steamapps\common\Palworld Dedicated Server')
+else:
+    STEAMCMD_DIR = os.path.expanduser('~/SteamCMD')
+    SERVER_DIR = os.path.expanduser('~/Steam/steamapps/common/Palworld Dedicated Server')
 PALWORLD_APPID = "2394010"
 
 def download_steamcmd():
@@ -53,9 +59,8 @@ def install_or_update_palworld_server():
         print("Failed to install/update Palworld server.")
         return False
 
-def start_palworld_server():
-    pal_exe = os.path.join(SERVER_DIR, 'PalServer.exe')
-    # Attempt UPnP port forwarding for 8211
+def setup_upnp_port_forwarding():
+    """Set up UPnP port forwarding for Palworld server (port 8211)"""
     upnp_success = False
     if miniupnpc:
         try:
@@ -65,33 +70,125 @@ def start_palworld_server():
             upnp.selectigd()
             local_ip = upnp.lanaddr
             upnp.addportmapping(8211, 'TCP', local_ip, 8211, 'Palworld Server', '')
+            upnp.addportmapping(8211, 'UDP', local_ip, 8211, 'Palworld Server', '')
             print(f"UPnP port forwarding set for 8211 TCP/UDP to {local_ip}")
             upnp_success = True
         except Exception as e:
             print(f"UPnP port forwarding failed: {e}")
+            upnp_success = False
     else:
         print("miniupnpc not installed. Skipping UPnP port forwarding.")
+        upnp_success = False
+    
+    return upnp_success
+
+def start_palworld_server():
+    """Start the Palworld dedicated server"""
+    pal_exe = os.path.join(SERVER_DIR, 'PalServer.exe')
+    
     if not os.path.exists(pal_exe):
         print(f"PalServer.exe not found in {SERVER_DIR}. Run install_or_update_palworld_server() first.")
-        return
+        return False
+    
     print("Starting Palworld Dedicated Server...")
-    subprocess.Popen([pal_exe], cwd=SERVER_DIR)
-    # Get public IP
     try:
-        public_ip = requests.get('https://api.ipify.org').text
-        # Check if public IP is pingable
-        param = '-n' if platform.system().lower() == 'windows' else '-c'
-        ping_cmd = ['ping', param, '1', public_ip]
-        ping_result = subprocess.run(ping_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        if ping_result.returncode == 0:
-            print(f"Server started. Public IP {public_ip} is pingable. You can now connect to {public_ip}:8211 in Palworld.")
-        else:
-            print(f"Server started. Public IP {public_ip} is NOT pingable. Check your network/firewall settings.")
+        subprocess.Popen([pal_exe], cwd=SERVER_DIR)
+        
+        # Get public IP for information
+        try:
+            public_ip = requests.get('https://api.ipify.org').text
+            print(f"Server started successfully. Public IP: {public_ip}, Port: 8211")
+        except Exception as e:
+            print("Server started. Could not retrieve public IP.")
+            print(f"Error: {e}")
+        
+        return True
     except Exception as e:
-        print("Server started. Could not retrieve or ping public IP.")
-        print(f"Error: {e}")
+        print(f"Failed to start Palworld server: {e}")
+        return False
+
+
+# Remove SteamCMD if installed
+def uninstall_steamcmd():
+    if os.path.exists(STEAMCMD_DIR):
+        try:
+            shutil.rmtree(STEAMCMD_DIR)
+            print(f"SteamCMD uninstalled from {STEAMCMD_DIR}.")
+            return True
+        except Exception as e:
+            print(f"Failed to uninstall SteamCMD: {e}")
+            return False
+    else:
+        print("SteamCMD is not installed.")
+        return False
+
+# Remove Palworld Dedicated Server if installed
+def uninstall_palworld_server():
+    if os.path.exists(SERVER_DIR):
+        try:
+            shutil.rmtree(SERVER_DIR)
+            print(f"Palworld Dedicated Server uninstalled from {SERVER_DIR}.")
+            return True
+        except Exception as e:
+            print(f"Failed to uninstall Palworld server: {e}")
+            return False
+    else:
+        print("Palworld Dedicated Server is not installed.")
+        return False
+
+# Remove UPnP port forwarding rule for port 8211 if it exists
+def remove_port_forward_rule():
+    if miniupnpc:
+        try:
+            upnp = miniupnpc.UPnP()
+            upnp.discoverdelay = 200
+            upnp.discover()
+            upnp.selectigd()
+            local_ip = upnp.lanaddr
+
+            tcp_removed = False
+            udp_removed = False
+
+            # Try removing TCP rule - match the addportmapping format
+            try:
+                tcp_removed = upnp.deleteportmapping(8211, 'TCP', '')
+                if tcp_removed:
+                    print("UPnP TCP port forwarding rule for 8211 removed.")
+                else:
+                    print("No UPnP TCP port forwarding rule for 8211 found to remove.")
+            except Exception as e:
+                if "Invalid Args" in str(e):
+                    print("No UPnP TCP port forwarding rule for 8211 found (or router doesn't support removal).")
+                    tcp_removed = False
+                else:
+                    print(f"Failed to remove UPnP TCP port forwarding rule: {e}")
+                    tcp_removed = False
+
+            # Try removing UDP rule - match the addportmapping format
+            try:
+                udp_removed = upnp.deleteportmapping(8211, 'UDP', '')
+                if udp_removed:
+                    print("UPnP UDP port forwarding rule for 8211 removed.")
+                else:
+                    print("No UPnP UDP port forwarding rule for 8211 found to remove.")
+            except Exception as e:
+                if "Invalid Args" in str(e):
+                    print("No UPnP UDP port forwarding rule for 8211 found (or router doesn't support removal).")
+                    udp_removed = False
+                else:
+                    print(f"Failed to remove UPnP UDP port forwarding rule: {e}")
+                    udp_removed = False
+
+            return tcp_removed or udp_removed
+        except Exception as e:
+            print(f"Failed to initialize UPnP for removing port forwarding rule: {e}")
+            return False
+    else:
+        print("miniupnpc not installed. Cannot remove UPnP port forwarding rule.")
+        return False
 
 if __name__ == "__main__":
-    download_steamcmd()
-    if install_or_update_palworld_server():
-        start_palworld_server()
+    #uninstall_palworld_server()
+    #uninstall_steamcmd()
+    pass
+
