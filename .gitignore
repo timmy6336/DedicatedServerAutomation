@@ -31,3 +31,6 @@ xref-*.html
 *.tmp
 *.temp
 temp/
+
+markdowns/
+*.md
