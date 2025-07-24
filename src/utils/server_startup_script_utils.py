@@ -1,6 +1,33 @@
 """
-Utility functions for game server startup scripts.
-Contains reusable functionality that can be shared across different game server implementations.
+Game Server Automation Utilities
+
+This module provides a comprehensive set of utility classes and functions for automating
+the installation, configuration, and management of dedicated game servers. It serves as
+the core backend for the server automation application, offering reusable functionality
+that can be shared across multiple game implementations.
+
+The module is organized into several utility classes, each handling a specific aspect
+of server management:
+
+Classes:
+    SteamCMDUtils: Handles SteamCMD installation, server downloads, and updates
+    UPnPUtils: Manages automatic port forwarding configuration via UPnP
+    ServerUtils: Provides server startup, path management, and lifecycle operations
+    NetworkUtils: Network connectivity testing and IP address resolution
+    FileUtils: Safe file and directory operations with error handling
+    GameConfig: Centralized game configuration and metadata storage
+
+Key Features:
+- Cross-platform compatibility (Windows/Linux)
+- Progress tracking with callback support for UI integration
+- Robust error handling and recovery mechanisms
+- File-based verification for reliable success detection
+- Smart SteamCMD management with preservation options
+- Automatic network configuration via UPnP
+- Comprehensive logging and status reporting
+
+This refactored architecture separates concerns and promotes code reuse while
+maintaining backward compatibility with existing game-specific scripts.
 """
 
 import shutil
@@ -16,13 +43,49 @@ from typing import Callable, Optional, Tuple, Union
 
 
 class SteamCMDUtils:
-    """Utilities for managing SteamCMD installation and operations"""
+    """
+    Utilities for managing SteamCMD installation and operations.
+    
+    This class provides comprehensive SteamCMD management functionality including
+    automated download, installation, server management, and cleanup operations.
+    All methods are static for easy access without instantiation.
+    
+    SteamCMD is Valve's command-line version of the Steam client used for downloading
+    and updating dedicated servers. This class abstracts the complexity of SteamCMD
+    operations and provides robust error handling and progress tracking.
+    
+    Key Features:
+    - Cross-platform SteamCMD installation (Windows/Linux)
+    - Progress tracking with callback support for UI integration
+    - Robust download and extraction with error recovery
+    - Server installation and update management
+    - File-based success verification for reliability
+    - Clean uninstallation with optional preservation
+    
+    Attributes:
+        STEAMCMD_URL (str): Official SteamCMD download URL from Valve
+    """
     
     STEAMCMD_URL = "https://steamcdn-a.akamaihd.net/client/installer/steamcmd.zip"
     
     @staticmethod
     def get_steamcmd_paths() -> Tuple[str, str]:
-        """Get platform-appropriate SteamCMD directory and executable paths"""
+        """
+        Get platform-appropriate SteamCMD directory and executable paths.
+        
+        Determines the correct installation directory and executable name for
+        SteamCMD based on the current operating system. Uses standard user
+        directories to avoid permission issues.
+        
+        Returns:
+            Tuple[str, str]: A tuple containing (steamcmd_directory, steamcmd_executable)
+                - On Windows: (%USERPROFILE%\\SteamCMD, steamcmd.exe)
+                - On Linux: (~/SteamCMD, steamcmd.sh)
+                
+        Example:
+            steamcmd_dir, steamcmd_exe = SteamCMDUtils.get_steamcmd_paths()
+            print(f"SteamCMD will be installed at: {steamcmd_dir}")
+        """
         if platform.system().lower() == 'windows':
             steamcmd_dir = os.path.expandvars(r'%USERPROFILE%\SteamCMD')
             steamcmd_exe = os.path.join(steamcmd_dir, 'steamcmd.exe')
@@ -34,7 +97,26 @@ class SteamCMDUtils:
     
     @staticmethod
     def is_steamcmd_installed() -> bool:
-        """Check if SteamCMD is already installed"""
+        """
+        Check if SteamCMD is already installed on the system.
+        
+        Verifies the presence of the SteamCMD executable at the expected
+        location based on the current platform. This is a quick check
+        that doesn't verify the integrity of the installation.
+        
+        Returns:
+            bool: True if SteamCMD executable exists, False otherwise
+            
+        Note:
+            This method only checks for the existence of the executable file.
+            It does not verify that SteamCMD is functional or up to date.
+            
+        Example:
+            if SteamCMDUtils.is_steamcmd_installed():
+                print("SteamCMD is ready to use")
+            else:
+                print("SteamCMD needs to be installed")
+        """
         _, steamcmd_exe = SteamCMDUtils.get_steamcmd_paths()
         return os.path.exists(steamcmd_exe)
     
@@ -42,14 +124,48 @@ class SteamCMDUtils:
     def download_steamcmd(progress_callback: Optional[Callable[[int], None]] = None, 
                          status_callback: Optional[Callable[[str], None]] = None) -> bool:
         """
-        Download and install SteamCMD with progress tracking
+        Download and install SteamCMD with comprehensive progress tracking.
+        
+        Downloads the official SteamCMD distribution from Valve's CDN, extracts it
+        to the appropriate platform-specific directory, and sets up the installation.
+        If SteamCMD is already present, the function will skip the download process.
+        
+        This method provides detailed progress tracking through callback functions,
+        making it suitable for integration with GUI progress bars and status displays.
+        The download includes automatic error handling and cleanup on failure.
         
         Args:
-            progress_callback: Function to call with progress percentage (0-100)
-            status_callback: Function to call with status messages
-            
+            progress_callback (callable, optional): Function to call with progress 
+                percentage (0-100). Called frequently during download and extraction.
+                Signature: progress_callback(percent: int) -> None
+            status_callback (callable, optional): Function to call with descriptive
+                status messages. Provides real-time information about current operations.
+                Signature: status_callback(message: str) -> None
+                
         Returns:
-            bool: True if successful, False otherwise
+            bool: True if SteamCMD was successfully downloaded/installed or already
+                exists, False if download or extraction failed.
+                
+        Raises:
+            No exceptions are raised; all errors are handled internally and reported
+            through the status_callback if provided.
+            
+        Progress Phases:
+            - 10%: Initial setup and directory creation
+            - 20-80%: File download (with continuous updates)
+            - 85%: Download complete, starting extraction
+            - 100%: Installation complete
+            
+        Example:
+            def on_progress(percent):
+                print(f"Download progress: {percent}%")
+                
+            def on_status(message):
+                print(f"Status: {message}")
+                
+            success = SteamCMDUtils.download_steamcmd(on_progress, on_status)
+            if success:
+                print("SteamCMD is ready for use!")
         """
         if progress_callback:
             progress_callback(10)
