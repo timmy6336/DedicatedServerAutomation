@@ -320,6 +320,13 @@ class GameDetailsPage(QWidget):
             # Create and show the setup window
             self.setup_window = PalworldServerSetupWindow(self.game)
             self.setup_window.show()
+        elif self.game and self.game.name.lower() == "valheim":
+            # Import here to avoid circular imports
+            from setup_windows.valheim_setup_window import ValheimServerSetupWindow
+            # Create and show the Valheim setup window
+            self.setup_window = ValheimServerSetupWindow(self.game)
+            self.setup_window.show()
+            
         else:
             print(f"Server setup not yet implemented for {self.game.name if self.game else 'Unknown Game'}")
     

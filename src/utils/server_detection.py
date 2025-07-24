@@ -43,6 +43,53 @@ def get_public_ip():
     except Exception:
         return "Unable to determine"
 
+def is_valheim_server_running():
+    """Check if Valheim dedicated server is running"""
+    try:
+        # Look for Valheim server processes
+        valheim_processes = [
+            "valheim_server.exe",
+            "valheim_server",
+            "valheim_server.sh"
+        ]
+        
+        for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+            try:
+                process_name = proc.info['name']
+                if process_name and any(valheim_proc.lower() in process_name.lower() for valheim_proc in valheim_processes):
+                    return True
+                    
+                # Also check command line for Valheim server
+                cmdline = proc.info['cmdline']
+                if cmdline and any('valheim' in cmd.lower() and ('server' in cmd.lower() or 'dedicated' in cmd.lower()) for cmd in cmdline):
+                    return True
+                    
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                continue
+                
+        return False
+    except Exception:
+        return False
+
+def get_valheim_server_port():
+    """Get the port that Valheim server is running on (default 2456)"""
+    try:
+        # Check if port 2456 is in use (default Valheim port)
+        for conn in psutil.net_connections(kind='inet'):
+            if conn.laddr.port == 2456 and conn.status == psutil.CONN_LISTEN:
+                return 2456
+        
+        # Check for other common Valheim ports (2457, 2458)
+        for port in [2457, 2458]:
+            for conn in psutil.net_connections(kind='inet'):
+                if conn.laddr.port == port and conn.status == psutil.CONN_LISTEN:
+                    return port
+        
+        # If not found, return default
+        return 2456
+    except Exception:
+        return 2456
+
 def is_palworld_server_running():
     """Check if Palworld dedicated server is running"""
     try:
@@ -100,6 +147,13 @@ def get_server_status_info(game_name):
         status_info['is_running'] = is_palworld_server_running()
         if status_info['is_running']:
             status_info['port'] = get_palworld_server_port()
+            if status_info['local_ip'] != "Unable to determine":
+                status_info['connection_string'] = f"{status_info['local_ip']}:{status_info['port']}"
+    
+    elif game_name_lower == "valheim":
+        status_info['is_running'] = is_valheim_server_running()
+        if status_info['is_running']:
+            status_info['port'] = get_valheim_server_port()
             if status_info['local_ip'] != "Unable to determine":
                 status_info['connection_string'] = f"{status_info['local_ip']}:{status_info['port']}"
     

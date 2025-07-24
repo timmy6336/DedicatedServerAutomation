@@ -420,12 +420,22 @@ class BaseServerSetupWindow(QWidget):
         self.proceed_button.setEnabled(False)
         self.proceed_button.setText("Processing...")
         
-        # Start the installation worker
-        self.worker = InstallationWorker(step['function'], step['name'])
-        self.worker.progress_updated.connect(self.progress_bar.setValue)
-        self.worker.status_updated.connect(self.log_message)
-        self.worker.finished.connect(self.on_step_finished)
-        self.worker.start()
+        # Handle interactive steps directly on main thread
+        if step.get('interactive', False):
+            self.log_message(f"Running interactive step: {step['name']}")
+            try:
+                success = step['function']()
+                self.on_step_finished(success)
+            except Exception as e:
+                self.log_message(f"Error in interactive step: {str(e)}")
+                self.on_step_finished(False)
+        else:
+            # Start the installation worker for non-interactive steps
+            self.worker = InstallationWorker(step['function'], step['name'])
+            self.worker.progress_updated.connect(self.progress_bar.setValue)
+            self.worker.status_updated.connect(self.log_message)
+            self.worker.finished.connect(self.on_step_finished)
+            self.worker.start()
     
     def on_step_finished(self, success):
         """Handle step completion"""

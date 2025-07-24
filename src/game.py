@@ -63,44 +63,49 @@ class Game:
 
     def load_info_from_json(self):
         """
-        Load game information from the JSON configuration file.
+        Load game information from individual JSON configuration files.
         
-        Searches for a game_info.json file in the same directory as this script
-        and attempts to find matching game data by name (case-insensitive).
-        If found, updates the instance properties with the loaded data.
+        Searches for a game-specific JSON file in the games/ directory and
+        loads detailed game metadata. The file should be named after the game
+        (e.g., "palworld.json", "valheim.json") and contain comprehensive
+        game information including server details, system requirements, and
+        configuration options.
         
-        The JSON file should contain an array of game objects with properties:
+        The JSON file should contain a game object with properties:
         - name: Game name (string)
-        - summary: Game description (string)
-        - genres: Array of genre strings
-        - image: Relative path to image file (string)
+        - display_name: Formatted display name (string)
+        - description: Game description (string)
+        - genre: Game genre(s) (string)
         - platforms: Array of platform strings
+        - server_info: Server configuration details
+        - system_requirements: Hardware requirements
+        - features: Array of game features
+        - And many other detailed properties
         
         Handles file not found and JSON parsing errors gracefully by printing
         error messages and leaving default values in place.
         """
         try:
-            # Determine the path to the game_info.json file
-            # Look in the same directory as this script file
+            # Determine the path to the individual game JSON file
+            # Look in the games/ subdirectory for game-specific files
             script_dir = os.path.dirname(os.path.abspath(__file__))
-            json_path = os.path.join(script_dir, "game_info.json")
+            games_dir = os.path.join(script_dir, "games")
+            
+            # Create filename from game name (lowercase, spaces replaced with underscores)
+            filename = f"{self.name.lower().replace(' ', '_')}.json"
+            json_path = os.path.join(games_dir, filename)
             
             # Load and parse the JSON configuration file
-            with open(json_path, "r") as f:
-                game_list = json.load(f)
+            with open(json_path, "r", encoding='utf-8') as f:
+                game_data = json.load(f)
             
-            # Search for this game in the loaded data
-            for game in game_list:
-                # Case-insensitive name matching for flexibility
-                if game.get("name", "").lower() == self.name.lower():
-                    # Update instance properties with loaded data
-                    self._update_from_json_data(game)
-                    break  # Stop searching once we find a match
+            # Update instance properties with loaded data
+            self._update_from_json_data(game_data)
                     
         except FileNotFoundError:
-            print(f"Warning: game_info.json not found for {self.name}")
+            print(f"Warning: {filename} not found in games/ directory for {self.name}")
         except json.JSONDecodeError as e:
-            print(f"Error parsing game_info.json for {self.name}: {e}")
+            print(f"Error parsing {filename} for {self.name}: {e}")
         except Exception as e:
             print(f"Error loading game info for {self.name}: {e}")
 
@@ -108,40 +113,121 @@ class Game:
         """
         Update instance properties from loaded JSON data.
         
-        Safely extracts and assigns properties from the JSON game object,
-        handling missing or malformed data gracefully by keeping default values.
+        Safely extracts and assigns properties from the comprehensive JSON game 
+        object, handling missing or malformed data gracefully by keeping default 
+        values. This method now supports the enhanced JSON structure with detailed
+        game information, server configuration, and system requirements.
         
         Args:
             game_data (dict): Game data object from JSON file
         """
-        # Update description/summary
-        self.description = game_data.get("summary", self.description)
+        # Update description - try 'description' first, fall back to 'summary'
+        self.description = game_data.get("description", game_data.get("summary", self.description))
         
-        # Process genre information
-        # Genres may be a list that needs to be joined into a string
-        genres = game_data.get("genres", [])
-        if genres:
-            self.genre = ", ".join(genres)
-        # If no genres or empty list, keep the default "Unknown"
+        # Process genre information - handle both string and array formats
+        genre_data = game_data.get("genre")
+        if genre_data:
+            if isinstance(genre_data, list):
+                self.genre = ", ".join(genre_data)
+            else:
+                self.genre = str(genre_data)
+        # If no genre data, keep the default "Unknown"
         
-        # Set image path (may be None if not specified)
-        self.image_url = game_data.get("image", None)
+        # Set image path - look for 'image' or 'image_url'
+        self.image_url = game_data.get("image", game_data.get("image_url", None))
         
         # Set supported platforms list
         self.platforms = game_data.get("platforms", [])
+        
+        # Store additional detailed information for potential future use
+        # These aren't used in the current UI but provide rich data for expansion
+        self.display_name = game_data.get("display_name", self.name)
+        self.developer = game_data.get("developer", "Unknown")
+        self.publisher = game_data.get("publisher", "Unknown")
+        self.release_date = game_data.get("release_date", "Unknown")
+        
+        # Server-specific information
+        server_info = game_data.get("server_info", {})
+        self.app_id = server_info.get("app_id", "Unknown")
+        self.default_port = server_info.get("default_port", 0)
+        self.executable = server_info.get("executable", "Unknown")
+        
+        # Multiplayer information
+        multiplayer_info = game_data.get("multiplayer", {})
+        self.max_players = multiplayer_info.get("max_players", 0)
+        self.min_players = multiplayer_info.get("min_players", 1)
+        
+        # Game features
+        self.features = game_data.get("features", [])
 
     def get_display_name(self):
         """
         Get the game's display name.
         
-        Returns the name formatted for display in the UI. Currently just
-        returns the name as-is, but this method allows for future formatting
-        changes without affecting the rest of the codebase.
+        Returns the formatted display name if available, otherwise falls back
+        to the basic name. This allows for games to have different internal
+        names versus user-facing display names.
         
         Returns:
             str: The game's display name
         """
-        return self.name
+        return getattr(self, 'display_name', self.name)
+
+    def get_server_info(self):
+        """
+        Get server-specific information for this game.
+        
+        Returns a dictionary containing key server configuration details
+        like app ID, port, and executable name.
+        
+        Returns:
+            dict: Server configuration information
+        """
+        return {
+            'app_id': getattr(self, 'app_id', 'Unknown'),
+            'default_port': getattr(self, 'default_port', 0),
+            'executable': getattr(self, 'executable', 'Unknown'),
+            'max_players': getattr(self, 'max_players', 0),
+            'min_players': getattr(self, 'min_players', 1)
+        }
+
+    def get_multiplayer_info(self):
+        """
+        Get multiplayer capability information.
+        
+        Returns details about the game's multiplayer support including
+        player limits and gameplay modes.
+        
+        Returns:
+            str: Formatted multiplayer information
+        """
+        max_players = getattr(self, 'max_players', 0)
+        min_players = getattr(self, 'min_players', 1)
+        
+        if max_players > 1:
+            return f"{min_players}-{max_players} players"
+        elif max_players == 1:
+            return "Single player only"
+        else:
+            return "Multiplayer support unknown"
+
+    def get_developer_info(self):
+        """
+        Get developer and publisher information.
+        
+        Returns formatted information about who developed and published
+        the game.
+        
+        Returns:
+            str: Developer and publisher information
+        """
+        developer = getattr(self, 'developer', 'Unknown')
+        publisher = getattr(self, 'publisher', 'Unknown')
+        
+        if developer == publisher:
+            return f"Developed by {developer}"
+        else:
+            return f"Developed by {developer}, Published by {publisher}"
 
     def get_genre_display(self):
         """

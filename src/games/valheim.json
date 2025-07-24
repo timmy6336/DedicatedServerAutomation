@@ -1,0 +1,123 @@
+{
+    "name": "Valheim",
+    "display_name": "Valheim",
+    "description": "A brutal exploration and survival game for 1-10 players, set in a procedurally-generated purgatory inspired by Viking culture.",
+    "image": "images/valheim_image.jpg",
+    "developer": "Iron Gate AB",
+    "publisher": "Coffee Stain Publishing",
+    "release_date": "2021-02-02",
+    "genre": "Survival, Action, Adventure, Indie",
+    "platforms": ["Windows", "Linux"],
+    "multiplayer": {
+        "min_players": 1,
+        "max_players": 10,
+        "cooperative": true,
+        "competitive": false
+    },
+    "server_info": {
+        "app_id": "896660",
+        "executable": "valheim_server.exe",
+        "default_port": 2456,
+        "additional_ports": [2457, 2458],
+        "protocol": "UDP",
+        "steam_required": true,
+        "difficulty": "Easy"
+    },
+    "system_requirements": {
+        "minimum": {
+            "os": "Windows 7 or later",
+            "processor": "2.6 GHz Dual Core",
+            "memory": "4 GB RAM",
+            "storage": "2 GB available space",
+            "network": "Broadband Internet connection"
+        },
+        "recommended": {
+            "os": "Windows 10",
+            "processor": "Intel Core i5 or equivalent",
+            "memory": "8 GB RAM",
+            "storage": "4 GB available space",
+            "network": "Broadband Internet connection"
+        }
+    },
+    "features": [
+        "Procedurally generated world",
+        "Co-op multiplayer up to 10 players",
+        "Viking-themed survival gameplay",
+        "Building and crafting system",
+        "Boss battles and exploration",
+        "Dedicated server support",
+        "World persistence and saves",
+        "Cross-platform play (Windows/Linux)"
+    ],
+    "server_features": {
+        "world_persistence": true,
+        "automatic_backups": true,
+        "world_size": "Large (procedurally generated)",
+        "save_frequency": "Auto-save every 20 minutes",
+        "world_seeds": "Customizable world generation",
+        "password_protection": "Optional server password",
+        "admin_commands": "Full admin control available"
+    },
+    "installation_notes": [
+        "Server requires SteamCMD for installation and updates",
+        "Default world name is 'Dedicated' if not specified",
+        "Server creates world files in installation directory",
+        "World data includes character progression and builds",
+        "Backup world files regularly to prevent data loss",
+        "Server supports custom world seeds for consistent generation"
+    ],
+    "configuration_files": [
+        "start_server.bat",
+        "start_server_xvfb.sh",
+        "server_exit.drp"
+    ],
+    "ports_info": {
+        "game_port": {
+            "port": 2456,
+            "protocol": "UDP",
+            "description": "Main game traffic port"
+        },
+        "query_port": {
+            "port": 2457,
+            "protocol": "UDP", 
+            "description": "Steam query port for server discovery"
+        },
+        "additional_port": {
+            "port": 2458,
+            "protocol": "UDP",
+            "description": "Additional communication port"
+        }
+    },
+    "common_issues": [
+        {
+            "issue": "Server not visible to friends",
+            "solution": "Ensure ports 2456-2458 UDP are forwarded"
+        },
+        {
+            "issue": "World not loading",
+            "solution": "Check server directory permissions and disk space"
+        },
+        {
+            "issue": "Server crashes on startup",
+            "solution": "Verify server files integrity through SteamCMD"
+        },
+        {
+            "issue": "High memory usage",
+            "solution": "Large worlds require more RAM, consider upgrading"
+        }
+    ],
+    "helpful_links": [
+        {
+            "title": "Official Valheim Server Guide",
+            "url": "https://valheim.fandom.com/wiki/Dedicated_server"
+        },
+        {
+            "title": "Valheim Server Configuration",
+            "url": "https://steamcommunity.com/app/892970/discussions/0/3078640516806849596/"
+        },
+        {
+            "title": "Port Forwarding Guide",
+            "url": "https://portforward.com/valheim/"
+        }
+    ]
+}

@@ -1,0 +1,231 @@
+{
+    "name": "Palworld",
+    "display_name": "Palworld",
+    "description": "Palworld is a multiplayer, open-world survival crafting game where you can befriend and collect mysterious creatures called \"Pal\" in a vast world! Make your Pals fight, build, farm, and work in factories.",
+    "image": "images/palworld_image.jpg",
+    "developer": "Pocketpair",
+    "publisher": "Pocketpair",
+    "release_date": "2024-01-19",
+    "genre": "Survival, Action, Adventure, RPG, Shooter, Indie",
+    "platforms": ["Windows", "Xbox Series X|S", "PlayStation 5", "Xbox One", "Mac"],
+    "multiplayer": {
+        "min_players": 1,
+        "max_players": 32,
+        "cooperative": true,
+        "competitive": true
+    },
+    "server_info": {
+        "app_id": "2394010",
+        "executable": "PalServer.exe",
+        "default_port": 8211,
+        "additional_ports": [8212, 25575],
+        "protocol": "UDP",
+        "steam_required": true,
+        "difficulty": "Easy"
+    },
+    "system_requirements": {
+        "minimum": {
+            "os": "Windows 10 or later (64-Bit)",
+            "processor": "Intel Core i5-3570K 3.4 GHz or AMD FX-8310",
+            "memory": "16 GB RAM",
+            "graphics": "NVIDIA GeForce GTX 1050 or AMD Radeon RX 560",
+            "directx": "Version 11",
+            "storage": "40 GB available space",
+            "network": "Broadband Internet connection"
+        },
+        "recommended": {
+            "os": "Windows 10 or later (64-Bit)",
+            "processor": "Intel Core i9-9900K or AMD Ryzen 7 3700X",
+            "memory": "32 GB RAM",
+            "graphics": "NVIDIA GeForce RTX 2070 or AMD Radeon RX 6700 XT",
+            "directx": "Version 12",
+            "storage": "40 GB available space (SSD recommended)",
+            "network": "Broadband Internet connection"
+        }
+    },
+    "features": [
+        "Collect and befriend mysterious Pals",
+        "Multiplayer survival crafting up to 32 players",
+        "Build bases and factories with Pal automation",
+        "Combat system with Pals and weapons",
+        "Open-world exploration and adventure",
+        "Breeding and genetics system for Pals",
+        "Dedicated server support",
+        "Cross-platform multiplayer",
+        "Resource gathering and crafting",
+        "Base building and automation"
+    ],
+    "server_features": {
+        "world_persistence": true,
+        "automatic_backups": true,
+        "world_size": "Large open world",
+        "save_frequency": "Auto-save configurable",
+        "player_progression": "Character and Pal progression saved",
+        "password_protection": "Server password support",
+        "admin_commands": "Full admin control available",
+        "guild_system": "Player guilds and cooperation",
+        "pvp_support": "Optional PvP gameplay",
+        "pal_catching": "Persistent Pal collection"
+    },
+    "installation_notes": [
+        "Server requires SteamCMD for installation and updates",
+        "Dedicated server supports up to 32 concurrent players",
+        "Server creates world and player data in installation directory",
+        "Player progress includes character levels and Pal collection",
+        "Base structures and automation persist between sessions",
+        "Regular backups recommended for player data protection",
+        "Server supports custom settings for difficulty and gameplay"
+    ],
+    "configuration_files": [
+        "PalWorldSettings.ini",
+        "DefaultPalWorldSettings.ini",
+        "Engine.ini",
+        "Game.ini"
+    ],
+    "ports_info": {
+        "game_port": {
+            "port": 8211,
+            "protocol": "UDP",
+            "description": "Main game traffic port"
+        },
+        "query_port": {
+            "port": 8212,
+            "protocol": "UDP",
+            "description": "Server query port for discovery"
+        },
+        "rcon_port": {
+            "port": 25575,
+            "protocol": "TCP",
+            "description": "Remote console administration port"
+        }
+    },
+    "server_settings": {
+        "difficulty": {
+            "options": ["None", "Normal", "Hard"],
+            "default": "None",
+            "description": "Overall game difficulty setting"
+        },
+        "day_time_speed_rate": {
+            "default": 1.0,
+            "range": [0.1, 5.0],
+            "description": "Speed of day cycle progression"
+        },
+        "night_time_speed_rate": {
+            "default": 1.0,
+            "range": [0.1, 5.0],
+            "description": "Speed of night cycle progression"
+        },
+        "exp_rate": {
+            "default": 1.0,
+            "range": [0.1, 20.0],
+            "description": "Experience gain multiplier"
+        },
+        "pal_capture_rate": {
+            "default": 1.0,
+            "range": [0.1, 20.0],
+            "description": "Pal capture success rate multiplier"
+        },
+        "pal_spawn_num_rate": {
+            "default": 1.0,
+            "range": [0.1, 10.0],
+            "description": "Number of Pals spawning multiplier"
+        },
+        "pal_damage_rate_attack": {
+            "default": 1.0,
+            "range": [0.1, 5.0],
+            "description": "Damage dealt by Pals multiplier"
+        },
+        "pal_damage_rate_defense": {
+            "default": 1.0,
+            "range": [0.1, 5.0],
+            "description": "Damage taken by Pals multiplier"
+        },
+        "player_damage_rate_attack": {
+            "default": 1.0,
+            "range": [0.1, 5.0],
+            "description": "Damage dealt by players multiplier"
+        },
+        "player_damage_rate_defense": {
+            "default": 1.0,
+            "range": [0.1, 5.0],
+            "description": "Damage taken by players multiplier"
+        },
+        "player_stomach_decrease_rate": {
+            "default": 1.0,
+            "range": [0.1, 5.0],
+            "description": "Player hunger decrease rate"
+        },
+        "player_stamina_decrease_rate": {
+            "default": 1.0,
+            "range": [0.1, 5.0],
+            "description": "Player stamina decrease rate"
+        },
+        "player_auto_hp_regene_rate": {
+            "default": 1.0,
+            "range": [0.1, 5.0],
+            "description": "Player health regeneration rate"
+        },
+        "player_auto_hp_regene_rate_in_sleep": {
+            "default": 1.0,
+            "range": [0.1, 5.0],
+            "description": "Player health regeneration while sleeping"
+        }
+    },
+    "common_issues": [
+        {
+            "issue": "Server not visible to friends",
+            "solution": "Ensure port 8211 UDP is forwarded and Windows Firewall allows the server"
+        },
+        {
+            "issue": "Players can't join server",
+            "solution": "Check server password, player limit, and network connectivity"
+        },
+        {
+            "issue": "Server crashes on startup",
+            "solution": "Verify server files through SteamCMD and check available RAM (16GB minimum)"
+        },
+        {
+            "issue": "High memory usage",
+            "solution": "Palworld servers require significant RAM, especially with many players and Pals"
+        },
+        {
+            "issue": "World corruption",
+            "solution": "Regular backups of SaveGames folder, avoid force-closing server"
+        },
+        {
+            "issue": "Pals disappearing",
+            "solution": "Check server stability and ensure proper save intervals"
+        },
+        {
+            "issue": "Performance issues",
+            "solution": "Reduce player count, optimize server settings, ensure SSD storage"
+        }
+    ],
+    "backup_locations": [
+        "Pal/Saved/SaveGames/",
+        "Pal/Saved/Config/",
+        "Pal/Binaries/Win64/steamapps/"
+    ],
+    "helpful_links": [
+        {
+            "title": "Official Palworld Server Setup Guide",
+            "url": "https://tech.palworldgame.com/dedicated-server-guide"
+        },
+        {
+            "title": "Palworld Server Settings Reference",
+            "url": "https://palworld.wiki.gg/wiki/Server_Settings"
+        },
+        {
+            "title": "Palworld Dedicated Server Steam Page",
+            "url": "https://steamcommunity.com/app/1623730"
+        },
+        {
+            "title": "Port Forwarding Guide for Palworld",
+            "url": "https://portforward.com/palworld/"
+        },
+        {
+            "title": "Palworld Server Optimization Guide",
+            "url": "https://www.reddit.com/r/Palworld/comments/19cxfty/palworld_dedicated_server_optimization_guide/"
+        }
+    ]
+}

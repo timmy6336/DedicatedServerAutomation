@@ -1,4 +1,5 @@
 GAMES_LIST = [
     "Palworld",
-    "Palworld"
+    "Valheim",
+    # Add more games here as needed
 ]

@@ -541,7 +541,7 @@ class ServerUtils:
                     working_directory: Optional[str] = None,
                     server_args: Optional[list] = None) -> bool:
         """
-        Start a server executable
+        Start a server executable in a separate command prompt window
         
         Args:
             server_executable_path: Full path to the server executable
@@ -558,24 +558,73 @@ class ServerUtils:
         if working_directory is None:
             working_directory = os.path.dirname(server_executable_path)
         
-        cmd = [server_executable_path]
+        # Build the command for the server
+        server_cmd = [server_executable_path]
         if server_args:
-            cmd.extend(server_args)
+            server_cmd.extend(server_args)
         
-        print(f"Starting server: {' '.join(cmd)}")
+        # Create a temporary batch file to run the server
+        # This avoids complex quoting issues with the 'start' command
+        import tempfile
+        
+        # Create temporary batch file
+        batch_content = f'''@echo off
+title Valheim Dedicated Server - {os.path.basename(server_executable_path)}
+cd /d "{working_directory}"
+echo Starting Valheim server...
+echo Working directory: {working_directory}
+echo Command: {' '.join(f'"{arg}"' if ' ' in str(arg) else str(arg) for arg in server_cmd)}
+echo.
+'''
+        
+        # Add the actual server command with proper quoting for each argument
+        # Each argument that contains spaces or special characters should be individually quoted
+        quoted_args = []
+        for arg in server_cmd:
+            arg_str = str(arg)
+            # Quote arguments that contain spaces or special characters
+            if ' ' in arg_str or any(char in arg_str for char in ['&', '|', '<', '>', '^', '%']):
+                quoted_args.append(f'"{arg_str}"')
+            else:
+                quoted_args.append(arg_str)
+        
+        batch_content += ' '.join(quoted_args) + '\n'
+        
+        # Add pause at the end to keep window open if server crashes
+        batch_content += '''
+echo.
+echo Server has stopped.
+echo Press any key to close this window...
+pause >nul
+'''
+        
+        # Write to temporary batch file
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.bat', delete=False) as batch_file:
+            batch_file.write(batch_content)
+            batch_file_path = batch_file.name
+        
+        # Start the batch file in a new command prompt window
+        # Use a single string command for shell=True to avoid argument parsing issues
+        start_cmd = f'cmd /c start "Valheim Server" "{batch_file_path}"'
+        
+        print(f"Starting server in new window using batch file: {batch_file_path}")
+        print(f"Working directory: {working_directory}")
+        print(f"Server command: {' '.join(str(arg) for arg in server_cmd)}")
         try:
-            subprocess.Popen(cmd, cwd=working_directory)
-            
-            # Get public IP for information
-            try:
-                public_ip = requests.get('https://api.ipify.org', timeout=5).text
-                print(f"Server started successfully. Public IP: {public_ip}")
-            except Exception:
-                print("Server started. Could not retrieve public IP.")
+            subprocess.Popen(start_cmd, shell=True)
+            print("Server started successfully in a new command prompt window.")
+            print("The server console will remain open in a separate window.")
+            print("To stop the server, close the server console window or use Ctrl+C in it.")
+            print(f"Note: Temporary batch file created at: {batch_file_path}")
             
             return True
         except Exception as e:
             print(f"Failed to start server: {e}")
+            # Clean up batch file if start failed
+            try:
+                os.unlink(batch_file_path)
+            except OSError:
+                pass  # Ignore cleanup errors
             return False
     
     @staticmethod
@@ -584,7 +633,7 @@ class ServerUtils:
         Get standard server installation paths for a given game
         
         Args:
-            game_name: Name of the game (e.g., 'palworld')
+            game_name: Name of the game (e.g., 'palworld', 'valheim')
             
         Returns:
             Tuple of (server_directory, executable_name)
@@ -602,6 +651,12 @@ class ServerUtils:
         if game_name_lower == 'palworld':
             server_dir = os.path.join(base_dir, 'Palworld Dedicated Server')
             executable_name = f'PalServer{exe_extension}'
+        elif game_name_lower == 'valheim':
+            server_dir = os.path.join(base_dir, 'Valheim dedicated server')
+            if platform.system().lower() == 'windows':
+                executable_name = 'valheim_server.exe'
+            else:
+                executable_name = 'valheim_server.sh'
         else:
             # Generic fallback
             server_dir = os.path.join(base_dir, f'{game_name} Dedicated Server')
@@ -751,11 +806,10 @@ class GameConfig:
         'server_dir_name': 'Palworld Dedicated Server'
     }
     
-    # Add more games here as needed
-    # VALHEIM = {
-    #     'app_id': '896660',
-    #     'name': 'Valheim',
-    #     'default_port': 2456,
-    #     'executable_name': 'valheim_server.exe' if platform.system().lower() == 'windows' else 'valheim_server',
-    #     'server_dir_name': 'Valheim Dedicated Server'
-    # }
+    VALHEIM = {
+        'app_id': '896660',
+        'name': 'Valheim',
+        'default_port': 2456,
+        'executable_name': 'valheim_server.exe' if platform.system().lower() == 'windows' else 'valheim_server.sh',
+        'server_dir_name': 'Valheim dedicated server'
+    }
