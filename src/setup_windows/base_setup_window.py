@@ -25,19 +25,29 @@ class InstallationWorker(QThread):
     
     def run(self):
         try:
-            self.status_updated.emit(f"Starting {self.task_name}...")
-            self.progress_updated.emit(10)
+            # Create callback functions that emit signals
+            def progress_callback(percent):
+                self.progress_updated.emit(percent)
             
-            # Call the task function
-            success = self.task_callback()
+            def status_callback(message):
+                self.status_updated.emit(message)
             
-            if success:
-                self.progress_updated.emit(100)
-                self.status_updated.emit(f"{self.task_name} completed successfully!")
-                self.finished.emit(True)
-            else:
-                self.status_updated.emit(f"{self.task_name} failed!")
-                self.finished.emit(False)
+            # Try calling with callbacks first (new functions)
+            try:
+                success = self.task_callback(
+                    progress_callback=progress_callback,
+                    status_callback=status_callback
+                )
+            except TypeError:
+                # Fallback for functions that don't support callbacks (old functions)
+                self.status_updated.emit(f"Starting {self.task_name}...")
+                self.progress_updated.emit(10)
+                success = self.task_callback()
+                if success:
+                    self.progress_updated.emit(100)
+                    self.status_updated.emit(f"{self.task_name} completed successfully!")
+            
+            self.finished.emit(success)
                 
         except Exception as e:
             self.status_updated.emit(f"{self.task_name} failed: {str(e)}")

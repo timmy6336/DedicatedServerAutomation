@@ -277,6 +277,35 @@ class GameDetailsPage(QWidget):
         self.start_button = start_button
         
         button_layout.addWidget(start_button)
+        
+        # Add delete button if server is installed
+        if self.game and self.is_server_installed(self.game.name):
+            delete_button = QPushButton("Uninstall Server")
+            delete_button.setFont(QFont('Segoe UI', 14, QFont.Bold))
+            delete_button.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: #dc3545;
+                    color: white;
+                    border: none;
+                    border-radius: {Layout.BORDER_RADIUS_MEDIUM}px;
+                    padding: 15px 30px;
+                    font-size: 14px;
+                    font-weight: bold;
+                    min-width: 180px;
+                    min-height: 50px;
+                    margin-left: 20px;
+                }}
+                QPushButton:hover {{
+                    background-color: #c82333;
+                }}
+                QPushButton:pressed {{
+                    background-color: #bd2130;
+                }}
+            """)
+            delete_button.clicked.connect(self.uninstall_server)
+            delete_button.setToolTip("Remove server files and port forwarding (keeps SteamCMD)")
+            button_layout.addWidget(delete_button)
+        
         button_layout.addStretch()
         button_container.setLayout(button_layout)
         
@@ -314,6 +343,91 @@ class GameDetailsPage(QWidget):
                 print(f"❌ Error starting server: {str(e)}")
         else:
             print(f"Direct server start not yet implemented for {self.game.name if self.game else 'Unknown Game'}")
+
+    def uninstall_server(self):
+        """Uninstall the server and SteamCMD with confirmation dialog"""
+        if not self.game:
+            return
+            
+        # Show confirmation dialog
+        from PyQt5.QtWidgets import QMessageBox
+        reply = QMessageBox.question(
+            self, 
+            'Confirm Uninstallation',
+            f'Are you sure you want to uninstall the {self.game.name} server?\n\n'
+            'This will remove:\n'
+            '• All server files\n'
+            '• UPnP port forwarding rules\n\n'
+            'Note: SteamCMD will be kept for future server installations.\n\n'
+            'This action cannot be undone.',
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+        
+        if reply != QMessageBox.Yes:
+            return
+            
+        try:
+            if self.game.name.lower() == "palworld":
+                # Import the uninstall functions
+                import sys
+                parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                sys.path.insert(0, os.path.join(parent_dir, "scripts"))
+                from scripts.palworld_server_startup_script import (
+                    uninstall_palworld_server,
+                    remove_port_forward_rule
+                )
+                
+                print(f"Uninstalling {self.game.name} server...")
+                
+                # Remove port forwarding first
+                try:
+                    if remove_port_forward_rule():
+                        print("✅ Port forwarding rules removed")
+                    else:
+                        print("ℹ️ No port forwarding rules to remove")
+                except Exception as e:
+                    print(f"⚠️ Failed to remove port forwarding: {e}")
+                
+                # Uninstall server files
+                if uninstall_palworld_server():
+                    print("✅ Palworld server files removed")
+                else:
+                    print("⚠️ Failed to remove server files")
+                
+                print(f"🗑️ {self.game.name} server uninstallation completed")
+                print("ℹ️ SteamCMD has been kept for future server installations")
+                
+                # Refresh the UI to reflect the changes
+                self.update_game(self.game)
+                
+                # Show success message
+                QMessageBox.information(
+                    self,
+                    'Uninstallation Complete',
+                    f'{self.game.name} server has been successfully uninstalled.\n\n'
+                    'Server files and port forwarding rules have been removed.\n'
+                    'SteamCMD has been kept for future server installations.',
+                    QMessageBox.Ok
+                )
+                
+            else:
+                print(f"Uninstallation not yet implemented for {self.game.name}")
+                QMessageBox.warning(
+                    self,
+                    'Not Implemented',
+                    f'Uninstallation is not yet implemented for {self.game.name}',
+                    QMessageBox.Ok
+                )
+                
+        except Exception as e:
+            print(f"❌ Error during uninstallation: {str(e)}")
+            QMessageBox.critical(
+                self,
+                'Uninstallation Error',
+                f'An error occurred during uninstallation:\n{str(e)}',
+                QMessageBox.Ok
+            )
 
     def start_server(self):
         """Legacy method - redirects to appropriate start method"""
