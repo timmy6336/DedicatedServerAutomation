@@ -1,8 +1,32 @@
 import os
 import sys
-from PyQt5.QtWidgets import QCheckBox, QLabel
+# ================== PALWORLD SETUP CONSTANTS ==================
+# UI styling constants
+EXPLANATION_FONT_SIZE = 16               # Font size for main explanation text
+CHECKBOX_FONT_SIZE = 14                  # Font size for checkbox labels
+INFO_FONT_SIZE = 12                      # Font size for informational text
+MARGIN_LARGE = 15                        # Large margin size for spacing
+MARGIN_MEDIUM = 10                       # Medium margin size for spacing
+MARGIN_SMALL = 5                         # Small margin size for spacing
+PADDING_STANDARD = 10                    # Standard padding for elements
+
+# Font configuration
+FONT_FAMILY = 'Segoe UI'                 # Default font family for UI elements
+
+# Palworld server configuration
+PALWORLD_DEFAULT_PORT = 8211             # Default port for Palworld server
+
+# UI layout and formatting
+SEPARATOR_LINE_LENGTH = 50               # Length of separator lines in logs
+
+from PyQt5.QtWidgets import (
+    QLabel, QVBoxLayout, QHBoxLayout, QCheckBox, QPushButton,
+    QTextEdit, QWidget, QApplication
+)
 from PyQt5.QtGui import QFont
 from .base_setup_window import BaseServerSetupWindow
+import os
+import sys
 
 # Import styles from parent directory
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -60,28 +84,28 @@ class PalworldServerSetupWindow(BaseServerSetupWindow):
         if self.current_step == 2:  # Step 3 (0-indexed)
             # Port forwarding explanation
             explanation = QLabel("Final Configuration Options:")
-            explanation.setFont(QFont('Segoe UI', 16, QFont.Bold))
-            explanation.setStyleSheet(f"color: {Colors.TEXT_PRIMARY}; margin: 15px 5px;")
+            explanation.setFont(QFont(FONT_FAMILY, EXPLANATION_FONT_SIZE, QFont.Bold))
+            explanation.setStyleSheet(f"color: {Colors.TEXT_PRIMARY}; margin: {MARGIN_LARGE}px {MARGIN_SMALL}px;")
             elements.append(explanation)
             
             # Port forwarding checkbox
             self.port_checkbox = QCheckBox("Enable automatic port forwarding (UPnP)")
-            self.port_checkbox.setFont(QFont('Segoe UI', 14))
-            self.port_checkbox.setStyleSheet(f"color: {Colors.TEXT_PRIMARY}; margin: 10px 5px;")
+            self.port_checkbox.setFont(QFont(FONT_FAMILY, CHECKBOX_FONT_SIZE))
+            self.port_checkbox.setStyleSheet(f"color: {Colors.TEXT_PRIMARY}; margin: {MARGIN_MEDIUM}px {MARGIN_SMALL}px;")
             self.port_checkbox.setChecked(True)
             elements.append(self.port_checkbox)
             
             # Port forwarding info
-            port_info = QLabel("This will automatically configure your router to forward port 8211 for the Palworld server. If you prefer to configure port forwarding manually, uncheck this option.")
-            port_info.setFont(QFont('Segoe UI', 12))
-            port_info.setStyleSheet(f"color: {Colors.TEXT_SECONDARY}; margin: 5px 15px; padding: 10px;")
+            port_info = QLabel(f"This will automatically configure your router to forward port {PALWORLD_DEFAULT_PORT} for the Palworld server. If you prefer to configure port forwarding manually, uncheck this option.")
+            port_info.setFont(QFont(FONT_FAMILY, INFO_FONT_SIZE))
+            port_info.setStyleSheet(f"color: {Colors.TEXT_SECONDARY}; margin: {MARGIN_SMALL}px {MARGIN_LARGE}px; padding: {PADDING_STANDARD}px;")
             port_info.setWordWrap(True)
             elements.append(port_info)
             
             # Server start info
             server_info = QLabel("Clicking 'Continue' will configure the selected options and launch your Palworld dedicated server.")
-            server_info.setFont(QFont('Segoe UI', 12))
-            server_info.setStyleSheet(f"color: {Colors.TEXT_SECONDARY}; margin: 15px 5px; font-style: italic;")
+            server_info.setFont(QFont(FONT_FAMILY, INFO_FONT_SIZE))
+            server_info.setStyleSheet(f"color: {Colors.TEXT_SECONDARY}; margin: {MARGIN_LARGE}px {MARGIN_SMALL}px; font-style: italic;")
             server_info.setWordWrap(True)
             elements.append(server_info)
         
@@ -121,10 +145,10 @@ class PalworldServerSetupWindow(BaseServerSetupWindow):
                 self.log_message("🎉 Palworld dedicated server started successfully!")
                 self.log_message("✅ Your server is now running and ready for players to connect.")
                 self.log_message("🌐 Check the game details page for connection information.")
-                self.log_message("=" * 50)
+                self.log_message("=" * SEPARATOR_LINE_LENGTH)
                 self.log_message("🎊 SETUP COMPLETED SUCCESSFULLY! 🎊")
                 self.log_message("Your Palworld server is ready for players!")
-                self.log_message("=" * 50)
+                self.log_message("=" * SEPARATOR_LINE_LENGTH)
             else:
                 self.log_message("❌ Failed to start Palworld server. Please check the logs above.")
                 success = False

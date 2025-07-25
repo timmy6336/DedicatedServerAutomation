@@ -13,6 +13,70 @@ Design Philosophy:
 import os
 
 # ============================================================================
+# UI MEASUREMENT CONSTANTS
+# ============================================================================
+
+# Border and spacing constants (pixels)
+BORDER_WIDTH_THIN = 1               # Thin border for subtle separations
+BORDER_WIDTH_STANDARD = 2           # Standard border width for most elements
+BORDER_WIDTH_THICK = 3              # Thick border for emphasis
+
+# Padding constants (pixels)
+PADDING_NONE = 0                    # No padding
+PADDING_SMALL = 10                  # Small padding for compact elements
+PADDING_MEDIUM = 12                 # Medium padding for buttons
+PADDING_LARGE = 20                  # Large padding for content areas
+PADDING_BUTTON_HORIZONTAL = 24      # Horizontal padding for primary buttons
+
+# Margin constants (pixels)
+MARGIN_NONE = 0                     # No margins
+MARGIN_TINY = 2                     # Tiny margin for image spacing
+MARGIN_SMALL = 8                    # Small margin for checkboxes and spacing
+MARGIN_MEDIUM = 15                  # Medium margin for section separation
+
+# Font size constants (pixels)
+FONT_SIZE_SMALL = 11                # Small font for status bars and fine print
+FONT_SIZE_STANDARD = 12             # Standard font size for UI elements
+FONT_SIZE_TITLE = 14                # Title font size for headers
+
+# Width and height constants (pixels)
+SCROLLBAR_WIDTH = 12                # Width of custom scrollbars
+SCROLLBAR_BORDER_RADIUS = 6         # Border radius for scrollbars
+SCROLLBAR_MIN_HANDLE_HEIGHT = 20    # Minimum height for scrollbar handles
+BUTTON_MIN_WIDTH_STANDARD = 100     # Minimum width for standard buttons
+BUTTON_MIN_WIDTH_PRIMARY = 120      # Minimum width for primary buttons
+COMBOBOX_MIN_WIDTH = 150            # Minimum width for combo boxes
+COMBOBOX_DROPDOWN_WIDTH = 30        # Width of combo box dropdown arrow
+COMBOBOX_ARROW_MARGIN = 8           # Margin for combo box arrow
+CHECKBOX_SIZE = 18                  # Size of checkbox indicators
+PROGRESS_BAR_HEIGHT = 24            # Height of progress bars
+
+# Border radius constants (pixels - keeping string format for CSS)
+RADIUS_NONE = "0px"                 # No border radius
+RADIUS_SMALL_PX = "6px"             # Small border radius
+RADIUS_MEDIUM_PX = "8px"            # Medium border radius 
+RADIUS_LARGE_PX = "12px"            # Large border radius
+RADIUS_XLARGE_PX = "18px"           # Extra large border radius
+RADIUS_CHECKBOX = "4px"             # Border radius for checkboxes
+
+# Shadow offset constants (pixels)
+SHADOW_OFFSET_LIGHT_Y = 2           # Light shadow Y offset
+SHADOW_OFFSET_LIGHT_BLUR = 8        # Light shadow blur radius
+SHADOW_OFFSET_MEDIUM_Y = 4          # Medium shadow Y offset
+SHADOW_OFFSET_MEDIUM_BLUR = 16      # Medium shadow blur radius
+SHADOW_OFFSET_HEAVY_Y = 8           # Heavy shadow Y offset
+SHADOW_OFFSET_HEAVY_BLUR = 32       # Heavy shadow blur radius
+
+# Opacity constants (for RGBA values)
+OPACITY_LIGHT = 0.15                # Light opacity for subtle effects
+OPACITY_MEDIUM = 0.25               # Medium opacity
+OPACITY_HEAVY = 0.35                # Heavy opacity for strong effects
+
+# Arrow constants for combo boxes
+ARROW_BORDER_WIDTH = 6              # Border width for dropdown arrows
+ARROW_TOP_HEIGHT = 8                # Height of dropdown arrow
+
+# ============================================================================
 # COLOR PALETTE - Professional Dark Mode Theme
 # ============================================================================
 
@@ -61,15 +125,15 @@ class Colors:
 class Effects:
     """Visual effects and styling constants"""
     
-    # Shadows
-    SHADOW_LIGHT = "0px 2px 8px rgba(52, 152, 219, 0.15)"
-    SHADOW_MEDIUM = "0px 4px 16px rgba(52, 152, 219, 0.25)"
-    SHADOW_HEAVY = "0px 8px 32px rgba(52, 152, 219, 0.35)"
+    # Shadows using the defined constants
+    SHADOW_LIGHT = f"0px {SHADOW_OFFSET_LIGHT_Y}px {SHADOW_OFFSET_LIGHT_BLUR}px rgba(52, 152, 219, {OPACITY_LIGHT})"
+    SHADOW_MEDIUM = f"0px {SHADOW_OFFSET_MEDIUM_Y}px {SHADOW_OFFSET_MEDIUM_BLUR}px rgba(52, 152, 219, {OPACITY_MEDIUM})"
+    SHADOW_HEAVY = f"0px {SHADOW_OFFSET_HEAVY_Y}px {SHADOW_OFFSET_HEAVY_BLUR}px rgba(52, 152, 219, {OPACITY_HEAVY})"
     
     # Border Radius
-    RADIUS_SMALL = "6px"
-    RADIUS_MEDIUM = "12px"
-    RADIUS_LARGE = "18px"
+    RADIUS_SMALL = RADIUS_SMALL_PX
+    RADIUS_MEDIUM = RADIUS_LARGE_PX
+    RADIUS_LARGE = RADIUS_XLARGE_PX
     RADIUS_ROUND = "50%"
     
     # Gradients (updated for dark mode)
@@ -84,11 +148,11 @@ class Effects:
 MAIN_WINDOW_STYLE = f"""
 QMainWindow {{
     background-color: {Colors.BACKGROUND_DARK};
-    border: 2px solid {Colors.GRAY_MEDIUM};
+    border: {BORDER_WIDTH_STANDARD}px solid {Colors.GRAY_MEDIUM};
     border-radius: {Effects.RADIUS_LARGE};
     color: {Colors.TEXT_PRIMARY};
     font-family: 'Segoe UI', 'San Francisco', 'Helvetica Neue', Arial, sans-serif;
-    font-size: 11px;
+    font-size: {FONT_SIZE_SMALL}px;
 }}
 
 QWidget {{
@@ -100,9 +164,9 @@ QWidget {{
 QMainWindow::title {{
     background-color: {Colors.BACKGROUND_MEDIUM};
     color: {Colors.TEXT_PRIMARY};
-    padding: 12px;
+    padding: {PADDING_MEDIUM}px;
     font-weight: 600;
-    font-size: 14px;
+    font-size: {FONT_SIZE_TITLE}px;
     border-top-left-radius: {Effects.RADIUS_LARGE};
     border-top-right-radius: {Effects.RADIUS_LARGE};
 }}
@@ -116,15 +180,15 @@ QWidget#centralWidget {{
 /* Scrollbars */
 QScrollBar:vertical {{
     background-color: {Colors.BACKGROUND_MEDIUM};
-    width: 12px;
-    border-radius: 6px;
-    margin: 0;
+    width: {SCROLLBAR_WIDTH}px;
+    border-radius: {SCROLLBAR_BORDER_RADIUS}px;
+    margin: {MARGIN_NONE};
 }}
 
 QScrollBar::handle:vertical {{
     background-color: {Colors.GRAY_MEDIUM};
-    border-radius: 6px;
-    min-height: 20px;
+    border-radius: {SCROLLBAR_BORDER_RADIUS}px;
+    min-height: {SCROLLBAR_MIN_HANDLE_HEIGHT}px;
 }}
 
 QScrollBar::handle:vertical:hover {{
@@ -144,7 +208,7 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
 LEFT_PANEL_STYLE = f"""
 QWidget {{
     background-color: {Colors.BACKGROUND_MEDIUM};
-    border-right: 2px solid {Colors.GRAY_MEDIUM};
+    border-right: {BORDER_WIDTH_STANDARD}px solid {Colors.GRAY_MEDIUM};
     border-top-left-radius: {Effects.RADIUS_LARGE};
     border-bottom-left-radius: {Effects.RADIUS_LARGE};
     color: {Colors.TEXT_PRIMARY};
@@ -153,26 +217,26 @@ QWidget {{
 QLabel {{
     color: {Colors.TEXT_PRIMARY};
     font-weight: 500;
-    padding: 0px;
-    border-top: 1px solid {Colors.BACKGROUND_LIGHT};
-    border-bottom: 1px solid {Colors.BACKGROUND_LIGHT};
+    padding: {PADDING_NONE}px;
+    border-top: {BORDER_WIDTH_THIN}px solid {Colors.BACKGROUND_LIGHT};
+    border-bottom: {BORDER_WIDTH_THIN}px solid {Colors.BACKGROUND_LIGHT};
 }}
 
 QLabel:hover {{
     background-color: {Colors.BACKGROUND_HOVER};
-    border-radius: 8px;
-    border-top: 1px solid {Colors.PRIMARY_BLUE};
-    border-bottom: 1px solid {Colors.PRIMARY_BLUE};
+    border-radius: {RADIUS_MEDIUM_PX};
+    border-top: {BORDER_WIDTH_THIN}px solid {Colors.PRIMARY_BLUE};
+    border-bottom: {BORDER_WIDTH_THIN}px solid {Colors.PRIMARY_BLUE};
 }}
 """
 
 RIGHT_PANEL_STYLE = f"""
 QWidget {{
     background-color: {Colors.BACKGROUND_MEDIUM};
-    border: 2px solid {Colors.GRAY_MEDIUM};
+    border: {BORDER_WIDTH_STANDARD}px solid {Colors.GRAY_MEDIUM};
     border-top-right-radius: {Effects.RADIUS_LARGE};
     border-bottom-right-radius: {Effects.RADIUS_LARGE};
-    padding: 20px;
+    padding: {PADDING_LARGE}px;
 }}
 
 QLabel {{

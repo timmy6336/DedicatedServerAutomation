@@ -1,5 +1,10 @@
 """
-Valheim Dedicated Server Setup Window
+Valheim Dedicated Ser# Dialog window dimensions and sizing
+VALHEIM_CONFIG_DIALOG_WIDTH = 600          # Width of the configuration dialog window
+VALHEIM_CONFIG_DIALOG_HEIGHT = 550         # Height of the configuration dialog window
+VALHEIM_CONFIG_DIALOG_MIN_HEIGHT = 500     # Minimum height for the configuration dialog
+VALHEIM_CONFIG_DIALOG_MAX_HEIGHT = 700     # Maximum height for the configuration dialog
+VALHEIM_CONFIG_DIALOG_TOP_OFFSET = 20      # Offset from top of parent window when positioning dialogetup Window
 
 This module provides a specialized setup window for Valheim dedicated servers.
 It inherits from the base setup window and provides Valheim-specific configuration
@@ -22,6 +27,95 @@ Features:
 - Error handling and recovery guidance
 - Integration with Valheim-specific automation scripts
 """
+
+# ================== VALHEIM SERVER CONFIGURATION CONSTANTS ==================
+# Dialog window dimensions and sizing
+VALHEIM_CONFIG_DIALOG_WIDTH = 600          # Width of the configuration dialog window
+VALHEIM_CONFIG_DIALOG_HEIGHT = 550         # Height of the configuration dialog window
+VALHEIM_CONFIG_DIALOG_MIN_HEIGHT = 500     # Minimum height for the configuration dialog
+VALHEIM_CONFIG_DIALOG_MAX_HEIGHT = 700     # Maximum height for the configuration dialog
+VALHEIM_CONFIG_DIALOG_TOP_OFFSET = 20      # Offset from top of parent window when positioning dialog
+
+# Valheim server port configuration
+VALHEIM_DEFAULT_PORT_MIN = 1024             # Minimum allowed port for Valheim server
+VALHEIM_DEFAULT_PORT_MAX = 65535            # Maximum allowed port for Valheim server
+VALHEIM_DEFAULT_PORT_BASE = 2456            # Base port number for Valheim (default)
+VALHEIM_PORT_OFFSET_QUERY = 1               # Offset for query port (+1 from base)
+VALHEIM_PORT_OFFSET_ADDITIONAL = 2          # Offset for additional port (+2 from base)
+VALHEIM_PASSWORD_MIN_LENGTH = 5             # Minimum password length required by Valheim
+
+# Font sizes for UI elements
+FONT_SIZE_CONFIG_TITLE = 18                 # Font size for main configuration dialog title
+FONT_SIZE_GROUP_HEADER = 14                 # Font size for group box headers (Server/Network)
+FONT_SIZE_INPUT_FIELDS = 12                 # Font size for input fields and labels
+FONT_SIZE_INFO_TEXT = 10                    # Font size for information/help text
+FONT_SIZE_BUTTON_LARGE = 12                 # Font size for dialog buttons
+
+# Layout and spacing constants
+LAYOUT_SPACING_LARGE = 20                   # Large spacing between major sections
+LAYOUT_SPACING_MEDIUM = 15                  # Medium spacing between form elements
+LAYOUT_SPACING_SMALL = 10                   # Small spacing for margins and padding
+GROUP_BOX_MARGIN_TOP = 10                   # Top margin for group boxes
+GROUP_BOX_PADDING_TOP = 10                  # Top padding inside group boxes
+TITLE_PADDING_HORIZONTAL = 5                # Horizontal padding for group box titles
+INFO_TEXT_MAX_HEIGHT = 80                   # Maximum height for information text areas (reduced from 120)
+
+# Border and visual styling
+BORDER_WIDTH_STANDARD = 2                   # Standard border width for UI elements
+BORDER_RADIUS_STANDARD = 8                  # Standard border radius for buttons and groups
+BORDER_RADIUS_SMALL = 6                     # Small border radius for input fields
+BUTTON_PADDING_VERTICAL = 12                # Vertical padding inside buttons
+BUTTON_PADDING_HORIZONTAL = 20              # Horizontal padding inside buttons
+INPUT_FIELD_PADDING = 8                     # Padding inside input fields
+INPUT_FIELD_MIN_WIDTH = 200                 # Minimum width for input fields to ensure proper display
+
+# Step tracking and installation
+SETUP_STEP_EXISTING_INDEX = 0               # Step index for existing installation
+SETUP_STEP_NEW_CONFIG_INDEX = 2             # Step index for new installation configuration
+SETUP_STEP_INCREMENT = 1                    # Standard increment for step progression
+
+# Progress and system constants
+PROGRESS_INITIAL_VALUE = 10                 # Initial progress percentage for setup
+PROGRESS_COMPLETE_VALUE = 100               # Progress value indicating completion
+SYS_PATH_INSERT_INDEX = 0                   # Index for inserting paths into sys.path
+
+# Game-specific constants
+VALHEIM_MAX_PLAYERS = 10                    # Maximum players supported by Valheim server
+VALHEIM_DOWNLOAD_SIZE_GB = 2                # Approximate download size in GB
+VALHEIM_DOWNLOAD_SIZE_MB = 10               # SteamCMD download size in MB
+SETUP_WINDOW_MIN_WIDTH = 900                # Minimum width for setup windows
+SETUP_WINDOW_MIN_HEIGHT = 700               # Minimum height for setup windows
+SETUP_WINDOW_DEFAULT_WIDTH = 1200           # Default width for setup windows
+SETUP_WINDOW_DEFAULT_HEIGHT = 900           # Default height for setup windows
+
+# Header icon scaling
+HEADER_ICON_WIDTH = 100                     # Width for header game icons
+HEADER_ICON_HEIGHT = 60                     # Height for header game icons
+
+# Setup window font sizes
+FONT_SIZE_SETUP_TITLE = 24                  # Font size for setup window title
+FONT_SIZE_SETUP_DESCRIPTION = 14            # Font size for setup descriptions
+FONT_SIZE_SETUP_STEP_HEADER = 16            # Font size for step headers
+FONT_SIZE_SETUP_STEP_CONTENT = 14           # Font size for step content text
+FONT_SIZE_SETUP_STATUS = 16                 # Font size for status labels
+FONT_SIZE_SETUP_BUTTON = 14                 # Font size for setup buttons
+FONT_SIZE_SETUP_CLOSE_BUTTON = 12           # Font size for close button
+
+# UI explanation font sizes
+FONT_SIZE_EXPLANATION_HEADER = 18           # Font size for explanation headers
+FONT_SIZE_EXPLANATION_STATUS = 14           # Font size for status information
+FONT_SIZE_EXPLANATION_CONFIG = 14           # Font size for configuration instructions
+FONT_SIZE_EXPLANATION_OPTIONS = 12          # Font size for option descriptions
+FONT_SIZE_EXPLANATION_DEFAULTS = 11         # Font size for default preview text
+FONT_SIZE_EXPLANATION_ACTION = 13           # Font size for action instructions
+
+# Margin and padding for explanations
+EXPLANATION_MARGIN_STANDARD = 15            # Standard margin for explanation elements
+EXPLANATION_MARGIN_LARGE = 15               # Large margin for major sections
+EXPLANATION_MARGIN_SMALL = 5                # Small margin for minor spacing
+EXPLANATION_PADDING_STANDARD = 15           # Standard padding for explanation boxes
+EXPLANATION_PADDING_SMALL = 10              # Small padding for compact elements
+EXPLANATION_PADDING_LARGE = 12              # Large padding for action boxes
 
 import os
 import sys
@@ -74,7 +168,12 @@ class ValheimConfigDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("🏰 Configure Valheim Server")
         self.setModal(True)
-        self.setFixedSize(600, 700)
+        
+        # Make dialog resizable with size constraints instead of fixed size
+        self.setMinimumSize(VALHEIM_CONFIG_DIALOG_WIDTH, VALHEIM_CONFIG_DIALOG_MIN_HEIGHT)
+        self.setMaximumSize(VALHEIM_CONFIG_DIALOG_WIDTH, VALHEIM_CONFIG_DIALOG_MAX_HEIGHT)
+        self.resize(VALHEIM_CONFIG_DIALOG_WIDTH, VALHEIM_CONFIG_DIALOG_HEIGHT)
+        
         self.setStyleSheet(f"background-color: {Colors.BACKGROUND_DARK};")
         
         # Server configuration values - load from persistent storage or use defaults
@@ -84,50 +183,84 @@ class ValheimConfigDialog(QDialog):
         else:
             self.server_config = config_manager.get_default_valheim_config()
         
+        # Initialize UI first
         self.init_ui()
+        
+        # Ensure proper sizing after UI initialization
+        self.adjustSize()  # Let Qt calculate the optimal size
+        self.setMinimumSize(self.sizeHint())  # Set minimum size based on content
+        
+        # Now position the dialog after size has been calculated
+        self.position_dialog_at_top()
+    
+    def position_dialog_at_top(self):
+        """Position the dialog at the top of the parent window after size calculation."""
+        parent = self.parent()
+        if parent:
+            parent_geometry = parent.geometry()
+            # Position dialog at top-center of parent window
+            dialog_x = parent_geometry.x() + (parent_geometry.width() - self.width()) // 2
+            dialog_y = parent_geometry.y() + VALHEIM_CONFIG_DIALOG_TOP_OFFSET
+            
+            # Ensure dialog stays within screen bounds
+            screen = parent.screen() if hasattr(parent, 'screen') else None
+            if screen:
+                screen_geometry = screen.availableGeometry()
+                # Clamp X position to stay within screen bounds
+                dialog_x = max(screen_geometry.x(), min(dialog_x, screen_geometry.x() + screen_geometry.width() - self.width()))
+                # Clamp Y position to stay within screen bounds
+                dialog_y = max(screen_geometry.y(), min(dialog_y, screen_geometry.y() + screen_geometry.height() - self.height()))
+            
+            self.move(dialog_x, dialog_y)
     
     def init_ui(self):
         """Initialize the configuration dialog UI."""
         layout = QVBoxLayout(self)
-        layout.setSpacing(20)
+        layout.setSpacing(LAYOUT_SPACING_MEDIUM)  # Reduced from LAYOUT_SPACING_LARGE
+        layout.setContentsMargins(LAYOUT_SPACING_MEDIUM, LAYOUT_SPACING_SMALL, LAYOUT_SPACING_MEDIUM, LAYOUT_SPACING_SMALL)
+        layout.setSizeConstraint(QVBoxLayout.SetMinimumSize)  # Ensure layout calculates minimum size properly
         
         # Title
         title = QLabel("🏰 Valheim Server Configuration")
-        title.setFont(QFont('Segoe UI', 18, QFont.Bold))
-        title.setStyleSheet(f"color: {Colors.TEXT_PRIMARY}; margin-bottom: 10px;")
+        title.setFont(QFont('Segoe UI', FONT_SIZE_CONFIG_TITLE, QFont.Bold))
+        title.setStyleSheet(f"color: {Colors.TEXT_PRIMARY}; margin-bottom: {LAYOUT_SPACING_SMALL}px;")
         title.setAlignment(Qt.AlignCenter)
+        title.setWordWrap(True)  # Allow word wrapping if needed
         layout.addWidget(title)
         
         # Server Settings Group
         server_group = QGroupBox("⚔️ Server Settings")
-        server_group.setFont(QFont('Segoe UI', 14, QFont.Bold))
+        server_group.setFont(QFont('Segoe UI', FONT_SIZE_GROUP_HEADER, QFont.Bold))
         server_group.setStyleSheet(f"""
             QGroupBox {{
                 color: {Colors.TEXT_PRIMARY};
-                border: 2px solid {Colors.GRAY_MEDIUM};
-                border-radius: 8px;
-                margin-top: 10px;
-                padding-top: 10px;
+                border: {BORDER_WIDTH_STANDARD}px solid {Colors.GRAY_MEDIUM};
+                border-radius: {BORDER_RADIUS_STANDARD}px;
+                margin-top: {GROUP_BOX_MARGIN_TOP}px;
+                padding-top: {GROUP_BOX_PADDING_TOP}px;
             }}
             QGroupBox::title {{
                 subcontrol-origin: margin;
-                left: 10px;
-                padding: 0 5px 0 5px;
+                left: {LAYOUT_SPACING_SMALL}px;
+                padding: 0 {TITLE_PADDING_HORIZONTAL}px 0 {TITLE_PADDING_HORIZONTAL}px;
             }}
         """)
         
         server_form = QFormLayout(server_group)
-        server_form.setSpacing(15)
+        server_form.setSpacing(LAYOUT_SPACING_SMALL)  # Reduced from LAYOUT_SPACING_MEDIUM
+        server_form.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)  # Allow fields to expand properly
+        server_form.setRowWrapPolicy(QFormLayout.DontWrapRows)  # Keep labels and fields on same row
         
         # World Name
         self.world_name_input = QLineEdit(self.server_config['world_name'])
-        self.world_name_input.setFont(QFont('Segoe UI', 12))
+        self.world_name_input.setFont(QFont('Segoe UI', FONT_SIZE_INPUT_FIELDS))
+        self.world_name_input.setMinimumWidth(INPUT_FIELD_MIN_WIDTH)  # Ensure minimum width for proper display
         self.world_name_input.setStyleSheet(f"""
             QLineEdit {{
                 background-color: {Colors.BACKGROUND_MEDIUM};
-                border: 2px solid {Colors.GRAY_MEDIUM};
-                border-radius: 6px;
-                padding: 8px;
+                border: {BORDER_WIDTH_STANDARD}px solid {Colors.GRAY_MEDIUM};
+                border-radius: {BORDER_RADIUS_SMALL}px;
+                padding: {INPUT_FIELD_PADDING}px;
                 color: {Colors.TEXT_PRIMARY};
             }}
         """)
@@ -135,13 +268,14 @@ class ValheimConfigDialog(QDialog):
         
         # Server Name
         self.server_name_input = QLineEdit(self.server_config['server_name'])
-        self.server_name_input.setFont(QFont('Segoe UI', 12))
+        self.server_name_input.setFont(QFont('Segoe UI', FONT_SIZE_INPUT_FIELDS))
+        self.server_name_input.setMinimumWidth(INPUT_FIELD_MIN_WIDTH)  # Ensure minimum width for proper display
         self.server_name_input.setStyleSheet(f"""
             QLineEdit {{
                 background-color: {Colors.BACKGROUND_MEDIUM};
-                border: 2px solid {Colors.GRAY_MEDIUM};
-                border-radius: 6px;
-                padding: 8px;
+                border: {BORDER_WIDTH_STANDARD}px solid {Colors.GRAY_MEDIUM};
+                border-radius: {BORDER_RADIUS_SMALL}px;
+                padding: {INPUT_FIELD_PADDING}px;
                 color: {Colors.TEXT_PRIMARY};
             }}
         """)
@@ -149,30 +283,31 @@ class ValheimConfigDialog(QDialog):
         
         # Password
         self.password_input = QLineEdit(self.server_config['password'])
-        self.password_input.setFont(QFont('Segoe UI', 12))
+        self.password_input.setFont(QFont('Segoe UI', FONT_SIZE_INPUT_FIELDS))
+        self.password_input.setMinimumWidth(INPUT_FIELD_MIN_WIDTH)  # Ensure minimum width for proper display
         self.password_input.setEchoMode(QLineEdit.Normal)  # Show password text instead of dots
         self.password_input.setStyleSheet(f"""
             QLineEdit {{
                 background-color: {Colors.BACKGROUND_MEDIUM};
-                border: 2px solid {Colors.GRAY_MEDIUM};
-                border-radius: 6px;
-                padding: 8px;
+                border: {BORDER_WIDTH_STANDARD}px solid {Colors.GRAY_MEDIUM};
+                border-radius: {BORDER_RADIUS_SMALL}px;
+                padding: {INPUT_FIELD_PADDING}px;
                 color: {Colors.TEXT_PRIMARY};
             }}
         """)
-        server_form.addRow("🔒 Password (min 5 chars):", self.password_input)
+        server_form.addRow(f"🔒 Password (min {VALHEIM_PASSWORD_MIN_LENGTH} chars):", self.password_input)
         
         # Port
         self.port_input = QSpinBox()
-        self.port_input.setRange(1024, 65535)
+        self.port_input.setRange(VALHEIM_DEFAULT_PORT_MIN, VALHEIM_DEFAULT_PORT_MAX)
         self.port_input.setValue(self.server_config['port'])
-        self.port_input.setFont(QFont('Segoe UI', 12))
+        self.port_input.setFont(QFont('Segoe UI', FONT_SIZE_INPUT_FIELDS))
         self.port_input.setStyleSheet(f"""
             QSpinBox {{
                 background-color: {Colors.BACKGROUND_MEDIUM};
-                border: 2px solid {Colors.GRAY_MEDIUM};
-                border-radius: 6px;
-                padding: 8px;
+                border: {BORDER_WIDTH_STANDARD}px solid {Colors.GRAY_MEDIUM};
+                border-radius: {BORDER_RADIUS_SMALL}px;
+                padding: {INPUT_FIELD_PADDING}px;
                 color: {Colors.TEXT_PRIMARY};
             }}
         """)
@@ -181,7 +316,7 @@ class ValheimConfigDialog(QDialog):
         # Public Server
         self.public_checkbox = QCheckBox("Make server visible in public server list")
         self.public_checkbox.setChecked(self.server_config['public_server'])
-        self.public_checkbox.setFont(QFont('Segoe UI', 12))
+        self.public_checkbox.setFont(QFont('Segoe UI', FONT_SIZE_INPUT_FIELDS))
         self.public_checkbox.setStyleSheet(f"color: {Colors.TEXT_PRIMARY};")
         server_form.addRow("📡 Visibility:", self.public_checkbox)
         
@@ -189,36 +324,38 @@ class ValheimConfigDialog(QDialog):
         
         # Network Settings Group
         network_group = QGroupBox("🌐 Network Configuration")
-        network_group.setFont(QFont('Segoe UI', 14, QFont.Bold))
+        network_group.setFont(QFont('Segoe UI', FONT_SIZE_GROUP_HEADER, QFont.Bold))
         network_group.setStyleSheet(f"""
             QGroupBox {{
                 color: {Colors.TEXT_PRIMARY};
-                border: 2px solid {Colors.GRAY_MEDIUM};
-                border-radius: 8px;
-                margin-top: 10px;
-                padding-top: 10px;
+                border: {BORDER_WIDTH_STANDARD}px solid {Colors.GRAY_MEDIUM};
+                border-radius: {BORDER_RADIUS_STANDARD}px;
+                margin-top: {GROUP_BOX_MARGIN_TOP}px;
+                padding-top: {GROUP_BOX_PADDING_TOP}px;
             }}
             QGroupBox::title {{
                 subcontrol-origin: margin;
-                left: 10px;
-                padding: 0 5px 0 5px;
+                left: {LAYOUT_SPACING_SMALL}px;
+                padding: 0 {TITLE_PADDING_HORIZONTAL}px 0 {TITLE_PADDING_HORIZONTAL}px;
             }}
         """)
         
         network_form = QFormLayout(network_group)
-        network_form.setSpacing(15)
+        network_form.setSpacing(LAYOUT_SPACING_SMALL)  # Reduced from LAYOUT_SPACING_MEDIUM
+        network_form.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)  # Allow fields to expand properly
+        network_form.setRowWrapPolicy(QFormLayout.DontWrapRows)  # Keep labels and fields on same row
         
         # Firewall Configuration
         self.firewall_checkbox = QCheckBox("Configure Windows Firewall rules for Valheim")
         self.firewall_checkbox.setChecked(self.server_config['configure_firewall'])
-        self.firewall_checkbox.setFont(QFont('Segoe UI', 12))
+        self.firewall_checkbox.setFont(QFont('Segoe UI', FONT_SIZE_INPUT_FIELDS))
         self.firewall_checkbox.setStyleSheet(f"color: {Colors.TEXT_PRIMARY};")
         network_form.addRow("🛡️ Firewall:", self.firewall_checkbox)
         
         # UPnP Configuration
         self.upnp_checkbox = QCheckBox("Enable automatic port forwarding (UPnP)")
         self.upnp_checkbox.setChecked(self.server_config['enable_upnp'])
-        self.upnp_checkbox.setFont(QFont('Segoe UI', 12))
+        self.upnp_checkbox.setFont(QFont('Segoe UI', FONT_SIZE_INPUT_FIELDS))
         self.upnp_checkbox.setStyleSheet(f"color: {Colors.TEXT_PRIMARY};")
         network_form.addRow("🔄 UPnP:", self.upnp_checkbox)
         
@@ -227,23 +364,21 @@ class ValheimConfigDialog(QDialog):
         # Information Text - Using QLabel instead of QTextEdit to avoid threading issues
         info_text = QLabel()
         info_text.setWordWrap(True)
-        info_text.setMaximumHeight(120)
-        info_text.setFont(QFont('Segoe UI', 10))
+        info_text.setMaximumHeight(INFO_TEXT_MAX_HEIGHT)
+        info_text.setFont(QFont('Segoe UI', FONT_SIZE_INFO_TEXT))
         info_text.setStyleSheet(f"""
             QLabel {{
                 background-color: {Colors.BACKGROUND_MEDIUM};
-                border: 2px solid {Colors.GRAY_MEDIUM};
-                border-radius: 6px;
-                padding: 8px;
+                border: {BORDER_WIDTH_STANDARD}px solid {Colors.GRAY_MEDIUM};
+                border-radius: {BORDER_RADIUS_SMALL}px;
+                padding: {INPUT_FIELD_PADDING}px;
                 color: {Colors.TEXT_SECONDARY};
             }}
         """)
         info_text.setText(
             "📋 Configuration Notes:\n"
-            "• Firewall: Allows Valheim traffic through Windows Firewall on ports 2456-2458 UDP\n"
-            "• UPnP: Automatically configures router port forwarding for external access\n"
-            "• Password: Must be at least 5 characters long for Valheim compatibility\n"
-            "• Port Range: Valheim uses your specified port + 1 and +2 (e.g., 2456, 2457, 2458)"
+            f"• Firewall: Allows Valheim traffic on ports {VALHEIM_DEFAULT_PORT_BASE}-{VALHEIM_DEFAULT_PORT_BASE + VALHEIM_PORT_OFFSET_ADDITIONAL} UDP\n"
+            f"• UPnP: Auto-configures router port forwarding • Password: Min {VALHEIM_PASSWORD_MIN_LENGTH} chars required"
         )
         layout.addWidget(info_text)
         
@@ -252,14 +387,14 @@ class ValheimConfigDialog(QDialog):
         
         # Advanced Button
         advanced_button = QPushButton("⚙️ Advanced Settings")
-        advanced_button.setFont(QFont('Segoe UI', 12))
+        advanced_button.setFont(QFont('Segoe UI', FONT_SIZE_BUTTON_LARGE))
         advanced_button.setStyleSheet(f"""
             QPushButton {{
                 background-color: {Colors.GRAY_MEDIUM};
                 border: none;
-                border-radius: 8px;
+                border-radius: {BORDER_RADIUS_STANDARD}px;
                 color: {Colors.TEXT_PRIMARY};
-                padding: 12px 20px;
+                padding: {BUTTON_PADDING_VERTICAL}px {BUTTON_PADDING_HORIZONTAL}px;
             }}
             QPushButton:hover {{
                 background-color: {Colors.BACKGROUND_HOVER};
@@ -275,14 +410,14 @@ class ValheimConfigDialog(QDialog):
         
         # Cancel Button
         cancel_button = QPushButton("❌ Cancel")
-        cancel_button.setFont(QFont('Segoe UI', 12))
+        cancel_button.setFont(QFont('Segoe UI', FONT_SIZE_BUTTON_LARGE))
         cancel_button.setStyleSheet(f"""
             QPushButton {{
                 background-color: {Colors.GRAY_MEDIUM};
                 border: none;
-                border-radius: 8px;
+                border-radius: {BORDER_RADIUS_STANDARD}px;
                 color: {Colors.TEXT_PRIMARY};
-                padding: 12px 20px;
+                padding: {BUTTON_PADDING_VERTICAL}px {BUTTON_PADDING_HORIZONTAL}px;
             }}
             QPushButton:hover {{
                 background-color: {Colors.BACKGROUND_HOVER};
@@ -296,7 +431,7 @@ class ValheimConfigDialog(QDialog):
         
         # OK Button
         ok_button = QPushButton("✅ Start Server")
-        ok_button.setFont(QFont('Segoe UI', 12))
+        ok_button.setFont(QFont('Segoe UI', FONT_SIZE_BUTTON_LARGE))
         ok_button.setStyleSheet("""
             QPushButton {
                 background-color: #2ecc71;
@@ -329,9 +464,9 @@ class ValheimConfigDialog(QDialog):
         """Validate and accept the configuration."""
         # Validate password
         password = self.password_input.text().strip()
-        if len(password) < 5:
+        if len(password) < VALHEIM_PASSWORD_MIN_LENGTH:
             QMessageBox.warning(self, "Invalid Password", 
-                              "🔒 Password must be at least 5 characters long for Valheim compatibility.")
+                              f"🔒 Password must be at least {VALHEIM_PASSWORD_MIN_LENGTH} characters long for Valheim compatibility.")
             return
         
         # Validate server name
@@ -435,10 +570,10 @@ class ValheimServerSetupWindow(BaseServerSetupWindow):
             },
             {
                 'name': 'Install Valheim Server',
-                'description': 'Download and install the Valheim Dedicated Server files from Steam. The Valheim server is relatively lightweight (~2GB) compared to other survival games. This includes all necessary files for hosting up to 10 Viking warriors in your procedurally generated world.',
+                'description': f'Download and install the Valheim Dedicated Server files from Steam. The Valheim server is relatively lightweight (~{VALHEIM_DOWNLOAD_SIZE_GB}GB) compared to other survival games. This includes all necessary files for hosting up to {VALHEIM_MAX_PLAYERS} Viking warriors in your procedurally generated world.',
                 'function': install_or_update_valheim_server,
                 'requires_confirmation': True,
-                'confirmation_text': 'This will download the Valheim server files (~2GB download). The server supports up to 10 concurrent players. Do you want to proceed?'
+                'confirmation_text': f'This will download the Valheim server files (~{VALHEIM_DOWNLOAD_SIZE_GB}GB download). The server supports up to {VALHEIM_MAX_PLAYERS} concurrent players. Do you want to proceed?'
             },
             {
                 'name': 'Configure Viking Realm',
@@ -465,8 +600,8 @@ class ValheimServerSetupWindow(BaseServerSetupWindow):
         
         # Check if this is the configuration step (either first step for existing install or last for new install)
         is_config_step = (
-            (len(self.setup_steps) == 1 and self.current_step == 0) or  # Existing installation
-            (len(self.setup_steps) > 1 and self.current_step == 2)      # New installation
+            (len(self.setup_steps) == SETUP_STEP_INCREMENT and self.current_step == SETUP_STEP_EXISTING_INDEX) or  # Existing installation
+            (len(self.setup_steps) > SETUP_STEP_INCREMENT and self.current_step == SETUP_STEP_NEW_CONFIG_INDEX)      # New installation
         )
         
         if is_config_step:
@@ -474,35 +609,35 @@ class ValheimServerSetupWindow(BaseServerSetupWindow):
             if is_valheim_server_installed():
                 # Server already installed
                 explanation = QLabel("🏰 Configure Existing Viking Realm")
-                explanation.setFont(QFont('Segoe UI', 18, QFont.Bold))
-                explanation.setStyleSheet(f"color: {Colors.TEXT_PRIMARY}; margin: 15px 5px;")
+                explanation.setFont(QFont('Segoe UI', FONT_SIZE_EXPLANATION_HEADER, QFont.Bold))
+                explanation.setStyleSheet(f"color: {Colors.TEXT_PRIMARY}; margin: {EXPLANATION_MARGIN_STANDARD}px {TITLE_PADDING_HORIZONTAL}px;")
                 explanation.setAlignment(Qt.AlignCenter)
                 elements.append(explanation)
                 
                 # Status info for existing installation
                 status_info = QLabel("✅ Valheim dedicated server is already installed and ready!")
-                status_info.setFont(QFont('Segoe UI', 14, QFont.Bold))
-                status_info.setStyleSheet(f"color: #2ecc71; margin: 10px 5px;")
+                status_info.setFont(QFont('Segoe UI', FONT_SIZE_EXPLANATION_STATUS, QFont.Bold))
+                status_info.setStyleSheet(f"color: #2ecc71; margin: {LAYOUT_SPACING_SMALL}px {TITLE_PADDING_HORIZONTAL}px;")
                 status_info.setWordWrap(True)
                 elements.append(status_info)
                 
                 config_info = QLabel("⚙️ Configure your server settings and launch your Viking realm:")
-                config_info.setFont(QFont('Segoe UI', 14, QFont.Bold))
-                config_info.setStyleSheet(f"color: {Colors.TEXT_SECONDARY}; margin: 10px 5px;")
+                config_info.setFont(QFont('Segoe UI', FONT_SIZE_EXPLANATION_CONFIG, QFont.Bold))
+                config_info.setStyleSheet(f"color: {Colors.TEXT_SECONDARY}; margin: {LAYOUT_SPACING_SMALL}px {TITLE_PADDING_HORIZONTAL}px;")
                 config_info.setWordWrap(True)
                 elements.append(config_info)
             else:
                 # New installation
                 explanation = QLabel("🏰 Viking Realm Configuration")
-                explanation.setFont(QFont('Segoe UI', 18, QFont.Bold))
-                explanation.setStyleSheet(f"color: {Colors.TEXT_PRIMARY}; margin: 15px 5px;")
+                explanation.setFont(QFont('Segoe UI', FONT_SIZE_EXPLANATION_HEADER, QFont.Bold))
+                explanation.setStyleSheet(f"color: {Colors.TEXT_PRIMARY}; margin: {EXPLANATION_MARGIN_STANDARD}px {TITLE_PADDING_HORIZONTAL}px;")
                 explanation.setAlignment(Qt.AlignCenter)
                 elements.append(explanation)
                 
                 # Configuration info
                 config_info = QLabel("⚙️ When you click 'Continue', you'll be able to customize your server settings:")
-                config_info.setFont(QFont('Segoe UI', 14, QFont.Bold))
-                config_info.setStyleSheet(f"color: {Colors.TEXT_SECONDARY}; margin: 10px 5px;")
+                config_info.setFont(QFont('Segoe UI', FONT_SIZE_EXPLANATION_CONFIG, QFont.Bold))
+                config_info.setStyleSheet(f"color: {Colors.TEXT_SECONDARY}; margin: {LAYOUT_SPACING_SMALL}px {TITLE_PADDING_HORIZONTAL}px;")
                 config_info.setWordWrap(True)
                 elements.append(config_info)
             
@@ -518,38 +653,38 @@ class ValheimServerSetupWindow(BaseServerSetupWindow):
             """
             
             options_label = QLabel(options_text)
-            options_label.setFont(QFont('Segoe UI', 12))
+            options_label.setFont(QFont('Segoe UI', FONT_SIZE_EXPLANATION_OPTIONS))
             options_label.setStyleSheet(f"""
                 color: {Colors.TEXT_PRIMARY}; 
-                margin: 10px 15px; 
-                padding: 15px; 
+                margin: {LAYOUT_SPACING_SMALL}px {EXPLANATION_MARGIN_STANDARD}px; 
+                padding: {EXPLANATION_PADDING_STANDARD}px; 
                 background-color: {Colors.BACKGROUND_MEDIUM}; 
-                border-radius: 8px;
-                border: 2px solid {Colors.GRAY_MEDIUM};
+                border-radius: {BORDER_RADIUS_STANDARD}px;
+                border: {BORDER_WIDTH_STANDARD}px solid {Colors.GRAY_MEDIUM};
             """)
             options_label.setWordWrap(True)
             elements.append(options_label)
             
             # Preview current defaults
             defaults_info = QLabel("� Default configuration preview:")
-            defaults_info.setFont(QFont('Segoe UI', 14, QFont.Bold))
-            defaults_info.setStyleSheet(f"color: {Colors.TEXT_SECONDARY}; margin: 15px 5px 5px 5px;")
+            defaults_info.setFont(QFont('Segoe UI', FONT_SIZE_EXPLANATION_CONFIG, QFont.Bold))
+            defaults_info.setStyleSheet(f"color: {Colors.TEXT_SECONDARY}; margin: {EXPLANATION_MARGIN_STANDARD}px {TITLE_PADDING_HORIZONTAL}px {TITLE_PADDING_HORIZONTAL}px {TITLE_PADDING_HORIZONTAL}px;")
             elements.append(defaults_info)
             
-            defaults_text = """
+            defaults_text = f"""
 • World: "DedicatedWorld" | Server: "Valheim Server"<br>
-• Port: 2456 | Password: Protected | Public: Yes<br>
+• Port: {VALHEIM_DEFAULT_PORT_BASE} | Password: Protected | Public: Yes<br>
 • Firewall & UPnP: Enabled (can be customized)
             """
             
             defaults_label = QLabel(defaults_text)
-            defaults_label.setFont(QFont('Segoe UI', 11))
+            defaults_label.setFont(QFont('Segoe UI', FONT_SIZE_EXPLANATION_DEFAULTS))
             defaults_label.setStyleSheet(f"""
                 color: {Colors.TEXT_SECONDARY}; 
-                margin: 5px 15px 15px 15px; 
-                padding: 10px; 
+                margin: {TITLE_PADDING_HORIZONTAL}px {EXPLANATION_MARGIN_STANDARD}px {EXPLANATION_MARGIN_STANDARD}px {EXPLANATION_MARGIN_STANDARD}px; 
+                padding: {EXPLANATION_PADDING_SMALL}px; 
                 background-color: {Colors.BACKGROUND_MEDIUM}; 
-                border-radius: 6px;
+                border-radius: {BORDER_RADIUS_SMALL}px;
                 font-style: italic;
             """)
             defaults_label.setWordWrap(True)
@@ -562,14 +697,14 @@ class ValheimServerSetupWindow(BaseServerSetupWindow):
                 action_text = "🚀 Click 'Continue' to open the configuration dialog and customize your Viking realm!"
             
             action_info = QLabel(action_text)
-            action_info.setFont(QFont('Segoe UI', 13, QFont.Bold))
-            action_info.setStyleSheet("""
+            action_info.setFont(QFont('Segoe UI', FONT_SIZE_EXPLANATION_ACTION, QFont.Bold))
+            action_info.setStyleSheet(f"""
                 color: #2ecc71; 
-                margin: 15px 5px; 
-                padding: 12px;
+                margin: {EXPLANATION_MARGIN_STANDARD}px {TITLE_PADDING_HORIZONTAL}px; 
+                padding: {EXPLANATION_PADDING_LARGE}px;
                 background-color: rgba(46, 204, 113, 0.1);
-                border-radius: 8px;
-                border: 2px solid #2ecc71;
+                border-radius: {BORDER_RADIUS_STANDARD}px;
+                border: {BORDER_WIDTH_STANDARD}px solid #2ecc71;
             """)
             action_info.setWordWrap(True)
             action_info.setAlignment(Qt.AlignCenter)

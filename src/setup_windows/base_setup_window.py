@@ -1,9 +1,87 @@
+"""
+Base Setup Window Framework
+
+This module provides the foundation for all game-specific server setup windows
+in the Dedicated Server Automation application. It implements a standardized
+step-by-step installation process with progress tracking, status updates, and
+comprehensive error handling.
+
+Key Features:
+- Multi-step installation wizard with progress tracking
+- Background thread processing to maintain UI responsiveness  
+- Consistent UI layout and styling across all games
+- Automatic success window auto-close functionality
+- Real-time progress and status updates during installation
+- Comprehensive error handling and user feedback
+- Support for game-specific customization through inheritance
+
+Architecture:
+- BaseServerSetupWindow: Main window class with standard UI components
+- InstallationWorker: Background thread for non-blocking operations
+- Step-based progression system with customizable steps per game
+- Extensible design allowing game-specific UI elements and behaviors
+
+Threading Model:
+- Main thread handles all UI updates and user interactions
+- Worker threads handle long-running operations (downloads, installations)
+- Signal/slot communication ensures thread-safe UI updates
+- Proper resource cleanup and thread lifecycle management
+
+Usage:
+Game-specific setup windows inherit from BaseServerSetupWindow and override:
+- get_setup_steps(): Define installation steps for the specific game
+- get_game_specific_ui_elements(): Add custom UI elements if needed  
+- handle_final_step_completion(): Implement final setup and server launch
+- Any other methods requiring game-specific behavior
+
+The base class handles all standard functionality including window management,
+progress tracking, UI layout, threading, and user interaction patterns.
+"""
+
+# ================== BASE SETUP WINDOW CONSTANTS ==================
+# Progress tracking constants
+PROGRESS_START_PERCENT = 10              # Initial progress percentage when installation starts
+PROGRESS_COMPLETE_PERCENT = 100          # Progress percentage when installation completes
+
+# Window sizing constants
+MIN_WINDOW_WIDTH = 900                   # Minimum window width for usability
+MIN_WINDOW_HEIGHT = 700                  # Minimum window height for usability
+DEFAULT_WINDOW_WIDTH = 1200              # Default window width
+DEFAULT_WINDOW_HEIGHT = 900              # Default window height
+
+# UI styling constants
+SCROLLBAR_WIDTH = 12                     # Width of custom scrollbars
+PROGRESS_BAR_MIN_HEIGHT = 20             # Minimum height for progress bars
+ICON_WIDTH = 100                         # Width for scaled game icons
+ICON_HEIGHT = 60                         # Height for scaled game icons
+
+# Auto-close timing
+AUTO_CLOSE_DELAY_MS = 3000               # Delay in milliseconds before auto-closing successful setup (3 seconds)
+
+# Font configuration
+FONT_FAMILY = 'Segoe UI'                 # Default font family
+TITLE_FONT_SIZE = 24                     # Font size for window titles
+DESCRIPTION_FONT_SIZE = 14               # Font size for descriptions
+LARGE_DESCRIPTION_FONT_SIZE = 16         # Font size for large description text
+
+# Layout spacing
+MARGIN_BOTTOM_STANDARD = 10              # Standard bottom margin
+MARGIN_TOP_LARGE = 20                    # Large top margin
+PADDING_STANDARD = 15                    # Standard padding for containers
+
+# Progress bar configuration
+PROGRESS_BAR_MIN = 0                     # Minimum progress bar value
+PROGRESS_BAR_MAX = 100                   # Maximum progress bar value
+
+# Keyboard shortcuts
+FULLSCREEN_SHORTCUT = "F11"              # Keyboard shortcut for fullscreen toggle
+
 import os
 import sys
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QLabel, QPushButton, QProgressBar, 
                            QTextEdit, QHBoxLayout, QMessageBox, QCheckBox, QScrollArea)
 from PyQt5.QtGui import QFont, QPixmap, QKeySequence
-from PyQt5.QtCore import Qt, QThread, pyqtSignal
+from PyQt5.QtCore import Qt, QThread, pyqtSignal, QTimer
 from PyQt5.QtWidgets import QShortcut
 from styles import (
     MAIN_WINDOW_STYLE, 
@@ -41,10 +119,10 @@ class InstallationWorker(QThread):
             except TypeError:
                 # Fallback for functions that don't support callbacks (old functions)
                 self.status_updated.emit(f"Starting {self.task_name}...")
-                self.progress_updated.emit(10)
+                self.progress_updated.emit(PROGRESS_START_PERCENT)
                 success = self.task_callback()
                 if success:
-                    self.progress_updated.emit(100)
+                    self.progress_updated.emit(PROGRESS_COMPLETE_PERCENT)
                     self.status_updated.emit(f"{self.task_name} completed successfully!")
             
             self.finished.emit(success)
@@ -54,9 +132,42 @@ class InstallationWorker(QThread):
             self.finished.emit(False)
 
 class BaseServerSetupWindow(QWidget):
-    """Base class for all game server setup windows"""
+    """
+    Base class for all game server setup windows providing standardized UI and functionality.
+    
+    This class implements a complete step-by-step installation wizard with progress tracking,
+    status updates, and thread-safe operations. Game-specific setup windows inherit from
+    this class and override methods to provide game-specific behavior.
+    
+    Attributes:
+        game: Game object containing metadata and configuration
+        current_step (int): Index of the currently active setup step
+        setup_steps (list): List of step dictionaries defining the installation process
+        installation_thread (QThread): Background thread for long-running operations
+        auto_close_timer (QTimer): Timer for automatic window closing after success
+        ui_elements (dict): Dictionary containing UI element references
+        
+    Key UI Components:
+        - Header with game title and icon
+        - Progress bar and step indicator
+        - Scrollable step description area
+        - Real-time status update text area
+        - Control buttons (Previous, Continue, Close)
+        - Auto-close functionality for successful installations
+    
+    Threading Safety:
+        All UI updates are performed on the main thread through Qt's signal/slot mechanism.
+        Long-running operations execute in background threads to maintain responsiveness.
+        Proper cleanup ensures no resource leaks or threading issues.
+    """
     
     def __init__(self, game):
+        """
+        Initialize the base setup window.
+        
+        Args:
+            game: Game object containing metadata, configuration, and image path
+        """
         super().__init__()
         self.game = game
         self.current_step = 0
@@ -93,11 +204,11 @@ class BaseServerSetupWindow(QWidget):
         self.setWindowTitle(f'{self.game.name} - Dedicated Server Setup')
         
         # Set up dynamic resizable window for setup
-        self.setMinimumSize(900, 700)  # Minimum size for setup usability
-        self.resize(1200, 900)  # Default size for setup windows
+        self.setMinimumSize(MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT)  # Minimum size for setup usability
+        self.resize(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT)  # Default size for setup windows
         
-        # Set up fullscreen toggle (F11 key)
-        self.fullscreen_shortcut = QShortcut(QKeySequence("F11"), self)
+        # Set up fullscreen toggle keyboard shortcut
+        self.fullscreen_shortcut = QShortcut(QKeySequence(FULLSCREEN_SHORTCUT), self)
         self.fullscreen_shortcut.activated.connect(self.toggle_fullscreen)
         
         # Set up escape key to exit fullscreen  
@@ -129,13 +240,13 @@ class BaseServerSetupWindow(QWidget):
             }}
             QScrollBar:vertical {{
                 background-color: {Colors.BACKGROUND_MEDIUM};
-                width: 12px;
+                width: {SCROLLBAR_WIDTH}px;
                 border-radius: 6px;
             }}
             QScrollBar::handle:vertical {{
                 background-color: {Colors.GRAY_MEDIUM};
                 border-radius: 6px;
-                min-height: 20px;
+                min-height: {PROGRESS_BAR_MIN_HEIGHT}px;
             }}
             QScrollBar::handle:vertical:hover {{
                 background-color: {Colors.TEXT_SECONDARY};
@@ -192,7 +303,7 @@ class BaseServerSetupWindow(QWidget):
             
             if os.path.exists(image_path):
                 pixmap = QPixmap(image_path)
-                scaled_pixmap = pixmap.scaled(100, 60, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                scaled_pixmap = pixmap.scaled(ICON_WIDTH, ICON_HEIGHT, Qt.KeepAspectRatio, Qt.SmoothTransformation)
                 
                 image_label = QLabel()
                 image_label.setPixmap(scaled_pixmap)
@@ -212,12 +323,12 @@ class BaseServerSetupWindow(QWidget):
         title_layout = QVBoxLayout()
         
         title_label = QLabel(f"{self.game.name} Dedicated Server Setup")
-        title_label.setFont(QFont('Segoe UI', 24, QFont.Bold))
+        title_label.setFont(QFont(FONT_FAMILY, TITLE_FONT_SIZE, QFont.Bold))
         title_label.setStyleSheet(f"color: {Colors.TEXT_PRIMARY};")
         title_layout.addWidget(title_label)
         
         desc_label = QLabel("Setting up your dedicated server environment...")
-        desc_label.setFont(QFont('Segoe UI', 14))
+        desc_label.setFont(QFont(FONT_FAMILY, DESCRIPTION_FONT_SIZE))
         desc_label.setStyleSheet(f"color: {Colors.TEXT_SECONDARY};")
         title_layout.addWidget(desc_label)
         
@@ -230,13 +341,13 @@ class BaseServerSetupWindow(QWidget):
         """Add progress bar and step indicator"""
         # Step indicator
         self.step_label = QLabel(f"Step 1/{len(self.setup_steps)}: Preparing...")
-        self.step_label.setFont(QFont('Segoe UI', 14, QFont.Bold))
-        self.step_label.setStyleSheet(f"color: {Colors.TEXT_PRIMARY}; margin-bottom: 10px;")
+        self.step_label.setFont(QFont(FONT_FAMILY, DESCRIPTION_FONT_SIZE, QFont.Bold))
+        self.step_label.setStyleSheet(f"color: {Colors.TEXT_PRIMARY}; margin-bottom: {MARGIN_BOTTOM_STANDARD}px;")
         layout.addWidget(self.step_label)
         
         # Progress bar
         self.progress_bar = QProgressBar()
-        self.progress_bar.setRange(0, 100)
+        self.progress_bar.setRange(PROGRESS_BAR_MIN, PROGRESS_BAR_MAX)
         self.progress_bar.setValue(0)
         self.progress_bar.setStyleSheet(f"""
             QProgressBar {{
@@ -257,19 +368,19 @@ class BaseServerSetupWindow(QWidget):
     def add_step_description_section(self, layout):
         """Add section that describes what the current step will do"""
         desc_label = QLabel("Step Description:")
-        desc_label.setFont(QFont('Segoe UI', 16, QFont.Bold))
-        desc_label.setStyleSheet(f"color: {Colors.TEXT_PRIMARY}; margin-top: 20px;")
+        desc_label.setFont(QFont(FONT_FAMILY, LARGE_DESCRIPTION_FONT_SIZE, QFont.Bold))
+        desc_label.setStyleSheet(f"color: {Colors.TEXT_PRIMARY}; margin-top: {MARGIN_TOP_LARGE}px;")
         layout.addWidget(desc_label)
         
         self.step_description = QLabel("Preparing setup...")
-        self.step_description.setFont(QFont('Segoe UI', 14))
+        self.step_description.setFont(QFont(FONT_FAMILY, DESCRIPTION_FONT_SIZE))
         self.step_description.setStyleSheet(f"""
             QLabel {{
                 background-color: {Colors.BACKGROUND_MEDIUM};
                 border: 2px solid {Colors.GRAY_MEDIUM};
                 border-radius: {Layout.BORDER_RADIUS_SMALL}px;
                 color: {Colors.TEXT_SECONDARY};
-                padding: 15px;
+                padding: {PADDING_STANDARD}px;
                 margin-bottom: 10px;
             }}
         """)
@@ -474,7 +585,7 @@ class BaseServerSetupWindow(QWidget):
     
     def show_final_step(self):
         """Show final step with game-specific options"""
-        self.step_label.setText(f"Final Step: Configuration & Launch")
+        self.step_label.setText("Final Step: Configuration & Launch")
         self.step_description.setText("Configure final settings and launch your server.")
         self.progress_bar.setValue(100)
         
@@ -515,6 +626,10 @@ class BaseServerSetupWindow(QWidget):
                 self.step_label.setText("🎉 Setup Complete - Server Running!")
                 self.step_description.setText("Your server setup is complete and the server is now running.")
                 self.log_message("🎊 Final setup completed successfully!")
+                self.log_message("✨ Window will close automatically in 3 seconds...")
+                
+                # Auto-close the window after successful setup
+                QTimer.singleShot(AUTO_CLOSE_DELAY_MS, self.close)
             else:
                 self.step_label.setText("⚠️ Setup Complete - Manual Action Required")
                 self.step_description.setText("Setup completed but there were some issues. Check the logs above.")

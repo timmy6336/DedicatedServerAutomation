@@ -15,6 +15,43 @@ Features:
 The main window acts as the central hub for all server management activities.
 """
 
+# ============================================================================
+# WINDOW CONFIGURATION CONSTANTS
+# ============================================================================
+
+# Window sizing constants
+WINDOW_MIN_WIDTH = 1200              # Minimum window width for UI usability
+WINDOW_MIN_HEIGHT = 800              # Minimum window height for UI usability
+WINDOW_DEFAULT_WIDTH = 1600          # Default window width on startup
+WINDOW_DEFAULT_HEIGHT = 1000         # Default window height on startup
+
+# Layout configuration constants
+LAYOUT_NO_SPACING = 0                # No spacing between layout elements
+LAYOUT_SMALL_SPACING = 2             # Small spacing for subtle visual separation
+LAYOUT_NO_MARGINS = 0                # No margins around layout containers
+
+# Image sizing constants
+GAME_IMAGE_WIDTH = 400               # Width for game images in list
+GAME_IMAGE_HEIGHT = 300               # Height for game images in list
+GAME_IMAGE_MIN_HEIGHT = 80           # Minimum height for game image labels
+GAME_IMAGE_MAX_HEIGHT = 80           # Maximum height for game image labels
+
+# Animation constants
+HOVER_ANIMATION_DURATION_MS = 200    # Duration of hover animations in milliseconds
+HOVER_SCALE_FACTOR = 1.05           # Scale factor for hover zoom effect (5% larger)
+HOVER_SCALE_OFFSET_DIVISOR = 2       # Divisor for centering scaled images
+
+# Layout proportion constants
+LEFT_PANEL_LAYOUT_PROPORTION = 4     # Left panel takes 4 parts of layout (40%)
+RIGHT_PANEL_LAYOUT_PROPORTION = 6    # Right panel takes 6 parts of layout (60%)
+
+# Hover effect styling constants
+HOVER_BACKGROUND_OPACITY = 0.1       # Background opacity for hover effects
+HOVER_BORDER_OPACITY = 0.6          # Border opacity for hover effects
+HOVER_BORDER_WIDTH_PX = 2            # Border width for hover effects in pixels
+HOVER_BORDER_RADIUS_PX = 8           # Border radius for hover effects in pixels
+HOVER_FONT_WEIGHT = 600              # Font weight for hover text
+
 import sys
 import os
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QHBoxLayout, QLabel
@@ -119,8 +156,8 @@ class MainWindow(QWidget):
         
         # Configure dynamic window sizing
         # Minimum size ensures UI elements remain usable
-        self.setMinimumSize(1200, 800)  # Minimum size for usability
-        self.resize(1600, 1000)  # Default starting size for good visibility
+        self.setMinimumSize(WINDOW_MIN_WIDTH, WINDOW_MIN_HEIGHT)  # Minimum size for usability
+        self.resize(WINDOW_DEFAULT_WIDTH, WINDOW_DEFAULT_HEIGHT)  # Default starting size for good visibility
         
         # Start in windowed mode (not maximized)
         self.setWindowState(self.windowState() & ~Qt.WindowMaximized)
@@ -143,13 +180,13 @@ class MainWindow(QWidget):
         
         # Create main horizontal layout (left panel + right panel)
         main_layout = QHBoxLayout()
-        main_layout.setSpacing(0)  # No spacing between panels for seamless look
-        main_layout.setContentsMargins(0, 0, 0, 0)  # Edge-to-edge layout
+        main_layout.setSpacing(LAYOUT_NO_SPACING)  # No spacing between panels for seamless look
+        main_layout.setContentsMargins(LAYOUT_NO_MARGINS, LAYOUT_NO_MARGINS, LAYOUT_NO_MARGINS, LAYOUT_NO_MARGINS)  # Edge-to-edge layout
         
         # Configure left panel for game image list
         left_layout = QVBoxLayout()
-        left_layout.setContentsMargins(0, 0, 0, 0)  # Remove margins for full-width images
-        left_layout.setSpacing(2)  # Small spacing for blur border effect
+        left_layout.setContentsMargins(LAYOUT_NO_MARGINS, LAYOUT_NO_MARGINS, LAYOUT_NO_MARGINS, LAYOUT_NO_MARGINS)  # Remove margins for full-width images
+        left_layout.setSpacing(LAYOUT_SMALL_SPACING)  # Small spacing for blur border effect
         
         # Load and display game images
         self._setup_game_images(left_layout)
@@ -236,15 +273,15 @@ class MainWindow(QWidget):
         # Load and scale the image
         pixmap = QPixmap(image_path)
         # Make image full width with proper aspect ratio
-        scaled_pixmap = pixmap.scaled(400, 80, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
+        scaled_pixmap = pixmap.scaled(GAME_IMAGE_WIDTH, GAME_IMAGE_HEIGHT, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
         
         # Create the label with image
         image_label = QLabel()
         image_label.setPixmap(scaled_pixmap)
         image_label.setStyleSheet(GAME_IMAGE_STYLE)
         image_label.setScaledContents(True)
-        image_label.setMinimumHeight(80)
-        image_label.setMaximumHeight(80)
+        image_label.setMinimumHeight(GAME_IMAGE_MIN_HEIGHT)
+        image_label.setMaximumHeight(GAME_IMAGE_MAX_HEIGHT)
         
         # Store reference to game for hover effects
         image_label.game = game
@@ -264,18 +301,18 @@ class MainWindow(QWidget):
         """Handle mouse enter event for game images"""
         # Create scale animation
         self.hover_animation = QPropertyAnimation(image_label, b"geometry")
-        self.hover_animation.setDuration(200)
+        self.hover_animation.setDuration(HOVER_ANIMATION_DURATION_MS)
         self.hover_animation.setEasingCurve(QEasingCurve.OutCubic)
         
         # Get current geometry and calculate scaled geometry
         current_rect = image_label.geometry()
-        scale_factor = 1.05
+        scale_factor = HOVER_SCALE_FACTOR
         new_width = int(current_rect.width() * scale_factor)
         new_height = int(current_rect.height() * scale_factor)
         
         # Center the scaled image
-        x_offset = (new_width - current_rect.width()) // 2
-        y_offset = (new_height - current_rect.height()) // 2
+        x_offset = (new_width - current_rect.width()) // HOVER_SCALE_OFFSET_DIVISOR
+        y_offset = (new_height - current_rect.height()) // HOVER_SCALE_OFFSET_DIVISOR
         
         scaled_rect = QRect(
             current_rect.x() - x_offset,
@@ -291,12 +328,12 @@ class MainWindow(QWidget):
         # Add glow effect
         image_label.setStyleSheet(f"""
             QLabel {{
-                background: rgba(52, 152, 219, 0.1);
-                border: 2px solid rgba(52, 152, 219, 0.6);
-                border-radius: 8px;
+                background: rgba(52, 152, 219, {HOVER_BACKGROUND_OPACITY});
+                border: {HOVER_BORDER_WIDTH_PX}px solid rgba(52, 152, 219, {HOVER_BORDER_OPACITY});
+                border-radius: {HOVER_BORDER_RADIUS_PX}px;
                 padding: 0px;
                 margin: 2px 0px;
-                font-weight: 600;
+                font-weight: {HOVER_FONT_WEIGHT};
                 color: {Colors.TEXT_PRIMARY};
                 qproperty-alignment: AlignCenter;
             }}
@@ -306,18 +343,18 @@ class MainWindow(QWidget):
         """Handle mouse leave event for game images"""
         # Create scale animation back to normal
         self.hover_animation = QPropertyAnimation(image_label, b"geometry")
-        self.hover_animation.setDuration(200)
+        self.hover_animation.setDuration(HOVER_ANIMATION_DURATION_MS)
         self.hover_animation.setEasingCurve(QEasingCurve.OutCubic)
         
         # Get current geometry and calculate original geometry
         current_rect = image_label.geometry()
-        scale_factor = 1.0 / 1.05
+        scale_factor = 1.0 / HOVER_SCALE_FACTOR
         new_width = int(current_rect.width() * scale_factor)
         new_height = int(current_rect.height() * scale_factor)
         
         # Center the normal image
-        x_offset = (current_rect.width() - new_width) // 2
-        y_offset = (current_rect.height() - new_height) // 2
+        x_offset = (current_rect.width() - new_width) // HOVER_SCALE_OFFSET_DIVISOR
+        y_offset = (current_rect.height() - new_height) // HOVER_SCALE_OFFSET_DIVISOR
         
         normal_rect = QRect(
             current_rect.x() + x_offset,
@@ -350,9 +387,9 @@ class MainWindow(QWidget):
         left_widget.setStyleSheet(LEFT_PANEL_STYLE)
         
         # Add both panels to main layout with sizing ratios
-        main_layout.addWidget(left_widget, 3)  # Left takes 3 parts (30% of width)
-        main_layout.addWidget(self.game_details_page, 7)  # Right takes 7 parts (70% of width)
-        
+        main_layout.addWidget(left_widget, LEFT_PANEL_LAYOUT_PROPORTION)  # Left takes 4 parts (40% of width)
+        main_layout.addWidget(self.game_details_page, RIGHT_PANEL_LAYOUT_PROPORTION)  # Right takes 6 parts (60% of width)
+
         # Apply the main layout to the window
         self.setLayout(main_layout)
     
@@ -369,15 +406,6 @@ class MainWindow(QWidget):
         """
         # Update the right panel with the selected game's information
         self.game_details_page.update_game(game)
-
-    def show_game_list(self):
-        """
-        Legacy method for showing game list.
-        
-        This method is no longer needed since games are displayed directly
-        on the main page in the left panel. Kept for backward compatibility.
-        """
-        pass  # No longer needed since games are displayed on main page
     
     def toggle_fullscreen(self):
         """
@@ -428,7 +456,7 @@ class MainWindow(QWidget):
                 self.setGeometry(self.normal_geometry)
             else:
                 # Fallback to default size if no saved geometry
-                self.resize(1600, 1000)
+                self.resize(WINDOW_DEFAULT_WIDTH, WINDOW_DEFAULT_HEIGHT)
                 
             self.is_fullscreen = False
             

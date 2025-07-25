@@ -19,6 +19,11 @@ Technical Implementation:
 - Thread-safe file operations with proper exception handling
 """
 
+# ================== CONFIGURATION MANAGER CONSTANTS ==================
+# Default server configuration values
+DEFAULT_VALHEIM_PORT = 2456              # Default port for Valheim dedicated server
+DEFAULT_FILE_ENCODING = 'utf-8'         # File encoding for configuration files
+
 import json
 import os
 import platform
@@ -45,7 +50,7 @@ class ServerConfigManager:
             "world_name": "DedicatedWorld",
             "server_name": "My Server",
             "password": "secret123",
-            "port": 2456,
+            "port": DEFAULT_VALHEIM_PORT,
             ...
         },
         "Palworld": {
@@ -154,7 +159,7 @@ class ServerConfigManager:
             config = {
                 'server_name': 'My Awesome Server',
                 'password': 'secret123',
-                'port': 2456,
+                'port': DEFAULT_VALHEIM_PORT,
                 'world_name': 'MyWorld'
             }
             success = manager.save_server_config('Valheim', config)
@@ -167,7 +172,7 @@ class ServerConfigManager:
             all_configs[game_name] = config
             
             # Save to file
-            with open(self.config_file, 'w', encoding='utf-8') as f:
+            with open(self.config_file, 'w', encoding=DEFAULT_FILE_ENCODING) as f:
                 json.dump(all_configs, f, indent=2)
             
             print(f"✅ Saved {game_name} server configuration")

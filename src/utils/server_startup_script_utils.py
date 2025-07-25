@@ -30,6 +30,63 @@ This refactored architecture separates concerns and promotes code reuse while
 maintaining backward compatibility with existing game-specific scripts.
 """
 
+# ============================================================================
+# PROGRESS TRACKING CONSTANTS
+# ============================================================================
+
+# Progress percentage constants (0-100)
+PROGRESS_MIN = 0                     # Minimum progress value
+PROGRESS_MAX = 100                   # Maximum progress value (completion)
+PROGRESS_INITIAL_SETUP = 10          # Progress after initial directory setup
+PROGRESS_DOWNLOAD_START = 20         # Progress when download begins
+PROGRESS_DOWNLOAD_WEIGHT = 60        # Weight allocation for download phase (20-80%)
+PROGRESS_DOWNLOAD_MAX = 80           # Maximum progress during download phase
+PROGRESS_EXTRACTION_START = 85       # Progress when extraction begins
+PROGRESS_COMPLETE = 100              # Progress when installation completes
+
+# SteamCMD installation progress stages
+STEAMCMD_INITIAL_SETUP = 10          # Initial setup progress
+STEAMCMD_EXTRACTION_COMPLETE = 100   # SteamCMD extraction complete
+STEAMCMD_DOWNLOAD_START = 20         # SteamCMD download start
+STEAMCMD_EXECUTION_START = 30        # SteamCMD execution start
+
+# Server installation progress constants
+SERVER_INITIAL_PROGRESS = 30         # Starting progress for server installation
+SERVER_PROGRESS_INIT = 0             # Initial server progress value
+SERVER_PROGRESS_FREQUENCY = 3        # Update progress every N lines
+SERVER_PROGRESS_INCREMENT = 1        # Progress increment per update
+SERVER_PROGRESS_MAXIMUM = 89         # Maximum progress during installation
+SERVER_PROGRESS_NEAR_COMPLETE = 85   # Progress threshold for near completion
+SERVER_TIMEOUT_INCREMENT = 0.5       # Incremental progress during timeouts
+SERVER_PERIODIC_UPDATE_LINES = 20    # Lines threshold for periodic updates
+SERVER_MAX_OUTPUT_LINES = 20         # Maximum output lines to keep in memory
+
+# Timing constants (seconds)
+SELECT_TIMEOUT_SECONDS = 1.0         # Timeout for process output selection
+PROGRESS_UPDATE_INTERVAL = 5.0       # Interval for forced progress updates
+UPNP_DISCOVERY_DELAY_MS = 200        # UPnP discovery delay in milliseconds
+
+# Network constants
+GOOGLE_DNS_IP = "8.8.8.8"           # Google DNS server for connectivity tests
+GOOGLE_DNS_PORT = 80                 # Port for Google DNS connectivity test
+
+# Buffer and processing constants
+PROCESS_BUFFER_SIZE = 0              # Unbuffered process output (immediate)
+PROGRESS_UPDATE_FREQUENCY = 5        # Force update every N lines
+PROGRESS_TIME_THRESHOLD = 5.0        # Time threshold for forced updates
+PROGRESS_CHANGE_THRESHOLD = 1        # Minimum progress change for updates
+
+# SteamCMD error codes
+STEAMCMD_ERROR_CODE_8 = 8            # SteamCMD error code 8 (download error)
+
+# Progress scaling constants for different phases
+DOWNLOAD_PROGRESS_SCALE = 0.6        # Scale factor for download progress (60%)
+EXTRACTION_PROGRESS_ADD = 3          # Progress increment for extraction
+VALIDATION_PROGRESS_ADD = 2          # Progress increment for validation
+COMPLETION_PROGRESS_ADD = 5          # Progress increment for completion
+STEAMCMD_PROGRESS_SCALE_BASE = 30    # Base progress for SteamCMD scaling
+STEAMCMD_PROGRESS_SCALE_MAX = 90     # Maximum scaled progress for SteamCMD
+
 import shutil
 import os
 import subprocess
@@ -168,7 +225,7 @@ class SteamCMDUtils:
                 print("SteamCMD is ready for use!")
         """
         if progress_callback:
-            progress_callback(10)
+            progress_callback(PROGRESS_INITIAL_SETUP)
         if status_callback:
             status_callback("Checking SteamCMD installation...")
             
@@ -183,15 +240,15 @@ class SteamCMDUtils:
             if status_callback:
                 status_callback("Downloading SteamCMD...")
             if progress_callback:
-                progress_callback(20)
+                progress_callback(PROGRESS_DOWNLOAD_START)
                 
             print("Downloading SteamCMD...")
             
             # Download with progress tracking
             def download_progress_hook(block_num, block_size, total_size):
-                if progress_callback and total_size > 0:
+                if progress_callback and total_size > PROGRESS_MIN:
                     downloaded = block_num * block_size
-                    percent = min(int((downloaded / total_size) * 60) + 20, 80)  # 20-80% for download
+                    percent = min(int((downloaded / total_size) * PROGRESS_DOWNLOAD_WEIGHT) + PROGRESS_DOWNLOAD_START, PROGRESS_DOWNLOAD_MAX)  # 20-80% for download
                     progress_callback(percent)
             
             try:
@@ -200,7 +257,7 @@ class SteamCMDUtils:
                 if status_callback:
                     status_callback("Extracting SteamCMD...")
                 if progress_callback:
-                    progress_callback(85)
+                    progress_callback(PROGRESS_EXTRACTION_START)
                     
                 with zipfile.ZipFile(steamcmd_zip, 'r') as zip_ref:
                     zip_ref.extractall(steamcmd_dir)
@@ -209,7 +266,7 @@ class SteamCMDUtils:
                 if status_callback:
                     status_callback("SteamCMD downloaded and extracted successfully!")
                 if progress_callback:
-                    progress_callback(100)
+                    progress_callback(PROGRESS_COMPLETE)
                 print("SteamCMD downloaded and extracted.")
                 return True
                 
@@ -222,7 +279,7 @@ class SteamCMDUtils:
             if status_callback:
                 status_callback("SteamCMD already present - skipping download")
             if progress_callback:
-                progress_callback(100)
+                progress_callback(STEAMCMD_EXTRACTION_COMPLETE)
             print("SteamCMD already present.")
             return True
     
@@ -246,23 +303,23 @@ class SteamCMDUtils:
             bool: True if successful, False otherwise
         """
         if progress_callback:
-            progress_callback(10)
+            progress_callback(STEAMCMD_INITIAL_SETUP)
         if status_callback:
-            status_callback(f"Checking server installation...")
+            status_callback("Checking server installation...")
             
         server_exe = os.path.join(server_dir, server_executable_name)
         if os.path.exists(server_exe):
             if status_callback:
                 status_callback("Server already installed - skipping installation")
             if progress_callback:
-                progress_callback(100)
+                progress_callback(PROGRESS_COMPLETE)
             print("Server already installed. Skipping installation.")
             return True
         
         if status_callback:
             status_callback("Installing/updating server...")
         if progress_callback:
-            progress_callback(20)
+            progress_callback(STEAMCMD_DOWNLOAD_START)
         print(f"Installing/updating server (App ID: {app_id})...")
         
         _, steamcmd_exe = SteamCMDUtils.get_steamcmd_paths()
@@ -287,7 +344,7 @@ class SteamCMDUtils:
         if status_callback:
             status_callback("Starting SteamCMD to download server files...")
         if progress_callback:
-            progress_callback(30)
+            progress_callback(STEAMCMD_EXECUTION_START)
         
         try:
             import select
@@ -299,15 +356,15 @@ class SteamCMDUtils:
                 stdout=subprocess.PIPE, 
                 stderr=subprocess.STDOUT, 
                 universal_newlines=True,
-                bufsize=0,  # Unbuffered
+                bufsize=PROCESS_BUFFER_SIZE,  # Unbuffered
                 shell=True
             )
             
             import time
-            progress_value = 30
-            last_progress_update = 0
+            progress_value = SERVER_INITIAL_PROGRESS
+            last_progress_update = SERVER_PROGRESS_INIT
             last_update_time = time.time()
-            lines_processed = 0
+            lines_processed = SERVER_PROGRESS_INIT
             recent_output_lines = []  # Track recent output for error detection
             
             while True:
@@ -333,7 +390,7 @@ class SteamCMDUtils:
                         output = None
                 else:
                     # Unix-like systems can use select for non-blocking read
-                    ready, _, _ = select.select([process.stdout], [], [], 1.0)  # 1 second timeout
+                    ready, _, _ = select.select([process.stdout], [], [], SELECT_TIMEOUT_SECONDS)  # 1 second timeout
                     output = None
                     if ready:
                         output = process.stdout.readline()
@@ -343,23 +400,23 @@ class SteamCMDUtils:
                     if line:  # Only process non-empty lines
                         lines_processed += 1
                         recent_output_lines.append(line)  # Track recent output
-                        if len(recent_output_lines) > 20:  # Keep only last 20 lines
+                        if len(recent_output_lines) > SERVER_MAX_OUTPUT_LINES:  # Keep only last 20 lines
                             recent_output_lines.pop(0)
                         
                         print(line)  # Keep console output
                         
                         # Update progress more frequently based on line count
-                        if lines_processed % 3 == 0:  # Every 3 lines instead of 5
-                            progress_value = min(progress_value + 1, 89)
+                        if lines_processed % SERVER_PROGRESS_FREQUENCY == 0:  # Every 3 lines instead of 5
+                            progress_value = min(progress_value + SERVER_PROGRESS_INCREMENT, SERVER_PROGRESS_MAXIMUM)
                         
                         if status_callback:
                             progress_value = SteamCMDUtils._parse_steamcmd_output(line, progress_value, status_callback)
                         
                         # Force progress update every 5 lines OR every 5 seconds OR significant progress change
                         time_since_update = current_time - last_update_time
-                        if progress_callback and (lines_processed % 5 == 0 or 
-                                                time_since_update >= 5.0 or 
-                                                abs(progress_value - last_progress_update) >= 1):
+                        if progress_callback and (lines_processed % PROGRESS_UPDATE_FREQUENCY == 0 or 
+                                                time_since_update >= PROGRESS_UPDATE_INTERVAL or 
+                                                abs(progress_value - last_progress_update) >= PROGRESS_CHANGE_THRESHOLD):
                             progress_callback(int(progress_value))
                             last_progress_update = progress_value
                             last_update_time = current_time
@@ -540,7 +597,7 @@ class UPnPUtils:
             import miniupnpc
             
             upnp = miniupnpc.UPnP()
-            upnp.discoverdelay = 200
+            upnp.discoverdelay = UPNP_DISCOVERY_DELAY_MS
             upnp.discover()
             upnp.selectigd()
             local_ip = upnp.lanaddr
@@ -570,7 +627,7 @@ class UPnPUtils:
             import miniupnpc
             
             upnp = miniupnpc.UPnP()
-            upnp.discoverdelay = 200
+            upnp.discoverdelay = UPNP_DISCOVERY_DELAY_MS
             upnp.discover()
             upnp.selectigd()
             
@@ -781,7 +838,7 @@ class NetworkUtils:
         try:
             # Connect to a remote address to determine the local IP
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-                s.connect(("8.8.8.8", 80))
+                s.connect((GOOGLE_DNS_IP, GOOGLE_DNS_PORT))
                 local_ip = s.getsockname()[0]
             return local_ip
         except Exception:

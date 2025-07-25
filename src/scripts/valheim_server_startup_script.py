@@ -20,6 +20,37 @@ This implementation demonstrates the power of the modular utility system by
 reusing 100% of the core functionality while providing Valheim-specific configuration.
 """
 
+# ================== VALHEIM SERVER CONSTANTS ==================
+# Valheim server networking and port configuration
+VALHEIM_DEFAULT_PORT = 2456              # Primary game port for Valheim server
+VALHEIM_QUERY_PORT_OFFSET = 1            # Offset for Steam query port (+1 from base)
+VALHEIM_ADDITIONAL_PORT_OFFSET = 2       # Offset for additional features port (+2 from base)
+
+# Player and server limits
+VALHEIM_MAX_PLAYERS_DEFAULT = 10         # Maximum players supported by default Valheim server
+VALHEIM_PASSWORD_MIN_LENGTH = 5          # Minimum password length required by Valheim
+
+# Steam configuration
+VALHEIM_STEAM_APP_ID = "896660"          # SteamCMD App ID for Valheim Dedicated Server
+
+# File size and conversion constants
+BYTES_TO_MB_DIVISOR = 1024               # Conversion factor for bytes to MB (1024*1024)
+MB_CONVERSION_FACTOR = 1024              # Secondary factor for complete bytes to MB conversion
+
+# Public/private server settings
+SERVER_PUBLIC_FLAG = "1"                 # Flag value for public server visibility
+SERVER_PRIVATE_FLAG = "0"                # Flag value for private server (not public)
+
+# Display formatting
+SEPARATOR_LINE_LENGTH = 60               # Length of separator lines for output formatting
+CONFIRMATION_SEPARATOR_LENGTH = 50       # Length of separator lines for confirmation prompts
+
+# Default values and fallbacks
+DEFAULT_WORLD_NAME = "Dedicated"         # Default world name for Valheim server
+DEFAULT_SERVER_NAME = "My Valheim Server" # Default server display name
+DEFAULT_PASSWORD = "valheim123"          # Default server password
+INITIAL_SIZE_VALUE = 0                   # Initial value for size calculations
+
 import os
 from utils.server_startup_script_utils import (
     SteamCMDUtils, 
@@ -78,7 +109,7 @@ def install_or_update_valheim_server(progress_callback=None, status_callback=Non
     updates throughout the process.
     
     The Valheim server is relatively lightweight compared to other games and
-    typically installs quickly. The server supports up to 10 players by default
+    typically installs quickly. The server supports up to {VALHEIM_MAX_PLAYERS_DEFAULT} players by default
     and includes built-in world persistence and backup capabilities.
     
     Args:
@@ -96,7 +127,7 @@ def install_or_update_valheim_server(progress_callback=None, status_callback=Non
         than relying solely on SteamCMD exit codes for better reliability.
         
         Valheim servers require approximately 2GB of disk space and 4GB of RAM
-        for optimal performance with a full 10-player server.
+        for optimal performance with a full {VALHEIM_MAX_PLAYERS_DEFAULT}-player server.
         
     Example:
         # Install with progress tracking
@@ -127,8 +158,8 @@ def setup_upnp_port_forwarding():
     using UPnP (Universal Plug and Play) protocol. This allows external players
     to connect to the server without manual router configuration.
     
-    Valheim uses UDP port 2456 by default for game traffic, plus additional
-    ports (2457, 2458) for Steam query and other features. This function
+    Valheim uses UDP port {VALHEIM_DEFAULT_PORT} by default for game traffic, plus additional
+    ports ({VALHEIM_DEFAULT_PORT + VALHEIM_QUERY_PORT_OFFSET}, {VALHEIM_DEFAULT_PORT + VALHEIM_ADDITIONAL_PORT_OFFSET}) for Steam query and other features. This function
     configures the primary game port for external connectivity.
     
     Returns:
@@ -138,9 +169,9 @@ def setup_upnp_port_forwarding():
         UPnP must be enabled on the router for this to work. Some routers
         have UPnP disabled by default for security reasons. If this function
         fails, users will need to manually configure port forwarding for:
-        - UDP 2456 (primary game port)
-        - UDP 2457 (Steam query port)
-        - UDP 2458 (additional features)
+        - UDP {VALHEIM_DEFAULT_PORT} (primary game port)
+        - UDP {VALHEIM_DEFAULT_PORT + VALHEIM_QUERY_PORT_OFFSET} (Steam query port)
+        - UDP {VALHEIM_DEFAULT_PORT + VALHEIM_ADDITIONAL_PORT_OFFSET} (additional features)
         
     Example:
         success = setup_upnp_port_forwarding()
@@ -155,8 +186,8 @@ def setup_upnp_port_forwarding():
     )
 
 
-def start_valheim_server(world_name="DedicatedWorld", server_name="Valheim Server", 
-                        password="valheim123", public_server=True, port=2456):
+def start_valheim_server(world_name=DEFAULT_WORLD_NAME, server_name=DEFAULT_SERVER_NAME, 
+                        password=DEFAULT_PASSWORD, public_server=True, port=VALHEIM_DEFAULT_PORT):
     """
     Start the Valheim dedicated server with proper configuration.
     
@@ -167,9 +198,9 @@ def start_valheim_server(world_name="DedicatedWorld", server_name="Valheim Serve
     Args:
         world_name (str): Name of the world to create/load (default: "DedicatedWorld")
         server_name (str): Display name for the server (default: "Valheim Server")
-        password (str): Server password - must be at least 5 characters (default: "valheim123")
+        password (str): Server password - must be at least {VALHEIM_PASSWORD_MIN_LENGTH} characters (default: "valheim123")
         public_server (bool): Whether server appears in public server list (default: True)
-        port (int): Server port number (default: 2456)
+        port (int): Server port number (default: {VALHEIM_DEFAULT_PORT})
     
     Returns:
         bool: True if server was successfully started, False otherwise
@@ -197,8 +228,8 @@ def start_valheim_server(world_name="DedicatedWorld", server_name="Valheim Serve
             print("Failed to start server - check installation")
     """
     # Validate password length (Valheim requires at least 5 characters)
-    if len(password) < 5:
-        print("Error: Server password must be at least 5 characters long")
+    if len(password) < VALHEIM_PASSWORD_MIN_LENGTH:
+        print(f"Error: Server password must be at least {VALHEIM_PASSWORD_MIN_LENGTH} characters long")
         return False
     
     server_executable_path = os.path.join(SERVER_DIR, EXECUTABLE_NAME)
@@ -217,10 +248,10 @@ def start_valheim_server(world_name="DedicatedWorld", server_name="Valheim Serve
     # Add public server flag if enabled
     if public_server:
         server_args.append("-public")
-        server_args.append("1")
+        server_args.append(SERVER_PUBLIC_FLAG)
     else:
         server_args.append("-public")
-        server_args.append("0")
+        server_args.append(SERVER_PRIVATE_FLAG)
     
     print(f"Starting Valheim server with configuration:")
     print(f"  World Name: {world_name}")
@@ -376,7 +407,7 @@ def get_valheim_world_info():
             world_files = [f for f in os.listdir(item_path) if f.endswith('.db') or f.endswith('.fwl')]
             if world_files:
                 # Calculate total size of world files
-                total_size = 0
+                total_size = INITIAL_SIZE_VALUE
                 for world_file in world_files:
                     file_path = os.path.join(item_path, world_file)
                     if os.path.exists(file_path):
@@ -386,7 +417,7 @@ def get_valheim_world_info():
                     'path': item_path,
                     'files': world_files,
                     'size_bytes': total_size,
-                    'size': f"{total_size / (1024*1024):.2f}"  # Size in MB
+                    'size': f"{total_size / (BYTES_TO_MB_DIVISOR*MB_CONVERSION_FACTOR):.2f}"  # Size in MB
                 }
     
     return worlds
@@ -408,33 +439,33 @@ def start_valheim_server_interactive():
         if success:
             print("Your customized Valheim server is now running!")
     """
-    print("=" * 60)
+    print("=" * SEPARATOR_LINE_LENGTH)
     print("           VALHEIM DEDICATED SERVER SETUP")
-    print("=" * 60)
+    print("=" * SEPARATOR_LINE_LENGTH)
     print()
     
     # Get world name
-    world_name = input("Enter world name (default: DedicatedWorld): ").strip()
+    world_name = input(f"Enter world name (default: {DEFAULT_WORLD_NAME}): ").strip()
     if not world_name:
-        world_name = "DedicatedWorld"
+        world_name = DEFAULT_WORLD_NAME
     
     # Get server display name
-    server_name = input("Enter server display name (default: Valheim Server): ").strip()
+    server_name = input(f"Enter server display name (default: {DEFAULT_SERVER_NAME}): ").strip()
     if not server_name:
-        server_name = "Valheim Server"
+        server_name = DEFAULT_SERVER_NAME
     
     # Get password with validation
     while True:
-        password = input("Enter server password (minimum 5 characters): ").strip()
-        if len(password) >= 5:
+        password = input(f"Enter server password (minimum {VALHEIM_PASSWORD_MIN_LENGTH} characters): ").strip()
+        if len(password) >= VALHEIM_PASSWORD_MIN_LENGTH:
             break
-        print("❌ Password must be at least 5 characters long. Please try again.")
+        print(f"❌ Password must be at least {VALHEIM_PASSWORD_MIN_LENGTH} characters long. Please try again.")
     
     # Get port
     while True:
-        port_input = input("Enter server port (default: 2456): ").strip()
+        port_input = input(f"Enter server port (default: {VALHEIM_DEFAULT_PORT}): ").strip()
         if not port_input:
-            port = 2456
+            port = VALHEIM_DEFAULT_PORT
             break
         try:
             port = int(port_input)
@@ -474,7 +505,7 @@ def start_valheim_server_interactive():
         return False
 
 
-def configure_valheim_firewall(port=2456):
+def configure_valheim_firewall(port=VALHEIM_DEFAULT_PORT):
     """
     Configure Windows Firewall rules for Valheim server.
     
@@ -483,7 +514,7 @@ def configure_valheim_firewall(port=2456):
     server can receive connections from external players.
     
     Args:
-        port (int): Base port number for Valheim server (default: 2456)
+        port (int): Base port number for Valheim server (default: {VALHEIM_DEFAULT_PORT})
     
     Returns:
         bool: True if firewall rules were successfully created, False otherwise
@@ -494,11 +525,11 @@ def configure_valheim_firewall(port=2456):
         
         Valheim uses three consecutive UDP ports:
         - port: Main game traffic
-        - port+1: Steam query
-        - port+2: Additional features
+        - port+{VALHEIM_QUERY_PORT_OFFSET}: Steam query
+        - port+{VALHEIM_ADDITIONAL_PORT_OFFSET}: Additional features
     
     Example:
-        success = configure_valheim_firewall(2456)
+        success = configure_valheim_firewall({VALHEIM_DEFAULT_PORT})
         if success:
             print("Firewall configured for Valheim server")
         else:
@@ -513,7 +544,7 @@ def configure_valheim_firewall(port=2456):
     
     try:
         # Define the ports to configure
-        ports = [port, port + 1, port + 2]
+        ports = [port, port + VALHEIM_QUERY_PORT_OFFSET, port + VALHEIM_ADDITIONAL_PORT_OFFSET]
         
         for i, p in enumerate(ports):
             port_names = ["Game", "Query", "Additional"]

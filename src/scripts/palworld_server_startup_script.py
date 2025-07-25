@@ -19,6 +19,10 @@ This refactored version maintains 100% backward compatibility while leveraging
 the new utility system for better maintainability and multi-game support.
 """
 
+# ================== PALWORLD SERVER CONSTANTS ==================
+# Palworld server configuration constants
+PALWORLD_DEFAULT_SERVER_PORT = 8211     # Default port for Palworld dedicated server
+
 import os
 from utils.server_startup_script_utils import (
     SteamCMDUtils, 
@@ -120,7 +124,7 @@ def setup_upnp_port_forwarding():
     to connect to the server without manual router configuration.
     
     The function configures both TCP and UDP forwarding for the standard
-    Palworld server port (8211) to ensure optimal connectivity.
+    Palworld server port (default port) to ensure optimal connectivity.
     
     Returns:
         bool: True if port forwarding was successfully configured, False otherwise
