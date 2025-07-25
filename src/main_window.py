@@ -28,13 +28,13 @@ WINDOW_DEFAULT_HEIGHT = 1000         # Default window height on startup
 # Layout configuration constants
 LAYOUT_NO_SPACING = 0                # No spacing between layout elements
 LAYOUT_SMALL_SPACING = 2             # Small spacing for subtle visual separation
-LAYOUT_NO_MARGINS = 0                # No margins around layout containers
+LAYOUT_NO_MARGINS = 10                # No margins around layout containers
 
-# Image sizing constants
-GAME_IMAGE_WIDTH = 400               # Width for game images in list
-GAME_IMAGE_HEIGHT = 300               # Height for game images in list
-GAME_IMAGE_MIN_HEIGHT = 80           # Minimum height for game image labels
-GAME_IMAGE_MAX_HEIGHT = 80           # Maximum height for game image labels
+# Image sizing constants - optimized for proper aspect ratios
+GAME_IMAGE_WIDTH = 280               # Width for game images in list (reduced for better fit)
+GAME_IMAGE_HEIGHT = 160              # Height for game images in list (16:9 aspect ratio)
+GAME_IMAGE_MIN_HEIGHT = 160          # Minimum height for game image labels (consistent sizing)
+GAME_IMAGE_MAX_HEIGHT = 160          # Maximum height for game image labels (consistent sizing)
 
 # Animation constants
 HOVER_ANIMATION_DURATION_MS = 200    # Duration of hover animations in milliseconds
@@ -56,7 +56,7 @@ import sys
 import os
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QHBoxLayout, QLabel
 from PyQt5.QtGui import QPixmap, QKeySequence, QIcon
-from PyQt5.QtCore import Qt, QPropertyAnimation, QEasingCurve, QRect
+from PyQt5.QtCore import Qt, QPropertyAnimation, QEasingCurve, QRect, QTimer
 from PyQt5.QtWidgets import QStackedWidget, QShortcut, QGraphicsOpacityEffect
 from game_list_page import GameListPage
 from game import Game
@@ -154,6 +154,11 @@ class MainWindow(QWidget):
         # Set application icon
         self._set_window_icon()
         
+        # Initialize animation tracking for hover effects
+        self.hover_animations = {}  # Track animations per image label
+        self.currently_hovered = None  # Track which image is currently hovered
+        self.original_geometries = {}  # Store original geometries for reset
+        
         # Configure dynamic window sizing
         # Minimum size ensures UI elements remain usable
         self.setMinimumSize(WINDOW_MIN_WIDTH, WINDOW_MIN_HEIGHT)  # Minimum size for usability
@@ -199,6 +204,9 @@ class MainWindow(QWidget):
         
         # Assemble the main layout
         self._assemble_main_layout(main_layout, left_layout)
+        
+        # Store original geometries after layout is complete (using QTimer to ensure widgets are rendered)
+        QTimer.singleShot(100, self._store_original_geometries)
     
     def _setup_game_images(self, left_layout):
         """
@@ -261,30 +269,51 @@ class MainWindow(QWidget):
     
     def _create_game_image_label(self, image_path, game):
         """
-        Create a clickable image label for a game.
+        Create a clickable image label for a game with proper aspect ratio handling.
         
         Args:
             image_path (str): Path to the image file
             game (Game): Game object to associate with this image
             
         Returns:
-            QLabel: Configured image label widget
+            QLabel: Configured image label widget with proper aspect ratio
         """
-        # Load and scale the image
+        # Load the original image
         pixmap = QPixmap(image_path)
-        # Make image full width with proper aspect ratio
-        scaled_pixmap = pixmap.scaled(GAME_IMAGE_WIDTH, GAME_IMAGE_HEIGHT, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
+        
+        # Calculate proper scaling to maintain aspect ratio within our constraints
+        original_width = pixmap.width()
+        original_height = pixmap.height()
+        
+        # Calculate scale factors for both dimensions
+        width_scale = GAME_IMAGE_WIDTH / original_width
+        height_scale = GAME_IMAGE_HEIGHT / original_height
+        
+        # Use the smaller scale factor to ensure image fits within bounds while maintaining aspect ratio
+        scale_factor = min(width_scale, height_scale)
+        
+        # Calculate final dimensions
+        final_width = int(original_width * scale_factor)
+        final_height = int(original_height * scale_factor)
+        
+        # Scale the image with smooth transformation and proper aspect ratio
+        scaled_pixmap = pixmap.scaled(final_width, final_height, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         
         # Create the label with image
         image_label = QLabel()
         image_label.setPixmap(scaled_pixmap)
         image_label.setStyleSheet(GAME_IMAGE_STYLE)
-        image_label.setScaledContents(True)
-        image_label.setMinimumHeight(GAME_IMAGE_MIN_HEIGHT)
-        image_label.setMaximumHeight(GAME_IMAGE_MAX_HEIGHT)
+        
+        # Set consistent sizing without forcing content scaling
+        image_label.setMinimumSize(GAME_IMAGE_WIDTH, GAME_IMAGE_HEIGHT)
+        image_label.setMaximumSize(GAME_IMAGE_WIDTH, GAME_IMAGE_HEIGHT)
+        image_label.setAlignment(Qt.AlignCenter)  # Center the image within the label
         
         # Store reference to game for hover effects
         image_label.game = game
+        
+        # Store original geometry for animation reset (will be set after widget is shown)
+        image_label.original_geometry = None
         
         # Override mouse events for custom hover effects
         image_label.enterEvent = lambda event: self._on_image_hover_enter(image_label)
@@ -298,11 +327,32 @@ class MainWindow(QWidget):
         return image_label
     
     def _on_image_hover_enter(self, image_label):
-        """Handle mouse enter event for game images"""
+        """
+        Handle mouse enter event for game images with proper animation state management.
+        
+        Args:
+            image_label (QLabel): The image label being hovered
+        """
+        # Reset any previously hovered image first
+        if self.currently_hovered and self.currently_hovered != image_label:
+            self._reset_image_to_normal(self.currently_hovered)
+        
+        # Store original geometry if not already stored
+        if image_label.original_geometry is None:
+            image_label.original_geometry = image_label.geometry()
+        
+        # Set this as the currently hovered image
+        self.currently_hovered = image_label
+        
+        # Stop any existing animation for this image
+        if image_label in self.hover_animations:
+            self.hover_animations[image_label].stop()
+        
         # Create scale animation
-        self.hover_animation = QPropertyAnimation(image_label, b"geometry")
-        self.hover_animation.setDuration(HOVER_ANIMATION_DURATION_MS)
-        self.hover_animation.setEasingCurve(QEasingCurve.OutCubic)
+        animation = QPropertyAnimation(image_label, b"geometry")
+        animation.setDuration(HOVER_ANIMATION_DURATION_MS)
+        animation.setEasingCurve(QEasingCurve.OutCubic)
+        self.hover_animations[image_label] = animation
         
         # Get current geometry and calculate scaled geometry
         current_rect = image_label.geometry()
@@ -321,9 +371,9 @@ class MainWindow(QWidget):
             new_height
         )
         
-        self.hover_animation.setStartValue(current_rect)
-        self.hover_animation.setEndValue(scaled_rect)
-        self.hover_animation.start()
+        animation.setStartValue(current_rect)
+        animation.setEndValue(scaled_rect)
+        animation.start()
         
         # Add glow effect
         image_label.setStyleSheet(f"""
@@ -331,44 +381,103 @@ class MainWindow(QWidget):
                 background: rgba(52, 152, 219, {HOVER_BACKGROUND_OPACITY});
                 border: {HOVER_BORDER_WIDTH_PX}px solid rgba(52, 152, 219, {HOVER_BORDER_OPACITY});
                 border-radius: {HOVER_BORDER_RADIUS_PX}px;
-                padding: 0px;
-                margin: 2px 0px;
+                padding: 4px;
+                margin: 4px 2px;
                 font-weight: {HOVER_FONT_WEIGHT};
                 color: {Colors.TEXT_PRIMARY};
                 qproperty-alignment: AlignCenter;
             }}
         """)
-    
+
     def _on_image_hover_leave(self, image_label):
-        """Handle mouse leave event for game images"""
-        # Create scale animation back to normal
-        self.hover_animation = QPropertyAnimation(image_label, b"geometry")
-        self.hover_animation.setDuration(HOVER_ANIMATION_DURATION_MS)
-        self.hover_animation.setEasingCurve(QEasingCurve.OutCubic)
+        """
+        Handle mouse leave event for game images with proper animation state management.
         
-        # Get current geometry and calculate original geometry
-        current_rect = image_label.geometry()
-        scale_factor = 1.0 / HOVER_SCALE_FACTOR
-        new_width = int(current_rect.width() * scale_factor)
-        new_height = int(current_rect.height() * scale_factor)
+        Args:
+            image_label (QLabel): The image label being left
+        """
+        # Clear currently hovered if it's this image
+        if self.currently_hovered == image_label:
+            self.currently_hovered = None
         
-        # Center the normal image
-        x_offset = (current_rect.width() - new_width) // HOVER_SCALE_OFFSET_DIVISOR
-        y_offset = (current_rect.height() - new_height) // HOVER_SCALE_OFFSET_DIVISOR
+        # Reset this image to normal
+        self._reset_image_to_normal(image_label)
+
+    def _reset_image_to_normal(self, image_label):
+        """
+        Reset an image label to its normal state with smooth animation.
         
-        normal_rect = QRect(
-            current_rect.x() + x_offset,
-            current_rect.y() + y_offset,
-            new_width,
-            new_height
-        )
+        Args:
+            image_label (QLabel): The image label to reset
+        """
+        if not image_label or not hasattr(image_label, 'original_geometry') or image_label.original_geometry is None:
+            return
         
-        self.hover_animation.setStartValue(current_rect)
-        self.hover_animation.setEndValue(normal_rect)
-        self.hover_animation.start()
+        try:
+            # Stop any existing animation for this image
+            if image_label in self.hover_animations:
+                animation = self.hover_animations[image_label]
+                if animation:
+                    animation.stop()
+            
+            # Create scale animation back to original size
+            animation = QPropertyAnimation(image_label, b"geometry")
+            animation.setDuration(HOVER_ANIMATION_DURATION_MS)
+            animation.setEasingCurve(QEasingCurve.OutCubic)
+            self.hover_animations[image_label] = animation
+            
+            # Animate back to original geometry
+            current_rect = image_label.geometry()
+            original_rect = image_label.original_geometry
+            
+            animation.setStartValue(current_rect)
+            animation.setEndValue(original_rect)
+            animation.start()
+            
+            # Remove glow effect
+            image_label.setStyleSheet(GAME_IMAGE_STYLE)
+            
+        except Exception as e:
+            # Fallback: directly set geometry and style if animation fails
+            print(f"Animation error, using fallback: {e}")
+            image_label.setGeometry(image_label.original_geometry)
+            image_label.setStyleSheet(GAME_IMAGE_STYLE)
+
+    def _store_original_geometries(self):
+        """
+        Store the original geometries of all game image labels after layout is complete.
         
-        # Remove glow effect
-        image_label.setStyleSheet(GAME_IMAGE_STYLE)
+        This is called with a delay to ensure all widgets have been properly rendered
+        and positioned before we store their baseline geometries for animation reset.
+        """
+        if hasattr(self, 'games'):
+            # Find all image labels in the widget hierarchy
+            for widget in self.findChildren(QLabel):
+                if hasattr(widget, 'game') and hasattr(widget, 'original_geometry'):
+                    widget.original_geometry = widget.geometry()
+
+    def cleanup_animations(self):
+        """
+        Clean up all running animations and reset images to normal state.
+        
+        This method should be called when switching pages or closing the application
+        to ensure smooth transitions and prevent animation artifacts.
+        """
+        # Stop all running animations
+        for animation in self.hover_animations.values():
+            if animation:
+                animation.stop()
+        
+        # Reset all images to normal state
+        for widget in self.findChildren(QLabel):
+            if hasattr(widget, 'game') and hasattr(widget, 'original_geometry'):
+                if widget.original_geometry:
+                    widget.setGeometry(widget.original_geometry)
+                widget.setStyleSheet(GAME_IMAGE_STYLE)
+        
+        # Clear tracking variables
+        self.hover_animations.clear()
+        self.currently_hovered = None
     
     def _assemble_main_layout(self, main_layout, left_layout):
         """

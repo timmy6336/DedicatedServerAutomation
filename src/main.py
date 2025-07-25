@@ -16,7 +16,7 @@ License: MIT
 
 import sys
 from PyQt5.QtWidgets import QApplication
-from hello_app import MainWindow
+from main_window import MainWindow
 
 
 def main():
@@ -37,7 +37,7 @@ def main():
     window = MainWindow()
     
     # Display the window to the user
-    window.show()
+    window.showMaximized()
     
     # Start the Qt event loop and wait for the application to exit
     # exec_() blocks until the user closes the application

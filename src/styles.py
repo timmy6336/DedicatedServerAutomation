@@ -252,10 +252,10 @@ QLabel {{
 GAME_IMAGE_STYLE = f"""
 QLabel {{
     background: transparent;
-    border: none;
-    border-radius: 0px;
-    padding: 0px;
-    margin: 2px 0px;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 4px;
+    margin: 4px 2px;
     font-weight: 600;
     color: {Colors.TEXT_PRIMARY};
     qproperty-alignment: AlignCenter;
@@ -263,8 +263,8 @@ QLabel {{
 
 QLabel:hover {{
     border-radius: 8px;
-    border: 2px solid rgba(52, 152, 219, 0.6);
-    background: rgba(52, 152, 219, 0.1);
+    border: 2px solid rgba(52, 152, 219, 0.8);
+    background: rgba(52, 152, 219, 0.15);
 }}
 
 QLabel:pressed {{

@@ -15,6 +15,10 @@ VALHEIM_DEFAULT_SERVER_PORT = 2456       # Default port for Valheim dedicated se
 VALHEIM_QUERY_PORT = 2457                # Valheim server query port
 VALHEIM_RCON_PORT = 2458                 # Valheim remote console port
 PALWORLD_DEFAULT_SERVER_PORT = 8211      # Default port for Palworld dedicated server
+RUST_DEFAULT_SERVER_PORT = 28015         # Default port for Rust dedicated server
+RUST_QUERY_PORT = 28016                  # Rust server query port
+RUST_RCON_PORT = 28016                   # Rust remote console port
+RUST_APP_PORT = 28082                    # Rust+ companion app port
 MINECRAFT_DEFAULT_SERVER_PORT = 25565    # Default port for Minecraft server
 SATISFACTORY_DEFAULT_SERVER_PORT = 7777  # Default port for Satisfactory server
 
@@ -262,6 +266,99 @@ def get_palworld_server_port():
     except Exception:
         return PALWORLD_DEFAULT_SERVER_PORT
 
+def is_rust_server_running():
+    """
+    Check if Rust dedicated server is currently running.
+    
+    Scans system processes to detect if a Rust server instance is active.
+    Rust servers run as RustDedicated.exe on Windows and may have variations
+    on other platforms. Uses optimized process scanning for better performance.
+    
+    Process detection strategy:
+    - Checks for exact executable name matches (fastest)
+    - Handles multiple Rust server variants and platforms
+    - Falls back to partial name matching for edge cases
+    - Uses optimized process scanning for better performance
+    
+    Known Rust executables:
+    - RustDedicated.exe (Windows)
+    - RustDedicated (Linux)
+    - rust_server (alternative naming)
+    
+    Returns:
+        bool: True if Rust server process is running, False otherwise
+    """
+    try:
+        # Look for Rust server processes with optimized search
+        rust_processes = [
+            "RustDedicated.exe",
+            "RustDedicated",
+            "rust_server.exe",
+            "rust_server"
+        ]
+        
+        # Use attrs=['pid', 'name'] only to reduce memory overhead
+        for proc in psutil.process_iter(attrs=['pid', 'name']):
+            try:
+                process_name = proc.info['name']
+                if process_name:
+                    process_name_lower = process_name.lower()
+                    # Quick check for exact matches first (most common case)
+                    if any(rust_proc.lower() == process_name_lower for rust_proc in rust_processes):
+                        return True
+                    # Then check for partial matches
+                    if 'rust' in process_name_lower and 'dedicated' in process_name_lower:
+                        return True
+                    if 'rustdedicated' in process_name_lower:
+                        return True
+                        
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                continue
+                
+        return False
+    except Exception:
+        return False
+
+def get_rust_server_port():
+    """
+    Detect the port that Rust server is currently using.
+    
+    Scans all listening network connections to find which port the Rust
+    server is bound to. Uses optimized scanning that gets all connections
+    once instead of checking each port individually.
+    
+    Port detection strategy:
+    - Scans all listening TCP and UDP connections once
+    - Checks Rust ports in priority order (game, query, RCON, app)
+    - Returns the first matching port found
+    - Falls back to default port if none detected
+    
+    Rust uses multiple ports:
+    - 28015: Main game server port (default, UDP)
+    - 28016: Query port for server browser (UDP) / RCON (TCP)
+    - 28082: Rust+ companion app port (TCP)
+    
+    Returns:
+        int: Port number the Rust server is using (or default 28015)
+    """
+    try:
+        # Get all listening connections at once to avoid multiple scans
+        listening_ports = set()
+        for conn in psutil.net_connections(kind='inet'):
+            if conn.status == psutil.CONN_LISTEN and conn.laddr:
+                listening_ports.add(conn.laddr.port)
+        
+        # Check for Rust ports in order of priority
+        rust_ports = [RUST_DEFAULT_SERVER_PORT, RUST_QUERY_PORT, RUST_RCON_PORT, RUST_APP_PORT]
+        for port in rust_ports:
+            if port in listening_ports:
+                return port
+        
+        # If not found, return default
+        return RUST_DEFAULT_SERVER_PORT
+    except Exception:
+        return RUST_DEFAULT_SERVER_PORT
+
 def get_server_status_info(game_name, skip_public_ip=False):
     """
     Get comprehensive server status information for any supported game.
@@ -314,6 +411,13 @@ def get_server_status_info(game_name, skip_public_ip=False):
         status_info['is_running'] = is_valheim_server_running()
         if status_info['is_running']:
             status_info['port'] = get_valheim_server_port()
+            if status_info['local_ip'] != IP_UNABLE_TO_DETERMINE:
+                status_info['connection_string'] = f"{status_info['local_ip']}:{status_info['port']}"
+    
+    elif game_name_lower == "rust":
+        status_info['is_running'] = is_rust_server_running()
+        if status_info['is_running']:
+            status_info['port'] = get_rust_server_port()
             if status_info['local_ip'] != IP_UNABLE_TO_DETERMINE:
                 status_info['connection_string'] = f"{status_info['local_ip']}:{status_info['port']}"
     

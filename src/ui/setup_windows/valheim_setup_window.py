@@ -562,50 +562,50 @@ class ValheimServerSetupWindow(BaseServerSetupWindow):
         # Full installation process for new installations
         return [
             {
-            'name': 'Install SteamCMD',
-            'description': 'SteamCMD is required to download and manage Steam-based game servers. This step will download and install SteamCMD if it is not already present on your system. SteamCMD is used by many games and will be preserved for future server installations.',
-            'function': download_steamcmd,
-            'requires_confirmation': True,
-            'confirmation_text': 'This will download and install SteamCMD (~10MB download). Do you want to proceed?'
+                'name': 'Install SteamCMD',
+                'description': 'SteamCMD is required to download and manage Steam-based game servers. This step will download and install SteamCMD if it is not already present on your system. SteamCMD is used by many games and will be preserved for future server installations.',
+                'function': download_steamcmd,
+                'requires_confirmation': True,
+                'confirmation_text': 'This will download and install SteamCMD (~10MB download). Do you want to proceed?'
             },
             {
-            'name': 'Install Valheim Server',
-            'description': f'''Download and install the Valheim Dedicated Server files from Steam. 
-            
-    <b>🎮 About Valheim:</b><br>
-    Valheim is a brutal exploration and survival game set in a procedurally-generated purgatory inspired by Norse mythology. Players must prove themselves worthy to the gods by conquering powerful bosses, crafting equipment, and building settlements with up to 10 players.
+                'name': 'Install Valheim Server',
+                'description': f'''Download and install the Valheim Dedicated Server files from Steam. 
+                
+<b>🎮 About Valheim:</b><br>
+Valheim is a brutal exploration and survival game set in a procedurally-generated purgatory inspired by Norse mythology. Players must prove themselves worthy to the gods by conquering powerful bosses, crafting equipment, and building settlements with up to 10 players.
 
-    <b>📊 System Requirements for Dedicated Server:</b><br>
-    <u>Minimum Requirements:</u><br>
-    &bull; <b>RAM:</b> 2GB (for 2-4 players)<br>
-    &bull; <b>CPU:</b> 2-core 2.5GHz (Intel i5-2400 / AMD FX-6100)<br>
-    &bull; <b>GPU:</b> Not required (headless server)<br>
-    &bull; <b>Storage:</b> 4GB available space<br>
-    &bull; <b>Network:</b> Broadband connection<br>
+<b>📊 System Requirements for Dedicated Server:</b><br>
+<u>Minimum Requirements:</u><br>
+• <b>RAM:</b> 2GB (for 2-4 players)<br>
+• <b>CPU:</b> 2-core 2.5GHz (Intel i5-2400 / AMD FX-6100)<br>
+• <b>GPU:</b> Not required (headless server)<br>
+• <b>Storage:</b> 4GB available space<br>
+• <b>Network:</b> Broadband connection<br>
 
-    <u>Recommended for {VALHEIM_MAX_PLAYERS} Players:</u><br>
-    &bull; <b>RAM:</b> 4-8GB dedicated to server<br>
-    &bull; <b>CPU:</b> 4-core 3.0GHz+ (Intel i5-8400 / AMD Ryzen 5 2600)<br>
-    &bull; <b>GPU:</b> Not required (dedicated server runs headless)<br>
-    &bull; <b>Storage:</b> 8GB+ SSD for world saves<br>
-    &bull; <b>Upload Speed:</b> 10+ Mbps for smooth multiplayer<br>
+<u>Recommended for {VALHEIM_MAX_PLAYERS} Players:</u><br>
+• <b>RAM:</b> 4-8GB dedicated to server<br>
+• <b>CPU:</b> 4-core 3.0GHz+ (Intel i5-8400 / AMD Ryzen 5 2600)<br>
+• <b>GPU:</b> Not required (dedicated server runs headless)<br>
+• <b>Storage:</b> 8GB+ SSD for world saves<br>
+• <b>Upload Speed:</b> 10+ Mbps for smooth multiplayer<br>
 
-    <b>📦 Download Details:</b><br>
-    &bull; <b>Size:</b> ~{VALHEIM_DOWNLOAD_SIZE_GB}GB server files<br>
-    &bull; <b>World Save Size:</b> 50-500MB (grows with exploration)<br>
-    &bull; <b>Supports:</b> Up to {VALHEIM_MAX_PLAYERS} concurrent Viking warriors<br>
-    &bull; <b>Features:</b> Procedural world generation, boss progression, building system''',
-            'function': install_or_update_valheim_server,
-            'requires_confirmation': True,
-            'confirmation_text': f'This will download the Valheim server files (~{VALHEIM_DOWNLOAD_SIZE_GB}GB download). The server supports up to {VALHEIM_MAX_PLAYERS} concurrent players. Do you want to proceed?'
+<b>📦 Download Details:</b><br>
+• <b>Size:</b> ~{VALHEIM_DOWNLOAD_SIZE_GB}GB server files<br>
+• <b>World Save Size:</b> 50-500MB (grows with exploration)<br>
+• <b>Supports:</b> Up to {VALHEIM_MAX_PLAYERS} concurrent Viking warriors<br>
+• <b>Features:</b> Procedural world generation, boss progression, building system''',
+                'function': install_or_update_valheim_server,
+                'requires_confirmation': True,
+                'confirmation_text': f'This will download the Valheim server files (~{VALHEIM_DOWNLOAD_SIZE_GB}GB download). The server supports up to {VALHEIM_MAX_PLAYERS} concurrent players. Do you want to proceed?'
             },
             {
-            'name': 'Configure Viking Realm',
-            'description': 'Configure final server settings including network access and launch your Viking realm. Your server will create a default world called "Dedicated" where players can begin their Norse adventure, build settlements, and face the challenges of Valheim together.',
-            'function': self.configure_and_launch_server,
-            'requires_confirmation': False,  # We'll handle confirmation in the final step
-            'confirmation_text': None,
-            'interactive': True  # Mark this as an interactive step that shouldn't run in worker thread
+                'name': 'Configure Viking Realm',
+                'description': 'Configure final server settings including network access and launch your Viking realm. Your server will create a default world called "Dedicated" where players can begin their Norse adventure, build settlements, and face the challenges of Valheim together.',
+                'function': self.configure_and_launch_server,
+                'requires_confirmation': False,  # We'll handle confirmation in the final step
+                'confirmation_text': None,
+                'interactive': True  # Mark this as an interactive step that shouldn't run in worker thread
             }
         ]
     

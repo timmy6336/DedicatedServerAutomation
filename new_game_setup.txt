@@ -1,0 +1,520 @@
+================================================================================
+                    NEW GAME SETUP GUIDE
+           Dedicated Server Automation Application
+================================================================================
+
+This guide provides step-by-step instructions for adding a new game to the
+Dedicated Server Automation application. The process assumes the game supports
+dedicated servers downloadable through SteamCMD.
+
+================================================================================
+                         PREREQUISITES
+================================================================================
+
+Before starting, ensure you have:
+1. Game's Steam App ID for the dedicated server
+2. Game's default ports and networking requirements
+3. Knowledge of the game's executable name and server directory structure
+4. Understanding of the game's configuration requirements
+5. Game's system requirements for dedicated server hosting
+
+================================================================================
+                    STEP 1: CREATE GAME METADATA
+================================================================================
+
+Location: src/games/[game_name].json
+
+Create a JSON file with game metadata:
+
+{
+    "name": "Game Name",
+    "description": "Brief description of the game",
+    "version": "1.0",
+    "developer": "Developer Name",
+    "release_date": "YYYY-MM-DD",
+    "app_id": "STEAM_APP_ID",
+    "ports": {
+        "main": 12345,
+        "query": 12346,
+        "additional": [12347, 12348]
+    },
+    "max_players": 100,
+    "min_players": 1,
+    "server_executable": "GameServer.exe",
+    "config_files": ["server.cfg", "game.ini"],
+    "features": [
+        "Multiplayer survival",
+        "Base building",
+        "Custom feature here"
+    ]
+}
+
+Example values to replace:
+- "Game Name": Display name (e.g., "Valheim", "Rust")
+- "STEAM_APP_ID": Steam App ID for dedicated server
+- Ports: Game's networking ports
+- max_players: Maximum supported players
+- server_executable: Name of server executable file
+
+================================================================================
+                 STEP 2: ADD GAME TO GAMES LIST
+================================================================================
+
+Location: src/games_list.py
+
+Add the new game to the GAMES_LIST:
+
+GAMES_LIST = [
+    "Valheim",
+    "Palworld", 
+    "Rust",
+    "Your New Game"  # Add your game here
+]
+
+================================================================================
+                STEP 3: ADD GAME IMAGE ASSET
+================================================================================
+
+Location: src/images/[game_name]_image.jpg
+
+Add a game image (400x400 pixels recommended):
+- Use official game artwork or logo
+- PNG format with transparent background preferred
+- Ensure image works well with dark theme
+- Name format: [game_name_lowercase]_image.jpg
+
+Example: rust_image.jpg, valheim_image.jpg
+
+================================================================================
+           STEP 4: UPDATE GAMECONFIG IN UTILS
+================================================================================
+
+Location: src/utils/server_startup_script_utils.py
+
+Add game configuration to GameConfig class:
+
+YOURGAME = {
+    'app_id': 'STEAM_APP_ID',
+    'name': 'Your Game Name',
+    'default_port': 12345,
+    'executable_name': 'GameServer.exe' if platform.system().lower() == 'windows' else 'GameServer',
+    'server_dir_name': 'Your Game Dedicated Server'
+}
+
+Add to get_server_paths method:
+
+elif game_name_lower == 'yourgame':
+    server_dir = os.path.join(base_dir, 'Your Game Dedicated Server')
+    executable_name = f'GameServer{exe_extension}'
+
+================================================================================
+         STEP 5: CREATE GAME SERVER STARTUP SCRIPT
+================================================================================
+
+Location: src/scripts/[game_name]_server_startup_script.py
+
+Create a comprehensive server management script based on existing templates:
+
+"""
+[Game Name] Dedicated Server Management Script
+
+This module provides comprehensive interface for managing [Game Name] servers.
+"""
+
+# Import shared utilities
+from utils.server_startup_script_utils import (
+    SteamCMDUtils, UPnPUtils, ServerUtils, GameConfig
+)
+
+# Game-specific configuration
+GAME_CONFIG = GameConfig.YOURGAME
+
+# Extract values for easier access
+GAME_APPID = GAME_CONFIG['app_id']
+GAME_PORT = GAME_CONFIG['default_port']
+SERVER_DIR, EXECUTABLE_NAME = ServerUtils.get_server_paths(GAME_CONFIG['name'])
+
+# Required functions to implement:
+
+def download_steamcmd(progress_callback=None, status_callback=None):
+    """Download and install SteamCMD."""
+    return SteamCMDUtils.download_steamcmd(progress_callback, status_callback)
+
+def install_or_update_game_server(progress_callback=None, status_callback=None):
+    """Install or update the game dedicated server."""
+    return SteamCMDUtils.install_or_update_server(
+        app_id=GAME_APPID,
+        server_directory=SERVER_DIR,
+        progress_callback=progress_callback,
+        status_callback=status_callback,
+        app_name='Your Game Dedicated Server'
+    )
+
+def start_game_server(server_name="Default Server", max_players=50, port=GAME_PORT, **kwargs):
+    """Start the game server with specified configuration."""
+    server_executable_path = os.path.join(SERVER_DIR, EXECUTABLE_NAME)
+    
+    # Build command line arguments specific to your game
+    server_args = [
+        "-dedicated",
+        f"-port={port}",
+        f"-maxplayers={max_players}",
+        f"-name={server_name}",
+        # Add game-specific arguments here
+    ]
+    
+    return ServerUtils.start_server(
+        server_executable_path=server_executable_path,
+        working_directory=SERVER_DIR,
+        server_args=server_args
+    )
+
+def uninstall_game_server():
+    """Uninstall the game server."""
+    return ServerUtils.uninstall_server(
+        server_directory=SERVER_DIR,
+        server_name=GAME_CONFIG['name']
+    )
+
+def setup_upnp_port_forwarding(port=GAME_PORT):
+    """Configure UPnP port forwarding for game server."""
+    ports_to_forward = [
+        (port, 'UDP'),          # Main game port
+        (port + 1, 'UDP'),      # Query port (adjust as needed)
+        # Add additional ports as needed
+    ]
+    
+    return UPnPUtils.setup_port_forwarding(
+        ports=ports_to_forward,
+        description='Your Game Server'
+    )
+
+def remove_port_forward_rule(port=GAME_PORT):
+    """Remove UPnP port forwarding rules."""
+    ports_to_remove = [
+        (port, 'UDP'),
+        (port + 1, 'UDP'),
+        # Match the ports from setup_upnp_port_forwarding
+    ]
+    
+    return UPnPUtils.remove_port_forwarding(ports_to_remove)
+
+def configure_game_firewall(port=GAME_PORT):
+    """Configure Windows Firewall rules."""
+    # Implement game-specific firewall configuration
+    # Use existing implementations as reference
+    pass
+
+def is_game_server_installed():
+    """Check if game server is installed."""
+    server_executable_path = os.path.join(SERVER_DIR, EXECUTABLE_NAME)
+    return os.path.exists(server_executable_path)
+
+================================================================================
+              STEP 6: CREATE SETUP WINDOW
+================================================================================
+
+Location: src/setup_windows/[game_name]_setup_window.py
+
+Create setup window based on existing templates. Key components:
+
+1. Configuration Dialog Class:
+   - Server settings (name, players, port, etc.)
+   - Game-specific options
+   - Network settings (firewall, UPnP)
+
+2. Setup Window Class:
+   - Inherits from BaseServerSetupWindow
+   - Defines installation steps
+   - Handles configuration and launch
+
+Key methods to implement:
+
+class GameConfigDialog(QDialog):
+    """Configuration dialog for game-specific settings."""
+    def __init__(self, parent=None):
+        # Initialize UI with game-specific options
+        pass
+
+class GameServerSetupWindow(BaseServerSetupWindow):
+    """Setup window for game server installation."""
+    
+    def get_setup_steps(self):
+        """Define installation steps."""
+        if is_game_server_installed():
+            # Return minimal steps for existing installation
+            return [configure_and_launch_step]
+        else:
+            # Return full installation steps
+            return [
+                steamcmd_step,
+                game_server_installation_step,
+                configuration_step
+            ]
+
+================================================================================
+           STEP 7: ADD SERVER DETECTION SUPPORT
+================================================================================
+
+Location: src/utils/server_detection.py
+
+Add server detection functions:
+
+# Add port constants
+GAME_DEFAULT_PORT = 12345
+GAME_QUERY_PORT = 12346
+
+def is_game_server_running():
+    """Check if game server is running."""
+    # Check for server process
+    for proc in psutil.process_iter(['pid', 'name']):
+        try:
+            if proc.info['name'] and 'GameServer' in proc.info['name']:
+                return True
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            continue
+    return False
+
+def get_game_server_port():
+    """Get the port the game server is running on."""
+    # Implement port detection logic
+    # Check for listening ports or process command line arguments
+    return GAME_DEFAULT_PORT
+
+Update get_server_status_info function:
+
+elif game_name.lower() == "yourgame":
+    return {
+        'is_running': is_game_server_running(),
+        'port': get_game_server_port(),
+        'game_name': 'Your Game',
+        # Add other status information
+    }
+
+================================================================================
+         STEP 8: ADD GAME TO DETAILS PAGE
+================================================================================
+
+Location: src/game_details_page.py
+
+Add server installation detection:
+
+def is_server_installed(self, game_name):
+    """Check if server is installed for the given game."""
+    if game_name.lower() == "yourgame":
+        return self.is_yourgame_server_installed()
+    # ... existing code
+
+def is_yourgame_server_installed(self):
+    """Check if Your Game server files are installed."""
+    if platform.system().lower() == 'windows':
+        steamcmd_dir = os.path.expandvars(r'%USERPROFILE%\SteamCMD')
+        server_dir = os.path.expandvars(r'%USERPROFILE%\Steam\steamapps\common\Your Game Dedicated Server')
+    else:
+        steamcmd_dir = os.path.expanduser('~/SteamCMD')
+        server_dir = os.path.expanduser('~/Steam/steamapps/common/Your Game Dedicated Server')
+    
+    steamcmd_exe = os.path.join(steamcmd_dir, 'steamcmd.exe' if platform.system().lower() == 'windows' else 'steamcmd.sh')
+    steamcmd_installed = os.path.exists(steamcmd_exe)
+    
+    game_exe = os.path.join(server_dir, 'GameServer.exe' if platform.system().lower() == 'windows' else 'GameServer')
+    server_installed = os.path.exists(game_exe)
+    
+    return steamcmd_installed and server_installed
+
+Add setup window integration:
+
+def start_server_setup(self):
+    """Start the server setup process."""
+    if self.game.name.lower() == "yourgame":
+        from setup_windows.yourgame_setup_window import YourGameServerSetupWindow
+        self.setup_window = YourGameServerSetupWindow(self.game)
+        self.setup_window.show()
+    # ... existing code
+
+Add server start integration:
+
+def start_server_directly(self):
+    """Start server directly with configuration."""
+    if self.game.name.lower() == "yourgame":
+        from setup_windows.yourgame_setup_window import YourGameConfigDialog
+        config_dialog = YourGameConfigDialog(self)
+        if config_dialog.exec_() == QDialog.Accepted:
+            # Start server with configuration
+            pass
+    # ... existing code
+
+Add uninstallation support:
+
+def uninstall_server(self):
+    """Uninstall the server."""
+    if self.game.name.lower() == "yourgame":
+        from scripts.yourgame_server_startup_script import (
+            uninstall_yourgame_server,
+            remove_port_forward_rule
+        )
+        
+        # Remove port forwarding
+        try:
+            if remove_port_forward_rule():
+                print("✅ Port forwarding rules removed")
+        except Exception as e:
+            print(f"⚠️ Failed to remove port forwarding: {e}")
+        
+        # Uninstall server
+        if uninstall_yourgame_server():
+            print("✅ Your Game server files removed")
+        else:
+            print("⚠️ Failed to remove server files")
+        
+        # Refresh UI and show confirmation
+        self.update_game(self.game)
+        QMessageBox.information(self, 'Uninstallation Complete', 
+                              f'{self.game.name} server has been successfully uninstalled.')
+    # ... existing code
+
+================================================================================
+        STEP 9: ADD DEFAULT CONFIGURATION SUPPORT
+================================================================================
+
+Location: src/utils/config_manager.py
+
+Add default configuration method:
+
+def get_default_yourgame_config(self) -> Dict[str, Any]:
+    """Get default configuration for Your Game server setup."""
+    return {
+        'server_name': 'My Game Server',
+        'password': 'gamepass123',
+        'port': 12345,
+        'max_players': 50,
+        'configure_firewall': True,
+        'enable_upnp': True,
+        # Add game-specific default settings
+    }
+
+================================================================================
+                    STEP 10: TESTING AND VALIDATION
+================================================================================
+
+Testing checklist:
+
+1. Application Launch:
+   □ Game appears in games list
+   □ Game image displays correctly
+   □ No import errors
+
+2. Setup Process:
+   □ Setup window opens without errors
+   □ SteamCMD downloads successfully
+   □ Game server downloads and installs
+   □ Configuration dialog works properly
+
+3. Server Management:
+   □ Server starts with custom configuration
+   □ Server detection works correctly
+   □ Port forwarding configures properly
+   □ Firewall rules are created
+
+4. Uninstallation:
+   □ Server files are removed
+   □ Port forwarding rules are cleaned up
+   □ No leftover files or configurations
+
+5. Error Handling:
+   □ Network errors are handled gracefully
+   □ Missing dependencies are detected
+   □ User feedback is clear and helpful
+
+================================================================================
+                    STEP 11: DOCUMENTATION
+================================================================================
+
+Update project documentation:
+
+1. README.md:
+   - Add game to supported games list
+   - Update system requirements if needed
+   - Add any game-specific setup notes
+
+2. Code Comments:
+   - Ensure all new functions are well-documented
+   - Add inline comments for complex logic
+   - Update existing docstrings if modified
+
+3. Configuration Examples:
+   - Provide example configurations
+   - Document available options
+   - Include troubleshooting tips
+
+================================================================================
+                       TROUBLESHOOTING
+================================================================================
+
+Common issues and solutions:
+
+1. Import Errors:
+   - Check all import paths are correct
+   - Ensure new modules are in correct directories
+   - Verify Python path configuration
+
+2. Server Detection Issues:
+   - Verify process name matching
+   - Check port detection logic
+   - Test with actual running server
+
+3. Configuration Problems:
+   - Validate JSON syntax in game metadata
+   - Check default configuration values
+   - Test configuration dialog functionality
+
+4. Installation Failures:
+   - Verify Steam App ID is correct
+   - Check server directory structure
+   - Ensure executable name matches actual file
+
+5. UI Issues:
+   - Test dialog sizing and layout
+   - Verify theme compatibility
+   - Check responsive behavior
+
+================================================================================
+                        EXAMPLE GAMES
+================================================================================
+
+Reference existing implementations:
+
+1. Valheim (src/scripts/valheim_server_startup_script.py):
+   - Simple configuration
+   - Basic port forwarding
+   - Lightweight server
+
+2. Palworld (src/scripts/palworld_server_startup_script.py):
+   - Complex configuration options
+   - Resource-intensive server
+   - Multiple server modes
+
+3. Rust (src/scripts/rust_server_startup_script.py):
+   - Advanced configuration
+   - Multiple ports
+   - High-performance server
+
+Use these as templates and modify for your specific game requirements.
+
+================================================================================
+                         FINAL NOTES
+================================================================================
+
+- Always test thoroughly before committing changes
+- Follow existing code style and patterns
+- Consider user experience and error handling
+- Document any special requirements or limitations
+- Update version information and changelogs
+- Consider backward compatibility with existing configurations
+
+For questions or issues, refer to the existing codebase or create detailed
+issue reports with steps to reproduce problems.
+
+================================================================================
+                          END OF GUIDE
+================================================================================
