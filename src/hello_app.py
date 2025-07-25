@@ -18,9 +18,9 @@ The main window acts as the central hub for all server management activities.
 import sys
 import os
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QHBoxLayout, QLabel
-from PyQt5.QtGui import QPixmap, QKeySequence
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QStackedWidget, QShortcut
+from PyQt5.QtGui import QPixmap, QKeySequence, QIcon
+from PyQt5.QtCore import Qt, QPropertyAnimation, QEasingCurve, QRect
+from PyQt5.QtWidgets import QStackedWidget, QShortcut, QGraphicsOpacityEffect
 from game_list_page import GameListPage
 from game import Game
 from game_details_page import GameDetailsPage
@@ -30,7 +30,11 @@ from styles import (
     LEFT_PANEL_STYLE, 
     RIGHT_PANEL_STYLE, 
     GAME_IMAGE_STYLE,
-    Layout
+    BUTTON_PRIMARY_STYLE,
+    BUTTON_SECONDARY_STYLE,
+    INPUT_STYLE,
+    Layout,
+    Colors
 )
 
 
@@ -60,6 +64,38 @@ class MainWindow(QWidget):
         super().__init__()
         self.initUI()
 
+    def _set_window_icon(self):
+        """
+        Set the application window icon.
+        
+        Attempts to load the custom application icon from the assets directory.
+        Falls back gracefully if the icon file is not found.
+        """
+        try:
+            # Get the path to the icon file
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            icon_path = os.path.join(script_dir, "assets", "app_icon.ico")
+            
+            # Set icon if file exists
+            if os.path.exists(icon_path):
+                icon = QIcon(icon_path)
+                self.setWindowIcon(icon)
+                
+                # Also set the application icon (for taskbar)
+                QApplication.instance().setWindowIcon(icon)
+            else:
+                # Try SVG fallback
+                svg_path = os.path.join(script_dir, "assets", "app_icon.svg") 
+                if os.path.exists(svg_path):
+                    icon = QIcon(svg_path)
+                    self.setWindowIcon(icon)
+                    QApplication.instance().setWindowIcon(icon)
+                else:
+                    print("Warning: Application icon not found")
+                    
+        except Exception as e:
+            print(f"Warning: Could not load application icon: {e}")
+
     def initUI(self):
         """
         Initialize the user interface.
@@ -68,13 +104,18 @@ class MainWindow(QWidget):
         - Left panel: Clickable game images in a vertical list
         - Right panel: Detailed game information and server controls
         - Fullscreen support with keyboard shortcuts
-        - Modern dark theme styling
+        - Modern light blue/silver/black theme styling
+        - Custom application icon
+        - Enhanced window appearance
         
         The window is designed to be responsive with minimum size constraints
         and supports both windowed and fullscreen modes.
         """
         # Set window title with user instructions
-        self.setWindowTitle('Game Library - Press F11 for Fullscreen')
+        self.setWindowTitle('Dedicated Server Automation - Press F11 for Fullscreen')
+        
+        # Set application icon
+        self._set_window_icon()
         
         # Configure dynamic window sizing
         # Minimum size ensures UI elements remain usable
@@ -97,7 +138,7 @@ class MainWindow(QWidget):
         self.is_fullscreen = False
         self.normal_geometry = None  # Store geometry before fullscreen
         
-        # Apply the modern dark theme styling
+        # Apply the modern light blue/silver/black theme styling
         self.setStyleSheet(MAIN_WINDOW_STYLE)
         
         # Create main horizontal layout (left panel + right panel)
@@ -107,11 +148,8 @@ class MainWindow(QWidget):
         
         # Configure left panel for game image list
         left_layout = QVBoxLayout()
-        left_layout.setContentsMargins(
-            Layout.MARGIN_LARGE, Layout.MARGIN_LARGE, 
-            Layout.MARGIN_LARGE, Layout.MARGIN_LARGE
-        )
-        left_layout.setSpacing(Layout.SPACING_LARGE)
+        left_layout.setContentsMargins(0, 0, 0, 0)  # Remove margins for full-width images
+        left_layout.setSpacing(2)  # Small spacing for blur border effect
         
         # Load and display game images
         self._setup_game_images(left_layout)
@@ -197,13 +235,23 @@ class MainWindow(QWidget):
         """
         # Load and scale the image
         pixmap = QPixmap(image_path)
-        scaled_pixmap = pixmap.scaled(500, 120)  # Large enough for the big window
+        # Make image full width with proper aspect ratio
+        scaled_pixmap = pixmap.scaled(400, 80, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
         
         # Create the label with image
         image_label = QLabel()
         image_label.setPixmap(scaled_pixmap)
         image_label.setStyleSheet(GAME_IMAGE_STYLE)
         image_label.setScaledContents(True)
+        image_label.setMinimumHeight(80)
+        image_label.setMaximumHeight(80)
+        
+        # Store reference to game for hover effects
+        image_label.game = game
+        
+        # Override mouse events for custom hover effects
+        image_label.enterEvent = lambda event: self._on_image_hover_enter(image_label)
+        image_label.leaveEvent = lambda event: self._on_image_hover_leave(image_label)
         
         # Make it clickable with visual feedback
         image_label.setCursor(Qt.PointingHandCursor)
@@ -211,6 +259,79 @@ class MainWindow(QWidget):
         image_label.mousePressEvent = lambda event, g=game: self.on_game_clicked(g)
         
         return image_label
+    
+    def _on_image_hover_enter(self, image_label):
+        """Handle mouse enter event for game images"""
+        # Create scale animation
+        self.hover_animation = QPropertyAnimation(image_label, b"geometry")
+        self.hover_animation.setDuration(200)
+        self.hover_animation.setEasingCurve(QEasingCurve.OutCubic)
+        
+        # Get current geometry and calculate scaled geometry
+        current_rect = image_label.geometry()
+        scale_factor = 1.05
+        new_width = int(current_rect.width() * scale_factor)
+        new_height = int(current_rect.height() * scale_factor)
+        
+        # Center the scaled image
+        x_offset = (new_width - current_rect.width()) // 2
+        y_offset = (new_height - current_rect.height()) // 2
+        
+        scaled_rect = QRect(
+            current_rect.x() - x_offset,
+            current_rect.y() - y_offset,
+            new_width,
+            new_height
+        )
+        
+        self.hover_animation.setStartValue(current_rect)
+        self.hover_animation.setEndValue(scaled_rect)
+        self.hover_animation.start()
+        
+        # Add glow effect
+        image_label.setStyleSheet(f"""
+            QLabel {{
+                background: rgba(52, 152, 219, 0.1);
+                border: 2px solid rgba(52, 152, 219, 0.6);
+                border-radius: 8px;
+                padding: 0px;
+                margin: 2px 0px;
+                font-weight: 600;
+                color: {Colors.TEXT_PRIMARY};
+                qproperty-alignment: AlignCenter;
+            }}
+        """)
+    
+    def _on_image_hover_leave(self, image_label):
+        """Handle mouse leave event for game images"""
+        # Create scale animation back to normal
+        self.hover_animation = QPropertyAnimation(image_label, b"geometry")
+        self.hover_animation.setDuration(200)
+        self.hover_animation.setEasingCurve(QEasingCurve.OutCubic)
+        
+        # Get current geometry and calculate original geometry
+        current_rect = image_label.geometry()
+        scale_factor = 1.0 / 1.05
+        new_width = int(current_rect.width() * scale_factor)
+        new_height = int(current_rect.height() * scale_factor)
+        
+        # Center the normal image
+        x_offset = (current_rect.width() - new_width) // 2
+        y_offset = (current_rect.height() - new_height) // 2
+        
+        normal_rect = QRect(
+            current_rect.x() + x_offset,
+            current_rect.y() + y_offset,
+            new_width,
+            new_height
+        )
+        
+        self.hover_animation.setStartValue(current_rect)
+        self.hover_animation.setEndValue(normal_rect)
+        self.hover_animation.start()
+        
+        # Remove glow effect
+        image_label.setStyleSheet(GAME_IMAGE_STYLE)
     
     def _assemble_main_layout(self, main_layout, left_layout):
         """
@@ -229,8 +350,8 @@ class MainWindow(QWidget):
         left_widget.setStyleSheet(LEFT_PANEL_STYLE)
         
         # Add both panels to main layout with sizing ratios
-        main_layout.addWidget(left_widget, 1)  # Left takes 1 part (narrower)
-        main_layout.addWidget(self.game_details_page, 3)  # Right takes 3 parts (wider)
+        main_layout.addWidget(left_widget, 3)  # Left takes 3 parts (30% of width)
+        main_layout.addWidget(self.game_details_page, 7)  # Right takes 7 parts (70% of width)
         
         # Apply the main layout to the window
         self.setLayout(main_layout)

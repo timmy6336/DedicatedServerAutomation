@@ -5,7 +5,8 @@ from PyQt5.QtGui import QPixmap, QFont
 from PyQt5.QtCore import Qt, QTimer
 from styles import (
     RIGHT_PANEL_STYLE, 
-    BUTTON_STYLE, 
+    BUTTON_PRIMARY_STYLE,
+    BUTTON_SECONDARY_STYLE, 
     GAME_IMAGE_STYLE,
     Colors, 
     Layout
@@ -36,17 +37,24 @@ class GameDetailsPage(QWidget):
                 background-color: transparent;
             }}
             QScrollBar:vertical {{
-                background-color: {Colors.BACKGROUND_LIGHT};
-                width: 12px;
-                border-radius: 6px;
+                background: {Colors.SILVER};
+                width: 14px;
+                border-radius: 7px;
+                margin: 0;
             }}
             QScrollBar::handle:vertical {{
-                background-color: {Colors.BORDER};
-                border-radius: 6px;
-                min-height: 20px;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
+                            stop:0 {Colors.PRIMARY_BLUE}, 
+                            stop:1 {Colors.SECONDARY_BLUE});
+                border-radius: 7px;
+                min-height: 30px;
             }}
             QScrollBar::handle:vertical:hover {{
-                background-color: {Colors.TEXT_SECONDARY};
+                background: {Colors.SECONDARY_BLUE};
+            }}
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
+                border: none;
+                background: none;
             }}
         """)
         
@@ -123,8 +131,8 @@ class GameDetailsPage(QWidget):
                 image_label.setPixmap(scaled_pixmap)
                 image_label.setStyleSheet(f"""
                     QLabel {{
-                        background-color: {Colors.BACKGROUND_LIGHT};
-                        border: 2px solid {Colors.BORDER};
+                        background-color: {Colors.SILVER_LIGHT};
+                        border: 2px solid {Colors.SILVER};
                         border-radius: {Layout.BORDER_RADIUS_LARGE}px;
                         padding: 10px;
                     }}
@@ -206,20 +214,11 @@ class GameDetailsPage(QWidget):
                 start_button = QPushButton("Server Running")
                 start_button.setFont(QFont('Segoe UI', 16, QFont.Bold))
                 start_button.setStyleSheet(f"""
+                    {BUTTON_SECONDARY_STYLE}
                     QPushButton {{
-                        background-color: #6c757d;
-                        color: white;
-                        border: none;
-                        border-radius: {Layout.BORDER_RADIUS_MEDIUM}px;
-                        padding: 20px 40px;
-                        font-size: 18px;
-                        font-weight: bold;
                         min-width: 250px;
                         min-height: 60px;
-                    }}
-                    QPushButton:disabled {{
-                        background-color: #6c757d;
-                        color: #adb5bd;
+                        font-size: 18px;
                     }}
                 """)
                 start_button.setEnabled(False)
@@ -229,22 +228,18 @@ class GameDetailsPage(QWidget):
                 start_button = QPushButton("Start Server")
                 start_button.setFont(QFont('Segoe UI', 16, QFont.Bold))
                 start_button.setStyleSheet(f"""
+                    {BUTTON_PRIMARY_STYLE}
                     QPushButton {{
-                        background-color: #28a745;
-                        color: white;
-                        border: none;
-                        border-radius: {Layout.BORDER_RADIUS_MEDIUM}px;
-                        padding: 20px 40px;
-                        font-size: 18px;
-                        font-weight: bold;
                         min-width: 250px;
                         min-height: 60px;
+                        font-size: 18px;
+                        background: {Colors.SUCCESS};
                     }}
                     QPushButton:hover {{
-                        background-color: #218838;
+                        background: #218838;
                     }}
                     QPushButton:pressed {{
-                        background-color: #1e7e34;
+                        background: #1e7e34;
                     }}
                 """)
                 start_button.clicked.connect(self.start_server_directly)
@@ -326,7 +321,7 @@ class GameDetailsPage(QWidget):
             # Create and show the Valheim setup window
             self.setup_window = ValheimServerSetupWindow(self.game)
             self.setup_window.show()
-            
+
         else:
             print(f"Server setup not yet implemented for {self.game.name if self.game else 'Unknown Game'}")
     
@@ -346,6 +341,42 @@ class GameDetailsPage(QWidget):
                     print("✅ Palworld server started successfully!")
                 else:
                     print("❌ Failed to start Palworld server")
+            except Exception as e:
+                print(f"❌ Error starting server: {str(e)}")
+        elif self.game and self.game.name.lower() == "valheim":
+            try:
+                # Import the Valheim server start function and config manager
+                import sys
+                parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                sys.path.insert(0, os.path.join(parent_dir, "scripts"))
+                sys.path.insert(0, os.path.join(parent_dir, "utils"))
+                from scripts.valheim_server_startup_script import start_valheim_server
+                from utils.config_manager import config_manager
+                
+                print("Starting Valheim server...")
+                
+                # Load saved configuration or use defaults
+                saved_config = config_manager.load_server_config('Valheim')
+                if saved_config:
+                    print("📂 Using saved server configuration")
+                    config = saved_config
+                else:
+                    print("⚙️ Using default server configuration")
+                    config = config_manager.get_default_valheim_config()
+                
+                success = start_valheim_server(
+                    world_name=config.get('world_name', 'DedicatedWorld'),
+                    server_name=config.get('server_name', 'Valheim Server'), 
+                    password=config.get('password', 'valheim123'),
+                    public_server=config.get('public_server', True),
+                    port=config.get('port', 2456)
+                )
+                if success:
+                    print("✅ Valheim server started successfully!")
+                    print("🏰 Your Viking realm is now active!")
+                    print(f"🔒 Server password: {config.get('password', 'valheim123')}")
+                else:
+                    print("❌ Failed to start Valheim server")
             except Exception as e:
                 print(f"❌ Error starting server: {str(e)}")
         else:
@@ -418,6 +449,50 @@ class GameDetailsPage(QWidget):
                     QMessageBox.Ok
                 )
                 
+            elif self.game.name.lower() == "valheim":
+                # Import the Valheim uninstall functions
+                import sys
+                parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                sys.path.insert(0, os.path.join(parent_dir, "scripts"))
+                from scripts.valheim_server_startup_script import (
+                    uninstall_valheim_server,
+                    remove_port_forward_rule
+                )
+                
+                print(f"Uninstalling {self.game.name} server...")
+                
+                # Remove port forwarding first
+                try:
+                    if remove_port_forward_rule():
+                        print("✅ Port forwarding rules removed")
+                    else:
+                        print("ℹ️ No port forwarding rules to remove")
+                except Exception as e:
+                    print(f"⚠️ Failed to remove port forwarding: {e}")
+                
+                # Uninstall server files
+                if uninstall_valheim_server():
+                    print("✅ Valheim server files removed")
+                    print("🏰 All Viking realms and server data have been deleted")
+                else:
+                    print("⚠️ Failed to remove server files")
+                
+                print(f"🗑️ {self.game.name} server uninstallation completed")
+                print("ℹ️ SteamCMD has been kept for future server installations")
+                
+                # Refresh the UI to reflect the changes
+                self.update_game(self.game)
+                
+                # Show success message
+                QMessageBox.information(
+                    self,
+                    'Uninstallation Complete',
+                    f'{self.game.name} server has been successfully uninstalled.\n\n'
+                    'Server files, world data, and port forwarding rules have been removed.\n'
+                    'SteamCMD has been kept for future server installations.',
+                    QMessageBox.Ok
+                )
+                
             else:
                 print(f"Uninstallation not yet implemented for {self.game.name}")
                 QMessageBox.warning(
@@ -467,6 +542,8 @@ class GameDetailsPage(QWidget):
         """Check if the server files are already installed for the given game"""
         if game_name.lower() == "palworld":
             return self.is_palworld_server_installed()
+        elif game_name.lower() == "valheim":
+            return self.is_valheim_server_installed()
         # Add more games here as needed
         return False
     
@@ -490,6 +567,26 @@ class GameDetailsPage(QWidget):
         
         return steamcmd_installed and server_installed
 
+    def is_valheim_server_installed(self):
+        """Check if Valheim server files are installed"""
+        # Use the same paths as the startup script
+        if platform.system().lower() == 'windows':
+            steamcmd_dir = os.path.expandvars(r'%USERPROFILE%\SteamCMD')
+            server_dir = os.path.expandvars(r'%USERPROFILE%\Steam\steamapps\common\Valheim dedicated server')
+        else:
+            steamcmd_dir = os.path.expanduser('~/SteamCMD')
+            server_dir = os.path.expanduser('~/Steam/steamapps/common/Valheim dedicated server')
+        
+        # Check if SteamCMD is installed
+        steamcmd_exe = os.path.join(steamcmd_dir, 'steamcmd.exe' if platform.system().lower() == 'windows' else 'steamcmd.sh')
+        steamcmd_installed = os.path.exists(steamcmd_exe)
+        
+        # Check if Valheim server is installed
+        valheim_exe = os.path.join(server_dir, 'valheim_server.exe' if platform.system().lower() == 'windows' else 'valheim_server.sh')
+        server_installed = os.path.exists(valheim_exe)
+        
+        return steamcmd_installed and server_installed
+
     def add_server_status(self, layout):
         """Add server status section"""
         self.server_status_widget = QWidget()
@@ -506,8 +603,8 @@ class GameDetailsPage(QWidget):
         status_container = QWidget()
         status_container.setStyleSheet(f"""
             QWidget {{
-                background-color: {Colors.BACKGROUND_LIGHT};
-                border: 2px solid {Colors.BORDER};
+                background-color: {Colors.SILVER_LIGHT};
+                border: 2px solid {Colors.SILVER};
                 border-radius: {Layout.BORDER_RADIUS_MEDIUM}px;
                 padding: 25px;
                 margin: 10px 0px;

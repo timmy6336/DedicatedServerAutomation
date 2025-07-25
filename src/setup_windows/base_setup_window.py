@@ -108,7 +108,14 @@ class BaseServerSetupWindow(QWidget):
         self.is_fullscreen = False
         self.normal_geometry = None
         
-        self.setStyleSheet(MAIN_WINDOW_STYLE)
+        # Apply dark mode styling to the entire window
+        self.setStyleSheet(f"""
+            {MAIN_WINDOW_STYLE}
+            QWidget {{
+                background-color: {Colors.BACKGROUND_DARK};
+                color: {Colors.TEXT_PRIMARY};
+            }}
+        """)
         
         # Create scroll area for the main content
         scroll_area = QScrollArea()
@@ -121,12 +128,12 @@ class BaseServerSetupWindow(QWidget):
                 background-color: transparent;
             }}
             QScrollBar:vertical {{
-                background-color: {Colors.BACKGROUND_LIGHT};
+                background-color: {Colors.BACKGROUND_MEDIUM};
                 width: 12px;
                 border-radius: 6px;
             }}
             QScrollBar::handle:vertical {{
-                background-color: {Colors.BORDER};
+                background-color: {Colors.GRAY_MEDIUM};
                 border-radius: 6px;
                 min-height: 20px;
             }}
@@ -191,8 +198,8 @@ class BaseServerSetupWindow(QWidget):
                 image_label.setPixmap(scaled_pixmap)
                 image_label.setStyleSheet(f"""
                     QLabel {{
-                        background-color: {Colors.BACKGROUND_LIGHT};
-                        border: 2px solid {Colors.BORDER};
+                        background-color: {Colors.BACKGROUND_MEDIUM};
+                        border: 2px solid {Colors.GRAY_MEDIUM};
                         border-radius: {Layout.BORDER_RADIUS_MEDIUM}px;
                         padding: 5px;
                     }}
@@ -233,15 +240,15 @@ class BaseServerSetupWindow(QWidget):
         self.progress_bar.setValue(0)
         self.progress_bar.setStyleSheet(f"""
             QProgressBar {{
-                border: 2px solid {Colors.BORDER};
+                border: 2px solid {Colors.GRAY_MEDIUM};
                 border-radius: {Layout.BORDER_RADIUS_SMALL}px;
-                background-color: {Colors.BACKGROUND_LIGHT};
+                background-color: {Colors.BACKGROUND_MEDIUM};
                 text-align: center;
                 font-weight: bold;
                 color: {Colors.TEXT_PRIMARY};
             }}
             QProgressBar::chunk {{
-                background-color: {Colors.ACCENT};
+                background-color: {Colors.PRIMARY_BLUE};
                 border-radius: {Layout.BORDER_RADIUS_SMALL}px;
             }}
         """)
@@ -258,8 +265,8 @@ class BaseServerSetupWindow(QWidget):
         self.step_description.setFont(QFont('Segoe UI', 14))
         self.step_description.setStyleSheet(f"""
             QLabel {{
-                background-color: {Colors.BACKGROUND_LIGHT};
-                border: 2px solid {Colors.BORDER};
+                background-color: {Colors.BACKGROUND_MEDIUM};
+                border: 2px solid {Colors.GRAY_MEDIUM};
                 border-radius: {Layout.BORDER_RADIUS_SMALL}px;
                 color: {Colors.TEXT_SECONDARY};
                 padding: 15px;
@@ -282,8 +289,8 @@ class BaseServerSetupWindow(QWidget):
         self.status_text.setMaximumHeight(200)  # Increased height for larger window
         self.status_text.setStyleSheet(f"""
             QTextEdit {{
-                background-color: {Colors.BACKGROUND_LIGHT};
-                border: 2px solid {Colors.BORDER};
+                background-color: {Colors.BACKGROUND_MEDIUM};
+                border: 2px solid {Colors.GRAY_MEDIUM};
                 border-radius: {Layout.BORDER_RADIUS_SMALL}px;
                 color: {Colors.TEXT_SECONDARY};
                 font-family: 'Consolas', 'Courier New', monospace;
@@ -302,7 +309,7 @@ class BaseServerSetupWindow(QWidget):
         self.close_button.setFont(QFont('Segoe UI', 12))
         self.close_button.setStyleSheet(f"""
             QPushButton {{
-                background-color: {Colors.BORDER};
+                background-color: {Colors.GRAY_MEDIUM};
                 color: {Colors.TEXT_PRIMARY};
                 border: none;
                 border-radius: {Layout.BORDER_RADIUS_SMALL}px;
@@ -321,7 +328,7 @@ class BaseServerSetupWindow(QWidget):
         self.proceed_button.setFont(QFont('Segoe UI', 14, QFont.Bold))
         self.proceed_button.setStyleSheet(f"""
             QPushButton {{
-                background-color: {Colors.ACCENT};
+                background-color: {Colors.PRIMARY_BLUE};
                 color: white;
                 border: none;
                 border-radius: {Layout.BORDER_RADIUS_MEDIUM}px;
@@ -330,11 +337,11 @@ class BaseServerSetupWindow(QWidget):
                 font-size: 14px;
             }}
             QPushButton:hover {{
-                background-color: {Colors.ACCENT_HOVER};
+                background-color: {Colors.SECONDARY_BLUE};
             }}
             QPushButton:disabled {{
-                background-color: {Colors.BORDER};
-                color: {Colors.TEXT_DISABLED};
+                background-color: {Colors.GRAY_MEDIUM};
+                color: {Colors.TEXT_SECONDARY};
             }}
         """)
         self.proceed_button.clicked.connect(self.proceed_with_step)

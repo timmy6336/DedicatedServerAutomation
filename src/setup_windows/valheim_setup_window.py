@@ -36,7 +36,7 @@ from .base_setup_window import BaseServerSetupWindow
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
-from styles import Colors
+from styles import Colors, Layout
 
 # Import the Valheim startup script
 sys.path.insert(0, os.path.join(parent_dir, "scripts"))
@@ -46,8 +46,13 @@ from scripts.valheim_server_startup_script import (
     setup_upnp_port_forwarding,
     start_valheim_server,
     configure_valheim_firewall,
-    create_valheim_server_config
+    create_valheim_server_config,
+    is_valheim_server_installed
 )
+
+# Import configuration manager
+sys.path.insert(0, os.path.join(parent_dir, "utils"))
+from utils.config_manager import config_manager
 
 
 class ValheimConfigDialog(QDialog):
@@ -72,16 +77,12 @@ class ValheimConfigDialog(QDialog):
         self.setFixedSize(600, 700)
         self.setStyleSheet(f"background-color: {Colors.BACKGROUND_DARK};")
         
-        # Server configuration values
-        self.server_config = {
-            'world_name': 'DedicatedWorld',
-            'server_name': 'Valheim Server',
-            'password': 'valheim123',
-            'port': 2456,
-            'public_server': True,
-            'configure_firewall': True,
-            'enable_upnp': True
-        }
+        # Server configuration values - load from persistent storage or use defaults
+        saved_config = config_manager.load_server_config('Valheim')
+        if saved_config:
+            self.server_config = saved_config
+        else:
+            self.server_config = config_manager.get_default_valheim_config()
         
         self.init_ui()
     
@@ -103,7 +104,7 @@ class ValheimConfigDialog(QDialog):
         server_group.setStyleSheet(f"""
             QGroupBox {{
                 color: {Colors.TEXT_PRIMARY};
-                border: 2px solid {Colors.BORDER};
+                border: 2px solid {Colors.GRAY_MEDIUM};
                 border-radius: 8px;
                 margin-top: 10px;
                 padding-top: 10px;
@@ -123,8 +124,8 @@ class ValheimConfigDialog(QDialog):
         self.world_name_input.setFont(QFont('Segoe UI', 12))
         self.world_name_input.setStyleSheet(f"""
             QLineEdit {{
-                background-color: {Colors.BACKGROUND_LIGHT};
-                border: 2px solid {Colors.BORDER};
+                background-color: {Colors.BACKGROUND_MEDIUM};
+                border: 2px solid {Colors.GRAY_MEDIUM};
                 border-radius: 6px;
                 padding: 8px;
                 color: {Colors.TEXT_PRIMARY};
@@ -137,8 +138,8 @@ class ValheimConfigDialog(QDialog):
         self.server_name_input.setFont(QFont('Segoe UI', 12))
         self.server_name_input.setStyleSheet(f"""
             QLineEdit {{
-                background-color: {Colors.BACKGROUND_LIGHT};
-                border: 2px solid {Colors.BORDER};
+                background-color: {Colors.BACKGROUND_MEDIUM};
+                border: 2px solid {Colors.GRAY_MEDIUM};
                 border-radius: 6px;
                 padding: 8px;
                 color: {Colors.TEXT_PRIMARY};
@@ -152,8 +153,8 @@ class ValheimConfigDialog(QDialog):
         self.password_input.setEchoMode(QLineEdit.Normal)  # Show password text instead of dots
         self.password_input.setStyleSheet(f"""
             QLineEdit {{
-                background-color: {Colors.BACKGROUND_LIGHT};
-                border: 2px solid {Colors.BORDER};
+                background-color: {Colors.BACKGROUND_MEDIUM};
+                border: 2px solid {Colors.GRAY_MEDIUM};
                 border-radius: 6px;
                 padding: 8px;
                 color: {Colors.TEXT_PRIMARY};
@@ -168,8 +169,8 @@ class ValheimConfigDialog(QDialog):
         self.port_input.setFont(QFont('Segoe UI', 12))
         self.port_input.setStyleSheet(f"""
             QSpinBox {{
-                background-color: {Colors.BACKGROUND_LIGHT};
-                border: 2px solid {Colors.BORDER};
+                background-color: {Colors.BACKGROUND_MEDIUM};
+                border: 2px solid {Colors.GRAY_MEDIUM};
                 border-radius: 6px;
                 padding: 8px;
                 color: {Colors.TEXT_PRIMARY};
@@ -192,7 +193,7 @@ class ValheimConfigDialog(QDialog):
         network_group.setStyleSheet(f"""
             QGroupBox {{
                 color: {Colors.TEXT_PRIMARY};
-                border: 2px solid {Colors.BORDER};
+                border: 2px solid {Colors.GRAY_MEDIUM};
                 border-radius: 8px;
                 margin-top: 10px;
                 padding-top: 10px;
@@ -230,8 +231,8 @@ class ValheimConfigDialog(QDialog):
         info_text.setFont(QFont('Segoe UI', 10))
         info_text.setStyleSheet(f"""
             QLabel {{
-                background-color: {Colors.BACKGROUND_LIGHT};
-                border: 2px solid {Colors.BORDER};
+                background-color: {Colors.BACKGROUND_MEDIUM};
+                border: 2px solid {Colors.GRAY_MEDIUM};
                 border-radius: 6px;
                 padding: 8px;
                 color: {Colors.TEXT_SECONDARY};
@@ -254,17 +255,17 @@ class ValheimConfigDialog(QDialog):
         advanced_button.setFont(QFont('Segoe UI', 12))
         advanced_button.setStyleSheet(f"""
             QPushButton {{
-                background-color: {Colors.BORDER};
+                background-color: {Colors.GRAY_MEDIUM};
                 border: none;
                 border-radius: 8px;
                 color: {Colors.TEXT_PRIMARY};
                 padding: 12px 20px;
             }}
             QPushButton:hover {{
-                background-color: {Colors.ACCENT_HOVER};
+                background-color: {Colors.BACKGROUND_HOVER};
             }}
             QPushButton:pressed {{
-                background-color: {Colors.ACCENT_PRESSED};
+                background-color: {Colors.GRAY_LIGHT};
             }}
         """)
         advanced_button.clicked.connect(self.show_advanced_settings)
@@ -277,17 +278,17 @@ class ValheimConfigDialog(QDialog):
         cancel_button.setFont(QFont('Segoe UI', 12))
         cancel_button.setStyleSheet(f"""
             QPushButton {{
-                background-color: {Colors.BORDER};
+                background-color: {Colors.GRAY_MEDIUM};
                 border: none;
                 border-radius: 8px;
                 color: {Colors.TEXT_PRIMARY};
                 padding: 12px 20px;
             }}
             QPushButton:hover {{
-                background-color: {Colors.ACCENT_HOVER};
+                background-color: {Colors.BACKGROUND_HOVER};
             }}
             QPushButton:pressed {{
-                background-color: {Colors.ACCENT_PRESSED};
+                background-color: {Colors.GRAY_LIGHT};
             }}
         """)
         cancel_button.clicked.connect(self.reject)
@@ -358,6 +359,9 @@ class ValheimConfigDialog(QDialog):
             'enable_upnp': self.upnp_checkbox.isChecked()
         })
         
+        # Save configuration to persistent storage
+        config_manager.save_server_config('Valheim', self.server_config)
+        
         self.accept()
     
     def get_config(self):
@@ -397,12 +401,30 @@ class ValheimServerSetupWindow(BaseServerSetupWindow):
         """
         Define the setup steps specific to Valheim server installation.
         
+        Checks if Valheim is already installed and skips installation steps
+        if it exists, going directly to the configuration step.
+        
         Returns a list of setup steps with Viking-themed descriptions and
         appropriate confirmation prompts for the Valheim installation process.
         
         Returns:
             list: List of setup step dictionaries containing step configuration
         """
+        # Check if Valheim server is already installed
+        if is_valheim_server_installed():
+            # Skip installation steps, go directly to configuration
+            return [
+                {
+                    'name': 'Configure & Launch Existing Server',
+                    'description': 'Valheim dedicated server is already installed! Configure your Viking realm settings and launch your server. Your existing world data and configurations will be preserved.',
+                    'function': self.configure_and_launch_server,
+                    'requires_confirmation': False,
+                    'confirmation_text': None,
+                    'interactive': True
+                }
+            ]
+        
+        # Full installation process for new installations
         return [
             {
                 'name': 'Install SteamCMD',
@@ -433,28 +455,56 @@ class ValheimServerSetupWindow(BaseServerSetupWindow):
         Return Valheim-specific UI elements for the current setup step.
         
         Provides step-specific UI components including configuration information
-        and instructions for the final setup step.
+        and instructions for the final setup step. Shows different content based
+        on whether the server is already installed.
         
         Returns:
             list: List of QWidget elements for the current step
         """
         elements = []
         
-        # Only show elements for the final step (step 3: Configure Viking Realm)
-        if self.current_step == 2:  # Step 3 (0-indexed)
-            # Configuration explanation
-            explanation = QLabel("🏰 Viking Realm Configuration")
-            explanation.setFont(QFont('Segoe UI', 18, QFont.Bold))
-            explanation.setStyleSheet(f"color: {Colors.TEXT_PRIMARY}; margin: 15px 5px;")
-            explanation.setAlignment(Qt.AlignCenter)
-            elements.append(explanation)
-            
-            # Configuration info
-            config_info = QLabel("⚙️ When you click 'Continue', you'll be able to customize your server settings:")
-            config_info.setFont(QFont('Segoe UI', 14, QFont.Bold))
-            config_info.setStyleSheet(f"color: {Colors.TEXT_SECONDARY}; margin: 10px 5px;")
-            config_info.setWordWrap(True)
-            elements.append(config_info)
+        # Check if this is the configuration step (either first step for existing install or last for new install)
+        is_config_step = (
+            (len(self.setup_steps) == 1 and self.current_step == 0) or  # Existing installation
+            (len(self.setup_steps) > 1 and self.current_step == 2)      # New installation
+        )
+        
+        if is_config_step:
+            # Show different header based on installation status
+            if is_valheim_server_installed():
+                # Server already installed
+                explanation = QLabel("🏰 Configure Existing Viking Realm")
+                explanation.setFont(QFont('Segoe UI', 18, QFont.Bold))
+                explanation.setStyleSheet(f"color: {Colors.TEXT_PRIMARY}; margin: 15px 5px;")
+                explanation.setAlignment(Qt.AlignCenter)
+                elements.append(explanation)
+                
+                # Status info for existing installation
+                status_info = QLabel("✅ Valheim dedicated server is already installed and ready!")
+                status_info.setFont(QFont('Segoe UI', 14, QFont.Bold))
+                status_info.setStyleSheet(f"color: #2ecc71; margin: 10px 5px;")
+                status_info.setWordWrap(True)
+                elements.append(status_info)
+                
+                config_info = QLabel("⚙️ Configure your server settings and launch your Viking realm:")
+                config_info.setFont(QFont('Segoe UI', 14, QFont.Bold))
+                config_info.setStyleSheet(f"color: {Colors.TEXT_SECONDARY}; margin: 10px 5px;")
+                config_info.setWordWrap(True)
+                elements.append(config_info)
+            else:
+                # New installation
+                explanation = QLabel("🏰 Viking Realm Configuration")
+                explanation.setFont(QFont('Segoe UI', 18, QFont.Bold))
+                explanation.setStyleSheet(f"color: {Colors.TEXT_PRIMARY}; margin: 15px 5px;")
+                explanation.setAlignment(Qt.AlignCenter)
+                elements.append(explanation)
+                
+                # Configuration info
+                config_info = QLabel("⚙️ When you click 'Continue', you'll be able to customize your server settings:")
+                config_info.setFont(QFont('Segoe UI', 14, QFont.Bold))
+                config_info.setStyleSheet(f"color: {Colors.TEXT_SECONDARY}; margin: 10px 5px;")
+                config_info.setWordWrap(True)
+                elements.append(config_info)
             
             # Configuration options list
             options_text = """
@@ -473,9 +523,9 @@ class ValheimServerSetupWindow(BaseServerSetupWindow):
                 color: {Colors.TEXT_PRIMARY}; 
                 margin: 10px 15px; 
                 padding: 15px; 
-                background-color: {Colors.BACKGROUND_SECONDARY}; 
+                background-color: {Colors.BACKGROUND_MEDIUM}; 
                 border-radius: 8px;
-                border: 2px solid {Colors.BORDER};
+                border: 2px solid {Colors.GRAY_MEDIUM};
             """)
             options_label.setWordWrap(True)
             elements.append(options_label)
@@ -498,15 +548,20 @@ class ValheimServerSetupWindow(BaseServerSetupWindow):
                 color: {Colors.TEXT_SECONDARY}; 
                 margin: 5px 15px 15px 15px; 
                 padding: 10px; 
-                background-color: {Colors.BACKGROUND_LIGHT}; 
+                background-color: {Colors.BACKGROUND_MEDIUM}; 
                 border-radius: 6px;
                 font-style: italic;
             """)
             defaults_label.setWordWrap(True)
             elements.append(defaults_label)
             
-            # Action instruction
-            action_info = QLabel("🚀 Click 'Continue' to open the configuration dialog and customize your Viking realm!")
+            # Action instruction - different text based on installation status
+            if is_valheim_server_installed():
+                action_text = "🚀 Click 'Continue' to configure and launch your existing Viking realm!"
+            else:
+                action_text = "🚀 Click 'Continue' to open the configuration dialog and customize your Viking realm!"
+            
+            action_info = QLabel(action_text)
             action_info.setFont(QFont('Segoe UI', 13, QFont.Bold))
             action_info.setStyleSheet("""
                 color: #2ecc71; 
@@ -665,3 +720,8 @@ class ValheimServerSetupWindow(BaseServerSetupWindow):
             success = False
         
         return success
+    
+    def add_control_buttons(self, layout):
+        """Add control buttons - using base implementation (no custom delete button)"""
+        # Use the base implementation which doesn't include delete functionality
+        super().add_control_buttons(layout)

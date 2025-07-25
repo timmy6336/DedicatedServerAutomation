@@ -289,6 +289,26 @@ def uninstall_valheim_server():
     return ServerUtils.uninstall_server(SERVER_DIR)
 
 
+def is_valheim_server_installed():
+    """
+    Check if Valheim dedicated server is already installed.
+    
+    Verifies that the Valheim server files are present by checking for the
+    main server executable in the expected installation directory.
+    
+    Returns:
+        bool: True if Valheim server is installed, False otherwise
+        
+    Example:
+        if is_valheim_server_installed():
+            print("Valheim server is ready to configure and launch")
+        else:
+            print("Valheim server needs to be installed first")
+    """
+    from utils.server_startup_script_utils import FileUtils
+    return FileUtils.is_server_installed(SERVER_DIR, EXECUTABLE_NAME)
+
+
 def remove_port_forward_rule():
     """
     Remove UPnP port forwarding rule for Valheim server.

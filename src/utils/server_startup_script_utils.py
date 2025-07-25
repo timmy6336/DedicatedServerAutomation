@@ -278,8 +278,8 @@ class SteamCMDUtils:
         
         cmd = [
             steamcmd_exe,
-            "+login", "anonymous",
             "+force_install_dir", server_dir,
+            "+login", "anonymous",
             "+app_update", app_id, "validate",
             "+quit"
         ]
@@ -290,6 +290,9 @@ class SteamCMDUtils:
             progress_callback(30)
         
         try:
+            import select
+            import time
+            
             # Use Popen for real-time output capture with unbuffered output
             process = subprocess.Popen(
                 cmd, 
@@ -300,43 +303,100 @@ class SteamCMDUtils:
                 shell=True
             )
             
+            import time
             progress_value = 30
             last_progress_update = 0
+            last_update_time = time.time()
             lines_processed = 0
+            recent_output_lines = []  # Track recent output for error detection
             
             while True:
-                output = process.stdout.readline()
-                if output == '' and process.poll() is not None:
+                current_time = time.time()
+                
+                # Check if process is still running
+                if process.poll() is not None:
+                    # Process finished, read any remaining output
+                    remaining_output = process.stdout.read()
+                    if remaining_output:
+                        for line in remaining_output.strip().split('\n'):
+                            if line.strip():
+                                print(line.strip())
+                                if status_callback:
+                                    progress_value = SteamCMDUtils._parse_steamcmd_output(line.strip(), progress_value, status_callback)
                     break
+                
+                if platform.system().lower() == 'windows':
+                    # Windows: Simple approach with readline and timeout handling
+                    try:
+                        output = process.stdout.readline()
+                    except (OSError, IOError):
+                        output = None
+                else:
+                    # Unix-like systems can use select for non-blocking read
+                    ready, _, _ = select.select([process.stdout], [], [], 1.0)  # 1 second timeout
+                    output = None
+                    if ready:
+                        output = process.stdout.readline()
                 
                 if output:
                     line = output.strip()
-                    lines_processed += 1
-                    print(line)  # Keep console output
-                    
-                    # Update progress more frequently based on line count
-                    if lines_processed % 5 == 0:  # Every 5 lines
-                        progress_value = min(progress_value + 1, 89)
-                    
-                    if status_callback:
-                        progress_value = SteamCMDUtils._parse_steamcmd_output(line, progress_value, status_callback)
-                    
-                    # Force progress update every 10 lines or if significant progress change
-                    if progress_callback and (lines_processed % 10 == 0 or abs(progress_value - last_progress_update) >= 2):
-                        progress_callback(int(progress_value))
-                        last_progress_update = progress_value
+                    if line:  # Only process non-empty lines
+                        lines_processed += 1
+                        recent_output_lines.append(line)  # Track recent output
+                        if len(recent_output_lines) > 20:  # Keep only last 20 lines
+                            recent_output_lines.pop(0)
+                        
+                        print(line)  # Keep console output
+                        
+                        # Update progress more frequently based on line count
+                        if lines_processed % 3 == 0:  # Every 3 lines instead of 5
+                            progress_value = min(progress_value + 1, 89)
+                        
+                        if status_callback:
+                            progress_value = SteamCMDUtils._parse_steamcmd_output(line, progress_value, status_callback)
+                        
+                        # Force progress update every 5 lines OR every 5 seconds OR significant progress change
+                        time_since_update = current_time - last_update_time
+                        if progress_callback and (lines_processed % 5 == 0 or 
+                                                time_since_update >= 5.0 or 
+                                                abs(progress_value - last_progress_update) >= 1):
+                            progress_callback(int(progress_value))
+                            last_progress_update = progress_value
+                            last_update_time = current_time
                 
-                # Force a small progress update even if no output (keeps UI responsive)
-                elif lines_processed > 50 and progress_value < 85:  # After initial setup
-                    progress_value = min(progress_value + 0.1, 89)
-                    if progress_callback and abs(progress_value - last_progress_update) >= 1:
-                        progress_callback(int(progress_value))
-                        last_progress_update = progress_value
+                # Force a progress update every 5 seconds even if no output (keeps UI responsive)
+                else:
+                    time_since_update = current_time - last_update_time
+                    if time_since_update >= 5.0:  # Every 5 seconds
+                        if lines_processed > 20 and progress_value < 85:  # After some initial setup
+                            progress_value = min(progress_value + 0.5, 89)
+                        if progress_callback:
+                            progress_callback(int(progress_value))
+                            last_progress_update = progress_value
+                            last_update_time = current_time
+                        
+                        # Update status to show we're still working
+                        if status_callback and lines_processed > 20:
+                            status_callback("🔄 Installation in progress... (this may take a while)")
             
             return_code = process.poll()
             
+            # Check for specific Steam error patterns in the output
+            steam_error_detected = False
+            error_details = ""
+            
+            # Look for specific error patterns in recent output lines
+            if return_code == 8:
+                steam_error_detected = True
+                error_details = "SteamCMD reported an error during download (exit code 8)"
+            elif any("Error! App" in line and "state is 0x" in line for line in recent_output_lines):
+                steam_error_detected = True
+                error_details = "Steam reported application state error (download corruption)"
+            elif any("stopping" in line and "progress:" in line for line in recent_output_lines):
+                steam_error_detected = True  
+                error_details = "Download was interrupted before completion"
+            
             # Check if installation was actually successful by verifying the server files exist
-            # SteamCMD sometimes returns non-zero exit codes even when successful
             server_exe_check = os.path.join(server_dir, server_executable_name)
             installation_successful = os.path.exists(server_exe_check)
             
@@ -347,6 +407,13 @@ class SteamCMDUtils:
                     progress_callback(100)
                 print("Server installed/updated.")
                 return True
+            elif steam_error_detected:
+                if status_callback:
+                    status_callback(f"❌ Steam download error detected: {error_details}")
+                    status_callback("💡 Suggestion: Try running the installation again - Steam downloads can sometimes fail due to network issues")
+                print(f"Steam download failed: {error_details}")
+                print("Suggestion: Retry the installation - this is often a temporary network issue")
+                return False
             else:
                 if status_callback:
                     status_callback(f"Installation incomplete - server files not found (SteamCMD exit code: {return_code})")
@@ -362,6 +429,19 @@ class SteamCMDUtils:
     @staticmethod
     def _parse_steamcmd_output(line: str, progress_value: float, status_callback: Callable[[str], None]) -> float:
         """Parse SteamCMD output for meaningful status updates and progress"""
+        
+        # Check for error conditions first
+        if "Error!" in line and "state is 0x" in line:
+            status_callback(f"❌ Steam Error: {line}")
+            # Don't increment progress on errors
+            return progress_value
+        elif "stopping" in line and "progress:" in line:
+            status_callback(f"⚠️ Download interrupted: {line}")
+            return progress_value
+        elif "Please use force_install_dir before logon!" in line:
+            status_callback("❌ SteamCMD command order error detected")
+            return progress_value
+        
         # Parse SteamCMD output for meaningful status updates
         if "Downloading" in line or "downloading" in line:
             status_callback(f"📥 {line}")
@@ -378,6 +458,9 @@ class SteamCMDUtils:
             elif "0x101" in line:
                 status_callback("🔄 Committing changes...")
                 progress_value = min(progress_value + 3, 88)
+            elif "0x461" in line:
+                status_callback("⚠️ Download stopping...")
+                # Don't increment progress when stopping
             else:
                 status_callback(f"📊 {line}")
         elif "Success" in line or "success" in line:
@@ -398,6 +481,7 @@ class SteamCMDUtils:
         elif "%" in line and ("downloaded" in line or "progress" in line):
             # Try to extract percentage if available
             try:
+                import re
                 match = re.search(r'(\d+)%', line)
                 if match:
                     percent = int(match.group(1))
