@@ -9,8 +9,9 @@ build/
 dist/
 *.spec
 __pycache__/
+**/__pycache__/*
 *.pyc
-*.pyo
+*.pyo   
 
 # Executable build files
 DedicatedServerAutomation.spec
