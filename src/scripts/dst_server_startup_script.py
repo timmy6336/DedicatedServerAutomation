@@ -33,6 +33,12 @@ import shutil
 import subprocess
 import time
 from pathlib import Path
+
+# Add parent directory to path for imports
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
+
 from utils.server_startup_script_utils import (
     SteamCMDUtils, 
     UPnPUtils, 
@@ -60,6 +66,87 @@ def get_dst_config_path():
     user_profile = os.environ.get('USERPROFILE', '')
     config_path = os.path.join(user_profile, 'Documents', 'Klei', 'DoNotStarveTogether', 'MyDediServer')
     return config_path
+
+def read_existing_dst_configuration():
+    """Read and parse existing DST configuration"""
+    config_path = get_dst_config_path()
+    cluster_ini_path = os.path.join(config_path, 'cluster.ini')
+    cluster_token_path = os.path.join(config_path, 'cluster_token.txt')
+    
+    # Default configuration values
+    config = {
+        'server_name': 'DST Server',
+        'server_description': 'A Don\'t Starve Together Server',
+        'max_players': 6,
+        'password': '',
+        'server_token': '',
+        'enable_caves': True,
+        'pvp': False,
+        'pause_when_empty': True,
+        'console_enabled': True,
+        'world_preset': 'SURVIVAL_TOGETHER',
+        'game_mode': 'survival'
+    }
+    
+    try:
+        # Read cluster.ini if it exists
+        if os.path.exists(cluster_ini_path):
+            logger.info(f"Reading existing configuration from: {cluster_ini_path}")
+            
+            import configparser
+            parser = configparser.ConfigParser()
+            parser.read(cluster_ini_path)
+            
+            # Parse GAMEPLAY section
+            if parser.has_section('GAMEPLAY'):
+                gameplay = parser['GAMEPLAY']
+                config['max_players'] = int(gameplay.get('max_players', config['max_players']))
+                config['pvp'] = gameplay.getboolean('pvp', config['pvp'])
+                config['pause_when_empty'] = gameplay.getboolean('pause_when_empty', config['pause_when_empty'])
+                config['game_mode'] = gameplay.get('game_mode', config['game_mode'])
+            
+            # Parse NETWORK section
+            if parser.has_section('NETWORK'):
+                network = parser['NETWORK']
+                config['server_name'] = network.get('cluster_name', config['server_name'])
+                config['server_description'] = network.get('cluster_description', config['server_description'])
+                config['password'] = network.get('cluster_password', config['password'])
+            
+            # Parse MISC section
+            if parser.has_section('MISC'):
+                misc = parser['MISC']
+                config['console_enabled'] = misc.getboolean('console_enabled', config['console_enabled'])
+            
+            # Parse SHARD section
+            if parser.has_section('SHARD'):
+                shard = parser['SHARD']
+                config['enable_caves'] = shard.getboolean('shard_enabled', config['enable_caves'])
+            
+            logger.info("Successfully parsed existing configuration")
+        
+        # Read server token if it exists
+        if os.path.exists(cluster_token_path):
+            with open(cluster_token_path, 'r') as f:
+                config['server_token'] = f.read().strip()
+            logger.info("Found existing server token")
+        
+        # Check if Master world settings exist
+        master_worldgen_path = os.path.join(config_path, 'Master', 'worldgenoverride.lua')
+        if os.path.exists(master_worldgen_path):
+            # Try to parse world preset from Lua file (simplified)
+            with open(master_worldgen_path, 'r') as f:
+                content = f.read()
+                if 'SURVIVAL_TOGETHER_CLASSIC' in content:
+                    config['world_preset'] = 'SURVIVAL_TOGETHER_CLASSIC'
+                elif 'SURVIVAL_DEFAULT_PLUS' in content:
+                    config['world_preset'] = 'SURVIVAL_DEFAULT_PLUS'
+                # Add more presets as needed
+        
+        return config
+        
+    except Exception as e:
+        logger.warning(f"Error reading existing configuration: {e}")
+        return config
 
 def download_steamcmd():
     """Download and install SteamCMD if not already present"""

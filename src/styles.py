@@ -94,6 +94,18 @@ class Colors:
     BACKGROUND_LIGHT = "#3a3a3a"    # Lighter dark for cards/inputs
     BACKGROUND_HOVER = "#404040"    # Hover state background
     
+    # Aliases for dialog compatibility
+    BACKGROUND_PRIMARY = "#1a1a1a"   # Main background (alias for BACKGROUND_DARK)
+    BACKGROUND_SECONDARY = "#3a3a3a" # Secondary background (alias for BACKGROUND_LIGHT)
+    BORDER_COLOR = "#4a4a4a"         # Border color (alias for GRAY_MEDIUM)
+    ACCENT_COLOR = "#3498db"         # Accent color (alias for PRIMARY_BLUE)
+    
+    # Button colors
+    BUTTON_BACKGROUND = "#3498db"    # Button background
+    BUTTON_TEXT = "#ffffff"          # Button text color
+    BUTTON_HOVER = "#2980b9"         # Button hover state
+    BUTTON_PRESSED = "#1f5f8b"       # Button pressed state
+    
     # Gray Palette for Dark Mode
     GRAY_DARK = "#2c2c2c"          # Dark gray for borders
     GRAY_MEDIUM = "#4a4a4a"        # Medium gray for elements

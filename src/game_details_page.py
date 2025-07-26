@@ -31,7 +31,7 @@ SECTION_TOP_MARGIN = 15             # Top margin for section titles in pixels
 
 import os
 import platform
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton, QScrollArea, QHBoxLayout
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton, QScrollArea, QHBoxLayout, QDialog, QMessageBox
 from PyQt5.QtGui import QPixmap, QFont
 from PyQt5.QtCore import Qt, QTimer, QThread, pyqtSignal
 from styles import (
@@ -620,8 +620,9 @@ class GameDetailsPage(QWidget):
                 sys.path.insert(0, os.path.join(parent_dir, "utils"))
                 sys.path.insert(0, os.path.join(parent_dir, "setup_windows"))
                 
-                from setup_windows.dst_setup_window import DSTServerSetupWindow
+                from setup_windows.dst_configuration_dialog import DSTConfigurationDialog
                 from scripts.dst_server_startup_script import start_dst_server, get_dst_config_path
+                from PyQt5.QtWidgets import QMessageBox, QDialog
                 
                 print("Checking DST server configuration...")
                 
@@ -630,29 +631,96 @@ class GameDetailsPage(QWidget):
                 cluster_token_path = os.path.join(config_path, 'cluster_token.txt')
                 cluster_config_path = os.path.join(config_path, 'cluster.ini')
                 
-                if os.path.exists(cluster_token_path) and os.path.exists(cluster_config_path):
-                    print("📂 Using existing server configuration")
-                    print("Starting Don't Starve Together server...")
+                has_existing_config = os.path.exists(cluster_token_path) and os.path.exists(cluster_config_path)
+                
+                if has_existing_config:
+                    print("📂 Found existing server configuration")
                     
-                    success = start_dst_server(enable_caves=True)
-                    if success:
-                        print("✅ DST server started successfully!")
-                        print("🌍 Your survival world is now active!")
-                        print("🔗 Both Master and Caves worlds are running")
-                    else:
-                        print("❌ Failed to start DST server")
-                else:
-                    print("⚠️ Server not configured. Please run the setup first.")
+                    # Show configuration dialog to allow editing
                     from PyQt5.QtWidgets import QMessageBox
                     reply = QMessageBox.question(
-                        self, 
-                        'Server Not Configured',
-                        'DST server is not configured yet. Would you like to run the setup now?',
-                        QMessageBox.Yes | QMessageBox.No,
-                        QMessageBox.Yes
+                        self,
+                        'DST Server Configuration',
+                        'Would you like to review/edit your server configuration before starting?\\n\\n'
+                        'Click "Yes" to configure server settings\\n'
+                        'Click "No" to start with current settings',
+                        QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel,
+                        QMessageBox.No
                     )
-                    if reply == QMessageBox.Yes:
-                        self.start_server_setup()
+                    
+                    if reply == QMessageBox.Cancel:
+                        print("⏹️ Server start cancelled by user")
+                        return
+                    elif reply == QMessageBox.Yes:
+                        print("🔧 Opening configuration dialog...")
+                        
+                        # Show configuration dialog with existing settings
+                        config_dialog = DSTConfigurationDialog(self, load_existing=True)
+                        
+                        def on_config_saved(config_data):
+                            print("✅ Configuration updated successfully!")
+                            print(f"Server name: {config_data.get('server_name', 'Unknown')}")
+                            print(f"Max players: {config_data.get('max_players', 6)}")
+                            print(f"Caves enabled: {'Yes' if config_data.get('enable_caves', True) else 'No'}")
+                            
+                            # Start server with updated configuration
+                            print("Starting Don't Starve Together server with updated configuration...")
+                            success = start_dst_server(enable_caves=config_data.get('enable_caves', True))
+                            if success:
+                                print("✅ DST server started successfully!")
+                                print("🌍 Your survival world is now active!")
+                                print("🔗 Both Master and Caves worlds are running")
+                            else:
+                                print("❌ Failed to start DST server")
+                        
+                        config_dialog.configuration_saved.connect(on_config_saved)
+                        
+                        if config_dialog.exec_() != QDialog.Accepted:
+                            print("⏹️ Configuration cancelled, server not started")
+                            return
+                        
+                        print("📂 Configuration dialog completed")
+                    else:
+                        print("📂 Using existing server configuration")
+                        
+                        # Start server with existing configuration
+                        print("Starting Don't Starve Together server...")
+                        success = start_dst_server(enable_caves=True)
+                        if success:
+                            print("✅ DST server started successfully!")
+                            print("🌍 Your survival world is now active!")
+                            print("🔗 Both Master and Caves worlds are running")
+                        else:
+                            print("❌ Failed to start DST server")
+                        
+                else:
+                    print("⚠️ Server not configured. Setting up new configuration...")
+                    
+                    # Show configuration dialog for new setup
+                    print("🔧 Opening configuration dialog for new server...")
+                    config_dialog = DSTConfigurationDialog(self, load_existing=False)
+                    
+                    def on_config_saved(config_data):
+                        print("✅ New configuration saved successfully!")
+                        print(f"Server name: {config_data.get('server_name', 'Unknown')}")
+                        print(f"Max players: {config_data.get('max_players', 6)}")
+                        print(f"Caves enabled: {'Yes' if config_data.get('enable_caves', True) else 'No'}")
+                        
+                        # Auto-start server after configuration
+                        print("Starting DST server with new configuration...")
+                        success = start_dst_server(enable_caves=config_data.get('enable_caves', True))
+                        if success:
+                            print("✅ DST server started successfully!")
+                            print("🌍 Your new survival world is now active!")
+                        else:
+                            print("❌ Failed to start DST server")
+                    
+                    config_dialog.configuration_saved.connect(on_config_saved)
+                    
+                    if config_dialog.exec_() != QDialog.Accepted:
+                        print("⏹️ Configuration cancelled, server not started")
+                        return
+                        
             except Exception as e:
                 print(f"❌ Error starting server: {str(e)}")
         else:
