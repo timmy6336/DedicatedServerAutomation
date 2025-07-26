@@ -3,6 +3,7 @@
 .env
 steamcmd/
 palworld_server/
+dst_server/
 
 # Python cache files and directories
 __pycache__/

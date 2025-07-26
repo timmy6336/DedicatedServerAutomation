@@ -494,6 +494,12 @@ class GameDetailsPage(QWidget):
             # Create and show the Rust setup window
             self.setup_window = RustServerSetupWindow(self.game)
             self.setup_window.show()
+        elif self.game and self.game.name.lower() == "dont starve together":
+            # Import here to avoid circular imports
+            from setup_windows.dst_setup_window import DSTServerSetupWindow
+            # Create and show the DST setup window
+            self.setup_window = DSTServerSetupWindow(self.game)
+            self.setup_window.show()
 
         else:
             print(f"Server setup not yet implemented for {self.game.name if self.game else 'Unknown Game'}")
@@ -603,6 +609,50 @@ class GameDetailsPage(QWidget):
                         print("❌ Failed to start Rust server")
                 else:
                     print("⏹️ Server start cancelled by user")
+            except Exception as e:
+                print(f"❌ Error starting server: {str(e)}")
+        elif self.game and self.game.name.lower() == "dont starve together":
+            try:
+                # Import the DST configuration dialog and server start function
+                import sys
+                parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                sys.path.insert(0, os.path.join(parent_dir, "scripts"))
+                sys.path.insert(0, os.path.join(parent_dir, "utils"))
+                sys.path.insert(0, os.path.join(parent_dir, "setup_windows"))
+                
+                from setup_windows.dst_setup_window import DSTServerSetupWindow
+                from scripts.dst_server_startup_script import start_dst_server, get_dst_config_path
+                
+                print("Checking DST server configuration...")
+                
+                # Check if server is already configured
+                config_path = get_dst_config_path()
+                cluster_token_path = os.path.join(config_path, 'cluster_token.txt')
+                cluster_config_path = os.path.join(config_path, 'cluster.ini')
+                
+                if os.path.exists(cluster_token_path) and os.path.exists(cluster_config_path):
+                    print("📂 Using existing server configuration")
+                    print("Starting Don't Starve Together server...")
+                    
+                    success = start_dst_server(enable_caves=True)
+                    if success:
+                        print("✅ DST server started successfully!")
+                        print("🌍 Your survival world is now active!")
+                        print("🔗 Both Master and Caves worlds are running")
+                    else:
+                        print("❌ Failed to start DST server")
+                else:
+                    print("⚠️ Server not configured. Please run the setup first.")
+                    from PyQt5.QtWidgets import QMessageBox
+                    reply = QMessageBox.question(
+                        self, 
+                        'Server Not Configured',
+                        'DST server is not configured yet. Would you like to run the setup now?',
+                        QMessageBox.Yes | QMessageBox.No,
+                        QMessageBox.Yes
+                    )
+                    if reply == QMessageBox.Yes:
+                        self.start_server_setup()
             except Exception as e:
                 print(f"❌ Error starting server: {str(e)}")
         else:
@@ -763,6 +813,50 @@ class GameDetailsPage(QWidget):
                     QMessageBox.Ok
                 )
                 
+            elif self.game.name.lower() == "dont starve together":
+                # Import the uninstall functions
+                import sys
+                parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                sys.path.insert(0, os.path.join(parent_dir, "scripts"))
+                from scripts.dst_server_startup_script import (
+                    uninstall_dst_server,
+                    remove_dst_port_forwarding
+                )
+                
+                print(f"Uninstalling {self.game.name} server...")
+                
+                # Remove port forwarding first
+                try:
+                    if remove_dst_port_forwarding():
+                        print("✅ Port forwarding rules removed")
+                    else:
+                        print("ℹ️ No port forwarding rules to remove")
+                except Exception as e:
+                    print(f"⚠️ Failed to remove port forwarding: {e}")
+                
+                # Uninstall server files
+                if uninstall_dst_server():
+                    print("✅ DST server files and configuration removed")
+                    print("🌍 All server data, worlds, and configuration have been deleted")
+                else:
+                    print("⚠️ Failed to remove server files")
+                
+                print(f"🗑️ {self.game.name} server uninstallation completed")
+                print("ℹ️ SteamCMD has been kept for future server installations")
+                
+                # Refresh the UI to reflect the changes
+                self.update_game(self.game)
+                
+                # Show success message
+                QMessageBox.information(
+                    self,
+                    'Uninstallation Complete',
+                    f'{self.game.name} server has been successfully uninstalled.\n\n'
+                    'Server files, configuration, and port forwarding rules have been removed.\n'
+                    'SteamCMD has been kept for future server installations.',
+                    QMessageBox.Ok
+                )
+                
             else:
                 print(f"Uninstallation not yet implemented for {self.game.name}")
                 QMessageBox.warning(
@@ -816,6 +910,8 @@ class GameDetailsPage(QWidget):
             return self.is_valheim_server_installed()
         elif game_name.lower() == "rust":
             return self.is_rust_server_installed()
+        elif game_name.lower() == "dont starve together":
+            return self.is_dst_server_installed()
         # Add more games here as needed
         return False
     
@@ -876,6 +972,26 @@ class GameDetailsPage(QWidget):
         # Check if Rust server is installed
         rust_exe = os.path.join(server_dir, 'RustDedicated.exe' if platform.system().lower() == 'windows' else 'RustDedicated')
         server_installed = os.path.exists(rust_exe)
+        
+        return steamcmd_installed and server_installed
+
+    def is_dst_server_installed(self):
+        """Check if Don't Starve Together server files are installed"""
+        # Use the same paths as the startup script
+        if platform.system().lower() == 'windows':
+            steamcmd_dir = os.path.expandvars(r'%USERPROFILE%\SteamCMD')
+            server_dir = os.path.expandvars(r'%USERPROFILE%\Steam\steamapps\common\Dont Starve Together Dedicated Server')
+        else:
+            steamcmd_dir = os.path.expanduser('~/SteamCMD')
+            server_dir = os.path.expanduser('~/Steam/steamapps/common/Dont Starve Together Dedicated Server')
+        
+        # Check if SteamCMD is installed
+        steamcmd_exe = os.path.join(steamcmd_dir, 'steamcmd.exe' if platform.system().lower() == 'windows' else 'steamcmd.sh')
+        steamcmd_installed = os.path.exists(steamcmd_exe)
+        
+        # Check if DST server is installed
+        dst_exe = os.path.join(server_dir, 'bin', 'dontstarve_dedicated_server_nullrenderer.exe' if platform.system().lower() == 'windows' else 'dontstarve_dedicated_server_nullrenderer')
+        server_installed = os.path.exists(dst_exe)
         
         return steamcmd_installed and server_installed
 

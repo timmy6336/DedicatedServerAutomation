@@ -19,6 +19,8 @@ RUST_DEFAULT_SERVER_PORT = 28015         # Default port for Rust dedicated serve
 RUST_QUERY_PORT = 28016                  # Rust server query port
 RUST_RCON_PORT = 28016                   # Rust remote console port
 RUST_APP_PORT = 28082                    # Rust+ companion app port
+DST_DEFAULT_MASTER_PORT = 11000          # Default port for Don't Starve Together master server
+DST_DEFAULT_CAVES_PORT = 11001           # Default port for Don't Starve Together caves server
 MINECRAFT_DEFAULT_SERVER_PORT = 25565    # Default port for Minecraft server
 SATISFACTORY_DEFAULT_SERVER_PORT = 7777  # Default port for Satisfactory server
 
@@ -359,6 +361,83 @@ def get_rust_server_port():
     except Exception:
         return RUST_DEFAULT_SERVER_PORT
 
+def is_dst_server_running():
+    """
+    Check if Don't Starve Together dedicated server is currently running.
+    
+    Scans system processes to detect if a DST server instance is active.
+    DST uses a dual-shard system with master and caves servers, so this
+    function checks for both processes.
+    
+    Process detection strategy:
+    - Checks for dontstarve_dedicated_server_nullrenderer processes
+    - Looks for both master and caves server instances
+    - Handles Windows (.exe) and Linux naming conventions
+    - Gracefully handles access denied and zombie processes
+    
+    Returns:
+        bool: True if DST server process(es) are running, False otherwise
+    """
+    try:
+        # Look for DST server processes
+        dst_processes = [
+            "dontstarve_dedicated_server_nullrenderer.exe",
+            "dontstarve_dedicated_server_nullrenderer",
+            "dontstarve_dedicated_server.exe",
+            "dontstarve_dedicated_server"
+        ]
+        
+        # Use attrs=['pid', 'name'] only to reduce memory overhead
+        for proc in psutil.process_iter(attrs=['pid', 'name']):
+            try:
+                process_name = proc.info['name']
+                if process_name:
+                    process_name_lower = process_name.lower()
+                    # Quick check for exact matches first (most common case)
+                    if any(dst_proc.lower() == process_name_lower for dst_proc in dst_processes):
+                        return True
+                    # Then check for partial matches
+                    if 'dontstarve' in process_name_lower and 'dedicated' in process_name_lower:
+                        return True
+                        
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                continue
+                
+        return False
+    except Exception:
+        return False
+
+def get_dst_server_port():
+    """
+    Detect the port that DST server is currently using.
+    
+    DST uses a dual-shard system with two ports:
+    - 11000: Master server (overworld) 
+    - 11001: Caves server
+    
+    Returns the master port if found, as it's the primary connection point.
+    
+    Returns:
+        int: Port number the DST server is using (or default 11000)
+    """
+    try:
+        # Get all listening connections at once to avoid multiple scans
+        listening_ports = set()
+        for conn in psutil.net_connections(kind='inet'):
+            if conn.status == psutil.CONN_LISTEN and conn.laddr:
+                listening_ports.add(conn.laddr.port)
+        
+        # Check for DST ports (master port takes priority)
+        dst_ports = [DST_DEFAULT_MASTER_PORT, DST_DEFAULT_CAVES_PORT]
+        for port in dst_ports:
+            if port in listening_ports:
+                return port
+        
+        # If not found, return default master port
+        return DST_DEFAULT_MASTER_PORT
+    except Exception:
+        return DST_DEFAULT_MASTER_PORT
+
 def get_server_status_info(game_name, skip_public_ip=False):
     """
     Get comprehensive server status information for any supported game.
@@ -418,6 +497,13 @@ def get_server_status_info(game_name, skip_public_ip=False):
         status_info['is_running'] = is_rust_server_running()
         if status_info['is_running']:
             status_info['port'] = get_rust_server_port()
+            if status_info['local_ip'] != IP_UNABLE_TO_DETERMINE:
+                status_info['connection_string'] = f"{status_info['local_ip']}:{status_info['port']}"
+    
+    elif game_name_lower == "dont starve together" or game_name_lower == "dst":
+        status_info['is_running'] = is_dst_server_running()
+        if status_info['is_running']:
+            status_info['port'] = get_dst_server_port()
             if status_info['local_ip'] != IP_UNABLE_TO_DETERMINE:
                 status_info['connection_string'] = f"{status_info['local_ip']}:{status_info['port']}"
     

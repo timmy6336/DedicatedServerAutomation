@@ -307,7 +307,12 @@ class SteamCMDUtils:
         if status_callback:
             status_callback("Checking server installation...")
             
-        server_exe = os.path.join(server_dir, server_executable_name)
+        # Handle different executable locations for different games
+        if app_id == '343050':  # Don't Starve Together
+            server_exe = os.path.join(server_dir, 'bin', server_executable_name)
+        else:
+            server_exe = os.path.join(server_dir, server_executable_name)
+            
         if os.path.exists(server_exe):
             if status_callback:
                 status_callback("Server already installed - skipping installation")
@@ -454,7 +459,10 @@ class SteamCMDUtils:
                 error_details = "Download was interrupted before completion"
             
             # Check if installation was actually successful by verifying the server files exist
-            server_exe_check = os.path.join(server_dir, server_executable_name)
+            if app_id == '343050':  # Don't Starve Together
+                server_exe_check = os.path.join(server_dir, 'bin', server_executable_name)
+            else:
+                server_exe_check = os.path.join(server_dir, server_executable_name)
             installation_successful = os.path.exists(server_exe_check)
             
             if installation_successful:
@@ -801,6 +809,9 @@ pause >nul
         elif game_name_lower == 'rust':
             server_dir = os.path.join(base_dir, 'Rust Dedicated Server')
             executable_name = f'RustDedicated{exe_extension}'
+        elif game_name_lower == 'dont starve together':
+            server_dir = os.path.join(base_dir, 'Dont Starve Together Dedicated Server')
+            executable_name = f'dontstarve_dedicated_server_nullrenderer{exe_extension}'
         else:
             # Generic fallback
             server_dir = os.path.join(base_dir, f'{game_name} Dedicated Server')

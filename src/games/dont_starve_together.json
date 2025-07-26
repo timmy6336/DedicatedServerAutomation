@@ -1,0 +1,76 @@
+{
+    "name": "Dont Starve Together",
+    "display_name": "Don't Starve Together",
+    "description": "Don't Starve Together is the multiplayer expansion of the uncompromising wilderness survival game, Don't Starve. Enter a strange and unexplored world full of strange creatures, dangers, and surprises.",
+    "image": "images/dst_image.jpg",
+    "developer": "Klei Entertainment",
+    "publisher": "Klei Entertainment",
+    "release_date": "2016-04-21",
+    "genre": "Survival, Action, Adventure, Indie",
+    "platforms": ["Windows", "Linux", "Mac"],
+    "multiplayer": {
+        "min_players": 1,
+        "max_players": 6,
+        "cooperative": true,
+        "competitive": false
+    },
+    "server_info": {
+        "app_id": "343050",
+        "executable": "dontstarve_dedicated_server_nullrenderer.exe",
+        "default_port": 11000,
+        "additional_ports": [11001, 27018, 27019, 8768, 8769],
+        "protocol": "UDP",
+        "steam_required": true,
+        "difficulty": "Medium",
+        "requires_token": true,
+        "token_url": "https://accounts.klei.com/account/game/servers?game=DontStarveTogether"
+    },
+    "system_requirements": {
+        "minimum": {
+            "os": "Windows 7 or later (64-bit)",
+            "processor": "1.7+ GHz or better",
+            "memory": "1 GB RAM",
+            "graphics": "DirectX 11 compatible video card",
+            "directx": "Version 11",
+            "storage": "3 GB available space",
+            "network": "Broadband Internet connection"
+        },
+        "recommended": {
+            "os": "Windows 10 (64-bit)",
+            "processor": "2.0+ GHz multi-core",
+            "memory": "4 GB RAM",
+            "graphics": "DirectX 11 compatible video card",
+            "directx": "Version 11",
+            "storage": "5 GB available space",
+            "network": "Broadband Internet connection"
+        }
+    },
+    "features": [
+        "Multiplayer survival up to 6 players",
+        "Procedurally generated world",
+        "Seasonal cycles and weather",
+        "Character progression and unlocks",
+        "Boss battles and exploration",
+        "Dedicated server support",
+        "Master and Caves world system",
+        "Mod support through Steam Workshop",
+        "Cross-platform multiplayer",
+        "Persistent world saves",
+        "Customizable world generation"
+    ],
+    "setup_requirements": [
+        "Steam account",
+        "Don't Starve Together game ownership (for mods)",
+        "Klei Entertainment account for server token",
+        "Port forwarding capability for external access"
+    ],
+    "server_configuration": {
+        "world_types": ["Master", "Caves"],
+        "default_max_players": 6,
+        "save_slots": 5,
+        "auto_save_interval": 600,
+        "supports_mods": true,
+        "supports_password": true,
+        "supports_whitelist": true
+    }
+}
