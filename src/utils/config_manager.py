@@ -452,6 +452,44 @@ class ServerConfigManager:
             'max_players': 32
         }
 
+    def get_default_rust_config(self) -> Dict[str, Any]:
+        """
+        Get default configuration for Rust server setup.
+        
+        Returns a dictionary containing default Rust server settings with
+        sensible defaults for a Rust server setup. These defaults are used when:
+        - No previous configuration exists for the user
+        - The configuration file is corrupted or missing
+        - User explicitly requests to reset to defaults
+        
+        Configuration includes server name, connection settings, gameplay options,
+        and system configuration preferences that work well for most users.
+        
+        Returns:
+            Dict[str, Any]: Dictionary containing default Rust server configuration
+                          with keys for server_name, password, port, world_size,
+                          max_players, server_description, pve_mode, configure_firewall,
+                          enable_upnp, and save_interval
+                          
+        Example:
+            config = manager.get_default_rust_config()
+            config['max_players'] = 100  # Large server
+            config['pve_mode'] = True     # PvE only server
+            manager.save_server_config('Rust', config)
+        """
+        return {
+            'server_name': 'Rust Server',
+            'password': 'rust123',
+            'port': 28015,
+            'world_size': 3000,
+            'max_players': 50,
+            'server_description': 'A friendly Rust server',
+            'pve_mode': False,
+            'configure_firewall': True,
+            'enable_upnp': True,
+            'save_interval': 300
+        }
+
 
 # Global instance for easy access throughout the application
 # This singleton pattern ensures consistent configuration access across all modules

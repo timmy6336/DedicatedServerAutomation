@@ -798,6 +798,9 @@ pause >nul
                 executable_name = 'valheim_server.exe'
             else:
                 executable_name = 'valheim_server.sh'
+        elif game_name_lower == 'rust':
+            server_dir = os.path.join(base_dir, 'Rust Dedicated Server')
+            executable_name = f'RustDedicated{exe_extension}'
         else:
             # Generic fallback
             server_dir = os.path.join(base_dir, f'{game_name} Dedicated Server')
@@ -953,4 +956,12 @@ class GameConfig:
         'default_port': 2456,
         'executable_name': 'valheim_server.exe' if platform.system().lower() == 'windows' else 'valheim_server.sh',
         'server_dir_name': 'Valheim dedicated server'
+    }
+    
+    RUST = {
+        'app_id': '258550',
+        'name': 'Rust',
+        'default_port': 28015,
+        'executable_name': 'RustDedicated.exe' if platform.system().lower() == 'windows' else 'RustDedicated',
+        'server_dir_name': 'rust_dedicated_server'
     }

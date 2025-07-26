@@ -54,59 +54,51 @@ class PalworldServerSetupWindow(BaseServerSetupWindow):
         """Define the setup steps for Palworld"""
         return [
             {
-            'name': '🛠️ Install SteamCMD',
-            'description': (
-                "<b>SteamCMD</b> is required to download and manage Steam-based game servers.<br>"
-                "This step will download and install SteamCMD if it is not already present on your system."
-            ),
-            'function': download_steamcmd,
-            'requires_confirmation': True,
-            'confirmation_text': (
-                "<b>This will download and install SteamCMD.</b><br>"
-                "Do you want to proceed?"
-            )
+                'name': 'Install SteamCMD',
+                'description': 'SteamCMD is required to download and manage Steam-based game servers. This step will download and install SteamCMD if it is not already present on your system.',
+                'function': download_steamcmd,
+                'requires_confirmation': True,
+                'confirmation_text': 'This will download and install SteamCMD. Do you want to proceed?'
             },
             {
-            'name': 'Install Palworld Server',
-            'description': (
-                "<b>⬇️ Download and install the Palworld Dedicated Server files from Steam.</b><br><br>"
-                "<u>🌍 About Palworld:</u><br>"
-                "Palworld is a creature-collecting survival game where players catch, train, and battle mysterious creatures called 'Pals' while building bases, crafting items, and exploring an open world. Features both cooperative and competitive multiplayer gameplay with up to 32 players.<br><br>"
-                "<u>🖥️ System Requirements for Dedicated Server:</u><br>"
-                "<b>Minimum Requirements:</b><br>"
-                "&bull; 🧠 RAM: 8GB (for 4-8 players)<br>"
-                "&bull; 🖥️ CPU: 4-core 2.5GHz (Intel i5-4430 / AMD FX-6300)<br>"
-                "&bull; 🎮 GPU: Not required (headless server)<br>"
-                "&bull; 💾 Storage: 8GB available space<br>"
-                "&bull; 🌐 Network: Broadband connection<br><br>"
-                "<b>Recommended for 32 Players:</b><br>"
-                "&bull; 🧠 RAM: 16-32GB dedicated to server<br>"
-                "&bull; 🖥️ CPU: 8-core 3.5GHz+ (Intel i7-9700K / AMD Ryzen 7 3700X)<br>"
-                "&bull; 🎮 GPU: Not required (dedicated server runs headless)<br>"
-                "&bull; 💾 Storage: 20GB+ SSD for world saves and Pal data<br>"
-                "&bull; 🚀 Upload Speed: 20+ Mbps for large multiplayer sessions<br><br>"
-                "<u>📦 Download Details:</u><br>"
-                "&bull; 📁 Size: ~4-6GB server files<br>"
-                "&bull; 💾 World Save Size: 500MB-2GB (grows with bases and Pals)<br>"
-                "&bull; 👥 Supports: Up to 32 concurrent players<br>"
-                "&bull; 🏗️ Features: Pal catching, base building, crafting, multiplayer raids<br><br>"
-                "<i>⚠️ Performance Note: Palworld servers are resource-intensive due to AI Pal management and complex base systems. More RAM is strongly recommended for stable performance.</i>"
-            ),
-            'function': install_or_update_palworld_server,
-            'requires_confirmation': True,
-            'confirmation_text': (
-                "<b>This will download the Palworld server files (several GB).</b><br>"
-                "Do you want to proceed?"
-            )
+                'name': 'Install Palworld Server',
+                'description': '''Download and install the Palworld Dedicated Server files from Steam.
+
+<b>🎮 About Palworld:</b><br>
+Palworld is a creature-collecting survival game where players catch, train, and battle mysterious creatures called "Pals" while building bases, crafting items, and exploring an open world. Features both cooperative and competitive multiplayer gameplay with up to 32 players.
+
+<b>📊 System Requirements for Dedicated Server:</b><br>
+<u>Minimum Requirements:</u><br>
+• <b>RAM:</b> 8GB (for 4-8 players)<br>
+• <b>CPU:</b> 4-core 2.5GHz (Intel i5-4430 / AMD FX-6300)<br>
+• <b>GPU:</b> Not required (headless server)<br>
+• <b>Storage:</b> 8GB available space<br>
+• <b>Network:</b> Broadband connection<br>
+
+<u>Recommended for 32 Players:</u><br>
+• <b>RAM:</b> 16-32GB dedicated to server<br>
+• <b>CPU:</b> 8-core 3.5GHz+ (Intel i7-9700K / AMD Ryzen 7 3700X)<br>
+• <b>GPU:</b> Not required (dedicated server runs headless)<br>
+• <b>Storage:</b> 20GB+ SSD for world saves and Pal data<br>
+• <b>Upload Speed:</b> 20+ Mbps for large multiplayer sessions<br>
+
+<b>📦 Download Details:</b><br>
+• <b>Size:</b> ~4-6GB server files<br>
+• <b>World Save Size:</b> 500MB-2GB (grows with bases and Pals)<br>
+• <b>Supports:</b> Up to 32 concurrent players<br>
+• <b>Features:</b> Pal catching, base building, crafting, multiplayer raids<br>
+
+<b>⚠️ Performance Note:</b> Palworld servers are resource-intensive due to AI Pal management and complex base systems. More RAM is strongly recommended for stable performance.''',
+                'function': install_or_update_palworld_server,
+                'requires_confirmation': True,
+                'confirmation_text': 'This will download the Palworld server files (several GB). Do you want to proceed?'
             },
             {
-            'name': 'Configure & Launch Server',
-            'description': (
-                "<b>Configure final server settings including port forwarding and start the Palworld dedicated server.</b>"
-            ),
-            'function': self.configure_and_launch_server,
-            'requires_confirmation': False,
-            'confirmation_text': None
+                'name': 'Configure & Launch Server',
+                'description': 'Configure final server settings including port forwarding and start the Palworld dedicated server.',
+                'function': self.configure_and_launch_server,
+                'requires_confirmation': False,  # We'll handle confirmation in the final step
+                'confirmation_text': None
             }
         ]
     

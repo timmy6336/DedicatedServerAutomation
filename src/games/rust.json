@@ -1,0 +1,212 @@
+{
+    "name": "Rust",
+    "display_name": "Rust",
+    "description": "Rust is a multiplayer survival game where players must work together or against each other to survive in a harsh open world. Build bases, gather resources, craft weapons, and defend against both wildlife and other players in this unforgiving environment.",
+    "image": "images/rust_image.jpg",
+    "developer": "Facepunch Studios",
+    "publisher": "Facepunch Studios",
+    "release_date": "2018-02-08",
+    "genre": "Survival, Action, Adventure, Multiplayer, Indie",
+    "platforms": ["Windows", "Mac", "Linux"],
+    "multiplayer": {
+        "min_players": 1,
+        "max_players": 300,
+        "cooperative": true,
+        "competitive": true
+    },
+    "server_info": {
+        "app_id": "258550",
+        "executable": "RustDedicated.exe",
+        "default_port": 28015,
+        "additional_ports": [28016, 28082],
+        "protocol": "UDP",
+        "steam_required": true,
+        "difficulty": "Hard"
+    },
+    "system_requirements": {
+        "minimum": {
+            "os": "Windows 10 64bit",
+            "processor": "Intel Core i7-3770 / AMD FX-9590 or better",
+            "memory": "10 GB RAM",
+            "graphics": "GTX 670 2GB / AMD R9 280 better",
+            "directx": "Version 11",
+            "storage": "25 GB available space",
+            "network": "Broadband Internet connection"
+        },
+        "recommended": {
+            "os": "Windows 10 64bit",
+            "processor": "Intel Core i7-4690K / AMD Ryzen 5 1600",
+            "memory": "16 GB RAM",
+            "graphics": "GTX 980 / AMD R9 Fury",
+            "directx": "Version 12",
+            "storage": "25 GB available space (SSD recommended)",
+            "network": "Broadband Internet connection"
+        }
+    },
+    "features": [
+        "Intense PvP survival gameplay",
+        "Large-scale multiplayer up to 300 players",
+        "Base building and fortification systems",
+        "Resource gathering and crafting",
+        "Weapon and tool crafting systems",
+        "Clan and team mechanics",
+        "Regular content updates and wipes",
+        "Modding support through Oxide/uMod",
+        "Administrative tools and commands",
+        "Custom map support"
+    ],
+    "server_features": {
+        "world_persistence": "Configurable wipe cycles",
+        "automatic_backups": "Manual and scheduled saves",
+        "world_size": "Configurable map size (1000-4000)",
+        "save_frequency": "Auto-save every 600 seconds",
+        "player_progression": "Persistent until wipe",
+        "password_protection": "Server password support",
+        "admin_commands": "Full F1 console access",
+        "clan_system": "Team system built-in",
+        "pvp_support": "Full PvP by default",
+        "modding_support": "Oxide/uMod plugin system"
+    },
+    "installation_notes": [
+        "Server requires SteamCMD for installation and updates",
+        "Rust servers support up to 300 concurrent players",
+        "Server creates world and player data based on seed and size",
+        "Regular wipes are common practice for server health",
+        "Map generation is procedural based on world size and seed",
+        "Oxide/uMod framework recommended for plugins and administration",
+        "Server requires significant RAM and CPU for large player counts"
+    ],
+    "configuration_files": [
+        "server.cfg",
+        "users.cfg",
+        "bans.cfg",
+        "oxide/config/Oxide.json"
+    ],
+    "ports_info": {
+        "game_port": {
+            "port": 28015,
+            "protocol": "UDP",
+            "description": "Main game connection port"
+        },
+        "query_port": {
+            "port": 28016,
+            "protocol": "UDP", 
+            "description": "Steam query port for server browser"
+        },
+        "rcon_port": {
+            "port": 28016,
+            "protocol": "TCP",
+            "description": "RCON remote console port"
+        },
+        "app_port": {
+            "port": 28082,
+            "protocol": "TCP",
+            "description": "Rust+ companion app port"
+        }
+    },
+    "server_settings": {
+        "hostname": {
+            "default": "My Rust Server",
+            "description": "Server name displayed in browser"
+        },
+        "maxplayers": {
+            "default": 100,
+            "range": [1, 300],
+            "description": "Maximum number of players"
+        },
+        "worldsize": {
+            "default": 3000,
+            "options": [1000, 2000, 3000, 4000],
+            "description": "World generation size"
+        },
+        "seed": {
+            "default": 12345,
+            "range": [1, 2147483647],
+            "description": "World generation seed"
+        },
+        "saveinterval": {
+            "default": 600,
+            "range": [60, 3600],
+            "description": "Auto-save interval in seconds"
+        },
+        "tickrate": {
+            "default": 30,
+            "options": [20, 30, 60],
+            "description": "Server tick rate (affects performance)"
+        },
+        "stability": {
+            "default": true,
+            "description": "Enable building stability system"
+        },
+        "radiation": {
+            "default": true,
+            "description": "Enable radiation in monuments"
+        },
+        "pve": {
+            "default": false,
+            "description": "Enable PvE mode (no player damage)"
+        },
+        "secure": {
+            "default": true,
+            "description": "Enable VAC protection"
+        }
+    },
+    "common_issues": [
+        {
+            "issue": "Server not appearing in browser",
+            "solution": "Check port forwarding for 28015-28016 and Steam query port configuration"
+        },
+        {
+            "issue": "High memory usage or crashes",
+            "solution": "Rust requires significant RAM, ensure 8GB+ available and consider reducing max players"
+        },
+        {
+            "issue": "Long loading times",
+            "solution": "Use SSD storage and ensure good CPU performance for map generation"
+        },
+        {
+            "issue": "Players getting kicked frequently",
+            "solution": "Check anti-cheat settings, server performance, and network stability"
+        },
+        {
+            "issue": "Lag or rubber-banding",
+            "solution": "Reduce tick rate, lower max players, or upgrade server hardware"
+        },
+        {
+            "issue": "Map generation fails",
+            "solution": "Verify world size and seed values, ensure sufficient disk space"
+        },
+        {
+            "issue": "Oxide plugins not loading",
+            "solution": "Install latest Oxide framework and check plugin compatibility"
+        }
+    ],
+    "backup_locations": [
+        "server/{identity}/",
+        "oxide/config/",
+        "oxide/data/",
+        "cfg/"
+    ],
+    "helpful_links": [
+        {
+            "title": "Official Rust Server Setup Guide",
+            "url": "https://developer.valvesoftware.com/wiki/Rust_Dedicated_Server"
+        },
+        {
+            "title": "Rust Server Commands Reference",
+            "url": "https://www.corrosionhour.com/rust-admin-commands/"
+        },
+        {
+            "title": "Oxide Mod Framework",
+            "url": "https://umod.org/"
+        },
+        {
+            "title": "Rust Server Configuration Guide",
+            "url": "https://rust.fandom.com/wiki/Server_Configuration"
+        },
+        {
+            "title": "Rust Server Performance Optimization",
+            "url": "https://www.battlemetrics.com/guides/rust-server-optimization"
+        }
+    ]
+}
