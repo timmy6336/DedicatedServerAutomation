@@ -98,6 +98,18 @@ import socket
 import re
 from typing import Callable, Optional, Tuple, Union
 
+# Import enhanced logging
+try:
+    from .logging_utils import get_logger
+    # Initialize logger for utilities
+    utils_logger = get_logger("Server_Utils")
+except ImportError:
+    # Fallback if logging utils not available
+    import logging
+    utils_logger = logging.getLogger("Server_Utils")
+    utils_logger.addHandler(logging.StreamHandler())
+    utils_logger.setLevel(logging.INFO)
+
 
 class SteamCMDUtils:
     """
@@ -302,6 +314,10 @@ class SteamCMDUtils:
         Returns:
             bool: True if successful, False otherwise
         """
+        utils_logger.info(f"Starting server installation - App ID: {app_id}")
+        utils_logger.info(f"Target directory: {server_dir}")
+        utils_logger.info(f"Expected executable: {server_executable_name}")
+        
         if progress_callback:
             progress_callback(STEAMCMD_INITIAL_SETUP)
         if status_callback:

@@ -39,6 +39,10 @@ from utils.server_startup_script_utils import (
     ServerUtils, 
     GameConfig
 )
+from utils.logging_utils import get_logger, OperationTimer
+
+# Initialize enhanced logging for DST operations
+logger = get_logger("DST_Server")
 
 # DST-specific configuration
 DST_CONFIG = {
@@ -61,192 +65,130 @@ def download_steamcmd():
     """Download and install SteamCMD if not already present"""
     return SteamCMDUtils.download_steamcmd()
 
+def _check_system_requirements():
+    """Check and log system requirements for DST server"""
+    try:
+        import psutil
+        
+        # Check available disk space
+        if os.path.exists(os.path.dirname(SERVER_DIR)):
+            usage = psutil.disk_usage(os.path.dirname(SERVER_DIR))
+            free_gb = usage.free / (1024**3)
+            
+            logger.info(f"Available disk space: {free_gb:.2f} GB")
+            
+            if free_gb < 5.0:  # DST needs ~4GB + buffer
+                logger.warning(f"⚠️ Low disk space warning: Only {free_gb:.2f} GB free (minimum 5GB recommended)")
+                if free_gb < 2.0:
+                    logger.error(f"❌ Insufficient disk space: {free_gb:.2f} GB free (minimum 2GB required)")
+                    raise Exception(f"Insufficient disk space: {free_gb:.2f} GB available, minimum 2GB required")
+        
+        # Check memory
+        memory = psutil.virtual_memory()
+        available_gb = memory.available / (1024**3)
+        logger.info(f"Available memory: {available_gb:.2f} GB")
+        
+        if available_gb < 1.0:
+            logger.warning(f"⚠️ Low memory warning: Only {available_gb:.2f} GB available")
+            
+        logger.info("✅ System requirements check passed")
+        
+    except Exception as e:
+        logger.error(f"System requirements check failed: {str(e)}")
+        raise
+
 def install_or_update_dst_server():
     """Install or update the Don't Starve Together dedicated server with file injection"""
-    try:
-        print("🔄 Installing Don't Starve Together Dedicated Server...")
-        
-        # Method 1: Try SteamCMD installation with file injection
-        print("🧬 Attempting SteamCMD installation with file injection...")
-        if install_dst_with_file_injection():
-            return True
-        else:
-            print("❌ All installation methods failed")
-            return False
+    with OperationTimer(logger, "DST Server Installation"):
+        try:
+            logger.info("🔄 Installing Don't Starve Together Dedicated Server...")
             
-    except Exception as e:
-        print(f"❌ Error during DST server installation: {str(e)}")
-        return False
+            # Log system requirements check
+            logger.info("Checking system requirements...")
+            _check_system_requirements()
+            
+            # Log network connectivity
+            logger.log_network_diagnostics()
+            
+            # Method 1: Try SteamCMD installation with file injection
+            logger.info("🧬 Attempting SteamCMD installation with file injection...")
+            
+            context = {
+                "installation_method": "SteamCMD with file injection",
+                "app_id": DST_CONFIG['app_id'],
+                "server_directory": SERVER_DIR,
+                "executable": DST_CONFIG['executable']
+            }
 
-def install_dst_with_file_injection():
-    """Install DST server with automatic file injection for missing components"""
-    try:
-        print("🔄 Installing DST with enhanced file support...")
-        
-        # Try SteamCMD installation first
-        if not SteamCMDUtils.install_or_update_server(DST_APPID, SERVER_DIR, EXECUTABLE_NAME):
-            print("❌ SteamCMD installation failed")
-            return False
-            
-        # Validate installation and inject missing files if needed
-        if not validate_and_repair_dst_installation():
-            print("❌ Installation validation and repair failed")
-            return False
-            
-        print("✅ DST server installation completed with file injection!")
-        return True
-        
-    except Exception as e:
-        print(f"❌ Error during DST installation: {str(e)}")
-        return False
-
-def validate_and_repair_dst_installation():
-    """Validate DST installation and inject missing files from bundled resources"""
-    try:
-        print("🔍 Validating DST installation...")
-        
-        # Check basic structure
-        if not check_server_structure():
-            return False
-            
-        # Check for critical files and inject if missing
-        return True
-        return inject_missing_files()
-        
-    except Exception as e:
-        print(f"❌ Error during validation and repair: {str(e)}")
-        return False
-
-def inject_missing_files():
-    """Inject missing DST files from bundled resources"""
-    try:
-        bundled_dir = os.path.join(os.path.dirname(__file__), '..', 'bundled_files', 'dst_core')
-        
-        if not os.path.exists(bundled_dir):
-            print("❌ Bundled DST files not found in application")
-            return False
-            
-        server_data_dir = os.path.join(SERVER_DIR, 'data')
-        os.makedirs(server_data_dir, exist_ok=True)
-        
-        # Essential files to check and inject
-        critical_files = [
-            'scripts/main.lua',
-            'scripts/constants.lua',
-            'scripts/class.lua',
-            'scripts/vector3.lua',
-            'scripts/util.lua',
-            'scripts/mathutil.lua',
-            'scripts/debugprint.lua',
-            'scripts/gamelogic.lua',
-            'scripts/networking.lua',
-            'scripts/simutil.lua'
-        ]
-        
-        injected_count = 0
-        
-        for file_path in critical_files:
-            server_file = os.path.join(server_data_dir, file_path)
-            bundled_file = os.path.join(bundled_dir, file_path)
-            
-            # Check if file exists and is valid
-            file_missing = not os.path.exists(server_file)
-            file_empty = os.path.exists(server_file) and os.path.getsize(server_file) == 0
-            
-            if (file_missing or file_empty) and os.path.exists(bundled_file):
-                print(f"💉 Injecting missing file: {file_path}")
-                
-                # Create directory if needed
-                os.makedirs(os.path.dirname(server_file), exist_ok=True)
-                
-                # Copy bundled file
-                shutil.copy2(bundled_file, server_file)
-                injected_count += 1
-                
-        if injected_count > 0:
-            print(f"✅ Injected {injected_count} missing files")
-        else:
-            print("✅ No file injection needed - all files present")
-            
-        # Final validation
-        return validate_dst_installation()
-        
-    except Exception as e:
-        print(f"❌ Error during file injection: {str(e)}")
-        return False
-
-def validate_dst_installation():
-    """Validate that the DST installation has all required files"""
-    try:
-        exe_path = os.path.join(SERVER_DIR, 'bin', EXECUTABLE_NAME)
-        scripts_path = os.path.join(SERVER_DIR, 'data', 'scripts', 'main.lua')
-        
-        if not os.path.exists(exe_path):
-            print(f"❌ Server executable not found: {exe_path}")
-            return False
-            
-        if not os.path.exists(scripts_path):
-            print(f"❌ Main Lua script not found: {scripts_path}")
-            return False
-            
-        print("✅ All required DST files found")
-        return True
-        
-    except Exception as e:
-        print(f"❌ Error validating DST installation: {str(e)}")
-        return False
-
-def find_steam_dst_installation():
-    """Find existing Steam DST installation with expanded search"""
-    print("🔍 Searching for Steam DST installation...")
-    
-    # Common Steam installation paths (using proper Windows path handling)
-    steam_paths = [
-        # User Steam directory
-        os.path.join(os.path.expanduser("~"), "Steam", "steamapps", "common", DST_STEAM_DIR_NAME),
-        # Alternative user Steam locations
-        os.path.join("C:", "Users", os.environ.get("USERNAME", ""), "Steam", "steamapps", "common", DST_STEAM_DIR_NAME),
-        os.path.join("D:", "Steam", "steamapps", "common", DST_STEAM_DIR_NAME),
-        os.path.join("E:", "Steam", "steamapps", "common", DST_STEAM_DIR_NAME),
-        # Program Files locations
-        f"C:\\Program Files (x86)\\Steam\\steamapps\\common\\{DST_STEAM_DIR_NAME}",
-        f"C:\\Program Files\\Steam\\steamapps\\common\\{DST_STEAM_DIR_NAME}",
-        f"D:\\Program Files (x86)\\Steam\\steamapps\\common\\{DST_STEAM_DIR_NAME}",
-        f"D:\\Program Files\\Steam\\steamapps\\common\\{DST_STEAM_DIR_NAME}",
-        # Steam library folders (common alternative locations)
-        f"C:\\SteamLibrary\\steamapps\\common\\{DST_STEAM_DIR_NAME}",
-        f"D:\\SteamLibrary\\steamapps\\common\\{DST_STEAM_DIR_NAME}",
-        f"E:\\SteamLibrary\\steamapps\\common\\{DST_STEAM_DIR_NAME}",
-    ]
-    
-    for path in steam_paths:
-        print(f"Checking: {path}")
-        if os.path.exists(path):
-            exe_path = os.path.join(path, 'bin', EXECUTABLE_NAME)
-            if os.path.exists(exe_path):
-                print(f"✅ Found Steam DST installation: {path}")
-                return path
+            if install_dst_server():
+                logger.log_operation_success("DST Installation", details=context)
+                return True
             else:
-                print(f"❌ Directory exists but no executable found: {exe_path}")
-        else:
-            print(f"❌ Path does not exist: {path}")
-    
-    print("❌ No Steam DST installation found in any common location")
-    return None
+                logger.error("❌ All installation methods failed")
+                logger.error("Installation context:")
+                for key, value in context.items():
+                    logger.error(f"  {key}: {value}")
+                return False
+                
+        except Exception as e:
+            context = {
+                "installation_method": "SteamCMD with file injection",
+                "app_id": DST_CONFIG['app_id'],
+                "server_directory": SERVER_DIR,
+                "executable": DST_CONFIG['executable'],
+                "python_version": sys.version,
+                "working_directory": os.getcwd()
+            }
+            logger.log_operation_failure("DST Server Installation", e, context=context)
+            return False
 
-def show_manual_installation_instructions():
-    """Show manual installation instructions to user"""
-    print("\n❌ No Steam DST installation found!")
-    print("\n📋 Manual Installation Instructions:")
-    print("1. Open Steam client")
-    print("2. Go to Library > Tools")
-    print("3. Install 'Don't Starve Together Dedicated Server'")
-    print("4. Run this setup again")
-    print("\nAlternatively, you can:")
-    print("1. Install DST normally through Steam")
-    print("2. In Steam, right-click Don't Starve Together")
-    print("3. Properties > DLC > Check 'Don't Starve Together Dedicated Server'")
-    print("4. Let it download, then run this setup again")
+def install_dst_server():
+    """Install DST server with automatic file injection for missing components"""
+    with OperationTimer(logger, "DST Installation with File Injection"):
+        try:
+            logger.info("🔄 Installing DST with enhanced file support...")
+            
+            # Log pre-installation state
+            logger.info(f"Target server directory: {SERVER_DIR}")
+            logger.info(f"Target executable: {EXECUTABLE_NAME}")
+            logger.info(f"DST App ID: {DST_APPID}")
+            
+            # Check if server directory already exists
+            if os.path.exists(SERVER_DIR):
+                logger.info(f"Server directory already exists: {SERVER_DIR}")
+                existing_files = len(list(Path(SERVER_DIR).rglob('*')))
+                logger.info(f"Existing files in server directory: {existing_files}")
+            else:
+                logger.info("Server directory does not exist - will be created")
+            
+            # Try SteamCMD installation first
+            logger.info("Attempting SteamCMD installation...")
+            steamcmd_success = SteamCMDUtils.install_or_update_server(DST_APPID, SERVER_DIR, EXECUTABLE_NAME)
+            
+            if not steamcmd_success:
+                logger.error("❌ SteamCMD installation failed")
+                logger.error("Checking if SteamCMD is accessible...")
+                
+                # Additional diagnostics
+                steamcmd_path = SteamCMDUtils._get_steamcmd_path()
+                logger.error(f"SteamCMD path: {steamcmd_path}")
+                logger.error(f"SteamCMD exists: {os.path.exists(steamcmd_path) if steamcmd_path else 'Path not found'}")
+                
+                return False
+            
+            logger.info("✅ DST server installation completed!")
+            return True
+            
+        except Exception as e:
+            context = {
+                "target_directory": SERVER_DIR,
+                "executable_name": EXECUTABLE_NAME,
+                "app_id": DST_APPID,
+                "steamcmd_available": hasattr(SteamCMDUtils, '_get_steamcmd_path'),
+                "server_dir_exists": os.path.exists(SERVER_DIR) if SERVER_DIR else False
+            }
+            logger.log_operation_failure("DST Installation with File Injection", e, context=context)
+            return False
 
 def validate_server_token(token):
     """Validate the server token format"""
@@ -400,12 +342,7 @@ def setup_upnp_port_forwarding():
 def start_dst_server(enable_caves=True):
     """Start the Don't Starve Together dedicated server with diagnostics"""
     try:
-        # Run diagnostics before starting
-        print("🔍 Running pre-startup diagnostics...")
-        if not diagnose_and_fix_dst_server():
-            print("❌ Pre-startup diagnostics failed. Please fix issues before starting.")
-            return False
-            
+        print("🚀 Starting Don't Starve Together dedicated server...")
         server_exe = os.path.join(SERVER_DIR, 'bin', EXECUTABLE_NAME)
         config_path = get_dst_config_path()
         
@@ -522,117 +459,6 @@ def remove_dst_port_forwarding():
     
     return success
 
-def diagnose_and_fix_dst_server():
-    """Diagnose and attempt to fix common DST server issues"""
-    try:
-        print("\n🔍 Running DST Server Diagnostics...")
-        
-        if not check_server_structure():
-            return False
-            
-        if not check_data_files():
-            return attempt_data_repair()
-            
-        print("✅ DST server diagnostics completed!")
-        return True
-        
-    except Exception as e:
-        print(f"❌ Error during diagnostics: {str(e)}")
-        return False
-
-def check_server_structure():
-    """Check basic server directory structure"""
-    if not os.path.exists(SERVER_DIR):
-        print("❌ Server directory not found")
-        return False
-        
-    exe_path = os.path.join(SERVER_DIR, 'bin', EXECUTABLE_NAME)
-    if not os.path.exists(exe_path):
-        print(f"❌ Server executable not found: {exe_path}")
-        return False
-    else:
-        print(f"✅ Server executable found: {exe_path}")
-        
-    return True
-
-def check_data_files():
-    """Check for essential data files and scripts"""
-    data_dir = os.path.join(SERVER_DIR, 'data')
-    scripts_dir = os.path.join(data_dir, 'scripts')
-    main_lua = os.path.join(scripts_dir, 'main.lua')
-    
-    if not os.path.exists(data_dir):
-        print(f"❌ Data directory not found: {data_dir}")
-        return False
-    print(f"✅ Data directory found: {data_dir}")
-        
-    if not os.path.exists(scripts_dir):
-        print(f"❌ Scripts directory not found: {scripts_dir}")
-        return False
-    print(f"✅ Scripts directory found: {scripts_dir}")
-        
-    if not os.path.exists(main_lua):
-        print(f"❌ Main Lua script not found: {main_lua}")
-        return False
-    print(f"✅ Main Lua script found: {main_lua}")
-        
-    # Check file readability
-    try:
-        with open(main_lua, 'r') as f:
-            content = f.read(100)
-            if not content.strip():
-                print("❌ Main Lua script is empty")
-                return False
-            print("✅ Main Lua script is readable and has content")
-    except Exception as e:
-        print(f"❌ Cannot read main Lua script: {e}")
-        return False
-        
-    return True
-
-def attempt_data_repair():
-    """Attempt to repair missing DST data files"""
-    try:
-        print("\n🔧 Attempting to repair DST server data...")
-        
-        # Try to find data files in Steam installation (using proper Windows paths)
-        steam_paths = [
-            os.path.join(os.path.expanduser("~"), "Steam", "steamapps", "common", DST_STEAM_DIR_NAME),
-            f"C:\\Program Files (x86)\\Steam\\steamapps\\common\\{DST_STEAM_DIR_NAME}",
-            f"C:\\Program Files\\Steam\\steamapps\\common\\{DST_STEAM_DIR_NAME}"
-        ]
-        
-        for steam_path in steam_paths:
-            steam_data = os.path.join(steam_path, 'data')
-            if os.path.exists(steam_data):
-                print(f"✅ Found Steam data directory: {steam_data}")
-                
-                # Copy missing data files
-                server_data = os.path.join(SERVER_DIR, 'data')
-                if not os.path.exists(server_data):
-                    print("📁 Copying data directory from Steam installation...")
-                    shutil.copytree(steam_data, server_data)
-                    return True
-                else:
-                    # Copy specific missing files
-                    steam_scripts = os.path.join(steam_data, 'scripts')
-                    server_scripts = os.path.join(server_data, 'scripts')
-                    
-                    if not os.path.exists(server_scripts) and os.path.exists(steam_scripts):
-                        print("📁 Copying scripts directory from Steam installation...")
-                        shutil.copytree(steam_scripts, server_scripts)
-                        return True
-                        
-        print("❌ Could not find Steam data files to repair with")
-        print("\n💡 Suggested fix:")
-        print("1. Reinstall DST Dedicated Server through Steam")
-        print("2. Verify game files integrity in Steam")
-        print("3. Run this setup again")
-        return False
-        
-    except Exception as e:
-        print(f"❌ Error during data repair: {str(e)}")
-        return False
 
 def main():
     """Main function for standalone execution"""

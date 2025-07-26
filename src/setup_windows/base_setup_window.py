@@ -13,6 +13,7 @@ Key Features:
 - Automatic success window auto-close functionality
 - Real-time progress and status updates during installation
 - Comprehensive error handling and user feedback
+- Enhanced logging for troubleshooting installation issues
 - Support for game-specific customization through inheritance
 
 Architecture:
@@ -20,6 +21,7 @@ Architecture:
 - InstallationWorker: Background thread for non-blocking operations
 - Step-based progression system with customizable steps per game
 - Extensible design allowing game-specific UI elements and behaviors
+- Enhanced logging and error diagnostics
 
 Threading Model:
 - Main thread handles all UI updates and user interactions
@@ -83,6 +85,19 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QLabel, QPushButton, QProgres
 from PyQt5.QtGui import QFont, QPixmap, QKeySequence
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QTimer
 from PyQt5.QtWidgets import QShortcut
+
+# Import enhanced logging
+try:
+    from utils.logging_utils import get_logger, OperationTimer
+    # Initialize logger for setup window operations
+    setup_logger = get_logger("Setup_Window")
+except ImportError:
+    # Fallback if logging utils not available
+    import logging
+    setup_logger = logging.getLogger("Setup_Window")
+    setup_logger.addHandler(logging.StreamHandler())
+    setup_logger.setLevel(logging.INFO)
+
 from styles import (
     MAIN_WINDOW_STYLE, 
     BUTTON_STYLE,
@@ -95,6 +110,7 @@ class InstallationWorker(QThread):
     progress_updated = pyqtSignal(int)  # Progress percentage
     status_updated = pyqtSignal(str)    # Status message
     finished = pyqtSignal(bool)         # Success/failure
+    error_details = pyqtSignal(str)     # Detailed error information
     
     def __init__(self, task_callback, task_name):
         super().__init__()
@@ -102,32 +118,88 @@ class InstallationWorker(QThread):
         self.task_name = task_name
     
     def run(self):
+        setup_logger.info(f"Starting installation worker for: {self.task_name}")
+        
         try:
+            # Log task details
+            setup_logger.info(f"Task callback: {self.task_callback.__name__ if hasattr(self.task_callback, '__name__') else str(self.task_callback)}")
+            setup_logger.info(f"Task module: {getattr(self.task_callback, '__module__', 'Unknown')}")
+            
             # Create callback functions that emit signals
             def progress_callback(percent):
+                setup_logger.debug(f"Progress update: {percent}%")
                 self.progress_updated.emit(percent)
             
             def status_callback(message):
+                setup_logger.info(f"Status update: {message}")
                 self.status_updated.emit(message)
             
             # Try calling with callbacks first (new functions)
+            success = None
             try:
+                setup_logger.info("Attempting to call task with progress/status callbacks...")
                 success = self.task_callback(
                     progress_callback=progress_callback,
                     status_callback=status_callback
                 )
-            except TypeError:
+                setup_logger.info(f"Task completed with callbacks. Success: {success}")
+                
+            except TypeError as te:
                 # Fallback for functions that don't support callbacks (old functions)
+                setup_logger.info(f"Callback method failed ({te}), falling back to simple call...")
                 self.status_updated.emit(f"Starting {self.task_name}...")
                 self.progress_updated.emit(PROGRESS_START_PERCENT)
+                
                 success = self.task_callback()
+                setup_logger.info(f"Task completed without callbacks. Success: {success}")
+                
                 if success:
                     self.progress_updated.emit(PROGRESS_COMPLETE_PERCENT)
                     self.status_updated.emit(f"{self.task_name} completed successfully!")
             
+            # Validate the return value
+            if success is None:
+                setup_logger.error(f"Task '{self.task_name}' returned None instead of boolean")
+                error_msg = f"Task '{self.task_name}' returned None - this indicates an implementation error"
+                self.error_details.emit(error_msg)
+                self.status_updated.emit(f"{self.task_name} failed: Invalid return value")
+                self.finished.emit(False)
+                return
+            
+            if not isinstance(success, bool):
+                setup_logger.warning(f"Task '{self.task_name}' returned {type(success).__name__} instead of boolean: {success}")
+                # Convert to boolean
+                success = bool(success)
+            
+            setup_logger.info(f"Installation worker finished. Final result: {success}")
             self.finished.emit(success)
                 
         except Exception as e:
+            error_msg = f"Fatal error in installation worker for '{self.task_name}': {str(e)}"
+            setup_logger.error(error_msg)
+            
+            # Log full exception details
+            import traceback
+            full_traceback = traceback.format_exc()
+            setup_logger.error(f"Full traceback:\n{full_traceback}")
+            
+            # Emit detailed error information
+            detailed_error = f"""
+Installation Error Details:
+Task: {self.task_name}
+Error Type: {type(e).__name__}
+Error Message: {str(e)}
+
+Technical Details:
+- Task Function: {getattr(self.task_callback, '__name__', 'Unknown')}
+- Module: {getattr(self.task_callback, '__module__', 'Unknown')}
+- Thread: {self.currentThread().objectName() or 'Worker Thread'}
+
+Full Stack Trace:
+{full_traceback}
+            """.strip()
+            
+            self.error_details.emit(detailed_error)
             self.status_updated.emit(f"{self.task_name} failed: {str(e)}")
             self.finished.emit(False)
 
@@ -549,20 +621,46 @@ class BaseServerSetupWindow(QWidget):
                 self.on_step_finished(False)
         else:
             # Start the installation worker for non-interactive steps
+            setup_logger.info(f"Starting worker for step: {step['name']}")
             self.worker = InstallationWorker(step['function'], step['name'])
             self.worker.progress_updated.connect(self.progress_bar.setValue)
             self.worker.status_updated.connect(self.log_message)
             self.worker.finished.connect(self.on_step_finished)
+            self.worker.error_details.connect(self.on_error_details)
             self.worker.start()
+    
+    def on_error_details(self, error_details):
+        """Handle detailed error information from worker"""
+        setup_logger.error(f"Received detailed error information:\n{error_details}")
+        
+        # Show detailed error in a dialog
+        error_dialog = QMessageBox(self)
+        error_dialog.setWindowTitle("Installation Error Details")
+        error_dialog.setIcon(QMessageBox.Critical)
+        error_dialog.setText("Installation failed with detailed error information:")
+        error_dialog.setDetailedText(error_details)
+        error_dialog.setStandardButtons(QMessageBox.Ok)
+        
+        # Make the dialog larger to show more details
+        error_dialog.resize(600, 400)
+        
+        # Log the error to both console and file
+        self.log_message("❌ Installation failed - click 'Show Details' for technical information")
+        
+        error_dialog.exec_()
     
     def on_step_finished(self, success):
         """Handle step completion"""
+        setup_logger.info(f"Step finished with result: {success}")
+        
         if success:
-            self.log_message("Step completed successfully!")
+            self.log_message("✅ Step completed successfully!")
+            setup_logger.info(f"Successfully completed step {self.current_step + 1}/{len(self.setup_steps)}")
             self.current_step += 1
             
             if self.current_step >= len(self.setup_steps):
                 # All steps done, show final options
+                setup_logger.info("All setup steps completed successfully")
                 self.show_final_step()
             else:
                 # Move to next step
@@ -571,9 +669,15 @@ class BaseServerSetupWindow(QWidget):
                 self.proceed_button.clicked.disconnect()
                 self.proceed_button.clicked.connect(self.go_to_next_step)
         else:
-            self.log_message("Step failed. Please check the logs.")
+            self.log_message("❌ Step failed. Check error details above or in logs.")
+            setup_logger.error(f"Step {self.current_step + 1} failed: {self.setup_steps[self.current_step]['name']}")
+            
+            # Add system state information to help with debugging
+            self.log_message(f"Failed step: {self.setup_steps[self.current_step]['name']}")
+            self.log_message(f"Step {self.current_step + 1} of {len(self.setup_steps)}")
+            
             self.close_button.setEnabled(True)
-            self.proceed_button.setText("Retry")
+            self.proceed_button.setText("Retry Step")
             self.proceed_button.setEnabled(True)
     
     def go_to_next_step(self):
