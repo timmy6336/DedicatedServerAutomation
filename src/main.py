@@ -1,55 +1,52 @@
 """
-Dedicated Server Automation Application
-Main entry point for the PyQt5-based GUI application that manages dedicated game servers.
+Entry point for the Dedicated Server Manager.
 
-This application provides a modern interface for:
-- Managing multiple game server installations
-- Automated server setup with progress tracking
-- Real-time server status monitoring
-- UPnP port forwarding configuration
-- Multi-platform support (Windows/Linux)
-
-Author: Dedicated Server Automation Team
-Version: 1.0
-License: MIT
+Run with:
+    python src/main.py
 """
 
 import sys
+import os
+
+# Ensure src/ is on the Python path so that `import core`, `import ui`,
+# `import server` all resolve correctly regardless of CWD.
+_SRC_DIR = os.path.dirname(os.path.abspath(__file__))
+if _SRC_DIR not in sys.path:
+    sys.path.insert(0, _SRC_DIR)
+
 from PyQt5.QtWidgets import QApplication
-from main_window import MainWindow
+from PyQt5.QtGui import QFont
+from PyQt5.QtCore import Qt
+
+# These MUST be set as class attributes before QApplication is instantiated.
+QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
+QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
+
+from ui.main_window import MainWindow
+from ui import theme
+from core.logging_utils import cleanup_old_logs
 
 
 def main():
-    """
-    Main application entry point.
-    
-    Initializes the PyQt5 application, creates the main window,
-    and starts the event loop.
-    
-    Returns:
-        int: Application exit code (0 for success, non-zero for error)
-    """
-    # Create the QApplication instance
-    # This is required for any PyQt5 GUI application
+    # Rotate old log files
+    try:
+        cleanup_old_logs()
+    except Exception:
+        pass
+
     app = QApplication(sys.argv)
-    
-    # Create and configure the main application window
+    app.setApplicationName("Dedicated Server Manager")
+    app.setApplicationVersion("2.0")
+
+    # Default font
+    font = QFont(theme.Fonts.FAMILY, theme.Fonts.SIZE_BASE)
+    app.setFont(font)
+
     window = MainWindow()
-    
-    # Display the window to the user
-    window.showMaximized()
-    
-    # Start the Qt event loop and wait for the application to exit
-    # exec_() blocks until the user closes the application
-    return app.exec_()
+    window.show()
+
+    sys.exit(app.exec_())
 
 
-if __name__ == '__main__':
-    """
-    Script entry point when run directly (not imported).
-    
-    Calls main() and exits with the returned exit code.
-    This allows the application to properly report success/failure
-    to the operating system.
-    """
-    sys.exit(main())
+if __name__ == "__main__":
+    main()

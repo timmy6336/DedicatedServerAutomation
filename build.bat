@@ -13,7 +13,12 @@ if exist "build" rmdir /s /q build
 
 REM Build the executable
 echo Running PyInstaller...
-pyinstaller --onefile --windowed --name=DedicatedServerAutomation --add-data="src/images;images" --add-data="src/static;static" --add-data="src/game_info.json;." --clean src/main.py
+pyinstaller --onefile --windowed --name=DedicatedServerAutomation ^
+    --add-data="src/images;images" ^
+    --add-data="src/games;games" ^
+    --add-data="src/assets;assets" ^
+    --icon="src/assets/app_icon.ico" ^
+    --clean src/main.py
 
 if exist "dist\DedicatedServerAutomation.exe" (
     echo.

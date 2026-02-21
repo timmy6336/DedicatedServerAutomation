@@ -17,32 +17,122 @@
     "server_info": {
         "app_id": "343050",
         "executable": "dontstarve_dedicated_server_nullrenderer.exe",
+        "executable_linux": "dontstarve_dedicated_server_nullrenderer",
+        "server_dir_name": "Dont Starve Together Dedicated Server",
+        "executable_subdir": "bin",
         "default_port": 11000,
-        "additional_ports": [11001, 27018, 27019, 8768, 8769],
         "protocol": "UDP",
-        "steam_required": true,
-        "difficulty": "Medium",
+        "launch_mode": "dst_dual_shard",
         "requires_token": true,
-        "token_url": "https://accounts.klei.com/account/game/servers?game=DontStarveTogether"
+        "token_url": "https://accounts.klei.com/account/game/servers?game=DontStarveTogether",
+        "process_names": [
+            "dontstarve_dedicated_server_nullrenderer.exe",
+            "dontstarve_dedicated_server_nullrenderer",
+            "dontstarve_dedicated_server.exe",
+            "dontstarve_dedicated_server"
+        ],
+        "launch_args": ""
     },
+    "ports": [
+        {"port": 11000, "protocol": "UDP", "description": "Master shard (overworld)"},
+        {"port": 11001, "protocol": "UDP", "description": "Caves shard"},
+        {"port": 27018, "protocol": "UDP", "description": "Steam auth (master)"},
+        {"port": 27019, "protocol": "UDP", "description": "Steam auth (caves)"}
+    ],
+    "server_settings": [
+        {
+            "key": "server_name",
+            "label": "Server Name",
+            "type": "string",
+            "default": "DST Server",
+            "required": true,
+            "placeholder": "My DST Server",
+            "tooltip": "Name shown in the server browser"
+        },
+        {
+            "key": "server_description",
+            "label": "Description",
+            "type": "string",
+            "default": "A Don't Starve Together dedicated server",
+            "placeholder": "Brief description of your server",
+            "tooltip": "Optional description shown in the server browser"
+        },
+        {
+            "key": "server_token",
+            "label": "Server Token",
+            "type": "password",
+            "default": "",
+            "required": true,
+            "placeholder": "pds-...",
+            "help_url": "https://accounts.klei.com/account/game/servers?game=DontStarveTogether",
+            "tooltip": "Required token from Klei Entertainment. Click the link to generate one."
+        },
+        {
+            "key": "password",
+            "label": "Server Password (optional)",
+            "type": "password",
+            "default": "",
+            "placeholder": "Leave blank for no password",
+            "tooltip": "Optional password for joining the server"
+        },
+        {
+            "key": "max_players",
+            "label": "Max Players",
+            "type": "int",
+            "default": 6,
+            "min": 1,
+            "max": 64,
+            "tooltip": "Maximum number of players (default is 6)"
+        },
+        {
+            "key": "game_mode",
+            "label": "Game Mode",
+            "type": "choice",
+            "default": "survival",
+            "options": ["survival", "wilderness", "endless", "lightsout"],
+            "tooltip": "Server game mode"
+        },
+        {
+            "key": "enable_caves",
+            "label": "Enable Caves World",
+            "type": "bool",
+            "default": true,
+            "tooltip": "Run a second Caves shard alongside the overworld (recommended)"
+        },
+        {
+            "key": "pvp",
+            "label": "PvP (Player vs Player)",
+            "type": "bool",
+            "default": false,
+            "tooltip": "Allow players to attack each other"
+        },
+        {
+            "key": "pause_when_empty",
+            "label": "Pause When Empty",
+            "type": "bool",
+            "default": true,
+            "tooltip": "Pause the world simulation when no players are online"
+        },
+        {
+            "key": "enable_upnp",
+            "label": "Auto Port Forward (UPnP)",
+            "type": "bool",
+            "default": true,
+            "tooltip": "Automatically configure port forwarding on your router"
+        }
+    ],
     "system_requirements": {
         "minimum": {
             "os": "Windows 7 or later (64-bit)",
             "processor": "1.7+ GHz or better",
             "memory": "1 GB RAM",
-            "graphics": "DirectX 11 compatible video card",
-            "directx": "Version 11",
-            "storage": "3 GB available space",
-            "network": "Broadband Internet connection"
+            "storage": "3 GB available space"
         },
         "recommended": {
             "os": "Windows 10 (64-bit)",
             "processor": "2.0+ GHz multi-core",
             "memory": "4 GB RAM",
-            "graphics": "DirectX 11 compatible video card",
-            "directx": "Version 11",
-            "storage": "5 GB available space",
-            "network": "Broadband Internet connection"
+            "storage": "5 GB available space"
         }
     },
     "features": [
@@ -51,26 +141,18 @@
         "Seasonal cycles and weather",
         "Character progression and unlocks",
         "Boss battles and exploration",
-        "Dedicated server support",
         "Master and Caves world system",
         "Mod support through Steam Workshop",
-        "Cross-platform multiplayer",
-        "Persistent world saves",
-        "Customizable world generation"
+        "Persistent world saves"
     ],
-    "setup_requirements": [
-        "Steam account",
-        "Don't Starve Together game ownership (for mods)",
-        "Klei Entertainment account for server token",
-        "Port forwarding capability for external access"
-    ],
-    "server_configuration": {
-        "world_types": ["Master", "Caves"],
-        "default_max_players": 6,
-        "save_slots": 5,
-        "auto_save_interval": 600,
-        "supports_mods": true,
-        "supports_password": true,
-        "supports_whitelist": true
-    }
+    "helpful_links": [
+        {
+            "title": "Get Server Token (required)",
+            "url": "https://accounts.klei.com/account/game/servers?game=DontStarveTogether"
+        },
+        {
+            "title": "DST Server Setup Guide",
+            "url": "https://forums.kleientertainment.com/forums/topic/64441-dedicated-server-quick-setup-guide-linux-windows/"
+        }
+    ]
 }

@@ -6,7 +6,7 @@
     "developer": "Iron Gate AB",
     "publisher": "Coffee Stain Publishing",
     "release_date": "2021-02-02",
-    "genre": "Survival, Action, Adventure, Indie",
+    "genre": "Survival, Action, Adventure",
     "platforms": ["Windows", "Linux"],
     "multiplayer": {
         "min_players": 1,
@@ -17,26 +17,91 @@
     "server_info": {
         "app_id": "896660",
         "executable": "valheim_server.exe",
+        "executable_linux": "valheim_server.sh",
+        "server_dir_name": "Valheim dedicated server",
+        "executable_subdir": "",
         "default_port": 2456,
-        "additional_ports": [2457, 2458],
         "protocol": "UDP",
-        "steam_required": true,
-        "difficulty": "Easy"
+        "launch_mode": "steam",
+        "process_names": ["valheim_server.exe", "valheim_server", "valheim_server.sh"],
+        "launch_args": "-nographics -batchmode -name \"{server_name}\" -port {port} -world \"{world_name}\" -password \"{password}\" -public {public}"
     },
+    "ports": [
+        {"port": 2456, "protocol": "UDP", "description": "Game traffic"},
+        {"port": 2457, "protocol": "UDP", "description": "Steam query"},
+        {"port": 2458, "protocol": "UDP", "description": "Additional comms"}
+    ],
+    "server_settings": [
+        {
+            "key": "server_name",
+            "label": "Server Name",
+            "type": "string",
+            "default": "Valheim Server",
+            "required": true,
+            "placeholder": "My Valheim Server",
+            "tooltip": "Name shown in the server browser"
+        },
+        {
+            "key": "world_name",
+            "label": "World Name",
+            "type": "string",
+            "default": "Dedicated",
+            "required": true,
+            "placeholder": "MyWorld",
+            "tooltip": "Name of the world save file"
+        },
+        {
+            "key": "password",
+            "label": "Server Password",
+            "type": "password",
+            "default": "",
+            "min_length": 5,
+            "placeholder": "Minimum 5 characters",
+            "tooltip": "Password players must enter to join. Minimum 5 characters."
+        },
+        {
+            "key": "port",
+            "label": "Port",
+            "type": "int",
+            "default": 2456,
+            "min": 1024,
+            "max": 65535,
+            "tooltip": "UDP port for the game server. Ports port, port+1, and port+2 will be used."
+        },
+        {
+            "key": "public",
+            "label": "Public Server",
+            "type": "bool",
+            "default": true,
+            "tooltip": "List this server in the public server browser"
+        },
+        {
+            "key": "enable_upnp",
+            "label": "Auto Port Forward (UPnP)",
+            "type": "bool",
+            "default": true,
+            "tooltip": "Automatically configure port forwarding on your router"
+        },
+        {
+            "key": "configure_firewall",
+            "label": "Configure Windows Firewall",
+            "type": "bool",
+            "default": true,
+            "tooltip": "Add firewall rules for the server ports"
+        }
+    ],
     "system_requirements": {
         "minimum": {
             "os": "Windows 7 or later",
             "processor": "2.6 GHz Dual Core",
             "memory": "4 GB RAM",
-            "storage": "2 GB available space",
-            "network": "Broadband Internet connection"
+            "storage": "2 GB available space"
         },
         "recommended": {
             "os": "Windows 10",
             "processor": "Intel Core i5 or equivalent",
             "memory": "8 GB RAM",
-            "storage": "4 GB available space",
-            "network": "Broadband Internet connection"
+            "storage": "4 GB available space"
         }
     },
     "features": [
@@ -45,75 +110,12 @@
         "Viking-themed survival gameplay",
         "Building and crafting system",
         "Boss battles and exploration",
-        "Dedicated server support",
-        "World persistence and saves",
-        "Cross-platform play (Windows/Linux)"
-    ],
-    "server_features": {
-        "world_persistence": true,
-        "automatic_backups": true,
-        "world_size": "Large (procedurally generated)",
-        "save_frequency": "Auto-save every 20 minutes",
-        "world_seeds": "Customizable world generation",
-        "password_protection": "Optional server password",
-        "admin_commands": "Full admin control available"
-    },
-    "installation_notes": [
-        "Server requires SteamCMD for installation and updates",
-        "Default world name is 'Dedicated' if not specified",
-        "Server creates world files in installation directory",
-        "World data includes character progression and builds",
-        "Backup world files regularly to prevent data loss",
-        "Server supports custom world seeds for consistent generation"
-    ],
-    "configuration_files": [
-        "start_server.bat",
-        "start_server_xvfb.sh",
-        "server_exit.drp"
-    ],
-    "ports_info": {
-        "game_port": {
-            "port": 2456,
-            "protocol": "UDP",
-            "description": "Main game traffic port"
-        },
-        "query_port": {
-            "port": 2457,
-            "protocol": "UDP", 
-            "description": "Steam query port for server discovery"
-        },
-        "additional_port": {
-            "port": 2458,
-            "protocol": "UDP",
-            "description": "Additional communication port"
-        }
-    },
-    "common_issues": [
-        {
-            "issue": "Server not visible to friends",
-            "solution": "Ensure ports 2456-2458 UDP are forwarded"
-        },
-        {
-            "issue": "World not loading",
-            "solution": "Check server directory permissions and disk space"
-        },
-        {
-            "issue": "Server crashes on startup",
-            "solution": "Verify server files integrity through SteamCMD"
-        },
-        {
-            "issue": "High memory usage",
-            "solution": "Large worlds require more RAM, consider upgrading"
-        }
+        "Dedicated server support"
     ],
     "helpful_links": [
         {
             "title": "Official Valheim Server Guide",
             "url": "https://valheim.fandom.com/wiki/Dedicated_server"
-        },
-        {
-            "title": "Valheim Server Configuration",
-            "url": "https://steamcommunity.com/app/892970/discussions/0/3078640516806849596/"
         },
         {
             "title": "Port Forwarding Guide",
