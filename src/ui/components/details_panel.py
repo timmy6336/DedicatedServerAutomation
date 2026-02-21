@@ -403,11 +403,18 @@ class DetailsPanel(QWidget):
         if not self._game:
             return
         saved = config_manager.load(self._game.id)
-        if saved is None:
-            saved = self._game.get_default_config()
 
-        # If no config saved yet, prompt user to configure first
-        if not saved and self._game.server_settings:
+        # Prompt to configure if: no config saved yet, or any required field is blank
+        needs_config = saved is None
+        if not needs_config and self._game.server_settings:
+            for setting in self._game.server_settings:
+                if setting.required:
+                    val = (saved or {}).get(setting.key, "")
+                    if not val:
+                        needs_config = True
+                        break
+
+        if needs_config and self._game.server_settings:
             self._on_configure()
             saved = config_manager.load(self._game.id)
             if saved is None:

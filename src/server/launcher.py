@@ -143,12 +143,12 @@ def _launch_dst(game: "GameModel", config: dict) -> bool:
 
     master_args = [
         "-console",
-        "-cluster", cluster_name,
+        "-cluster", "Cluster_1",
         "-shard", "Master",
     ]
     caves_args = [
         "-console",
-        "-cluster", cluster_name,
+        "-cluster", "Cluster_1",
         "-shard", "Caves",
     ]
 
@@ -178,12 +178,23 @@ def _write_dst_cluster_config(game: "GameModel", config: dict) -> None:
     """
     import platform as _platform
     if _platform.system().lower() == "windows":
-        docs = os.path.join(os.path.expandvars("%USERPROFILE%"), "Documents")
+        # Use the shell API so OneDrive-redirected Documents folders are resolved
+        # correctly (e.g. C:\Users\X\OneDrive\Documents instead of C:\Users\X\Documents).
+        try:
+            import ctypes.wintypes
+            CSIDL_PERSONAL = 5
+            buf = ctypes.create_unicode_buffer(ctypes.wintypes.MAX_PATH)
+            ctypes.windll.shell32.SHGetFolderPathW(0, CSIDL_PERSONAL, 0, 0, buf)
+            docs = buf.value
+        except Exception:
+            docs = os.path.join(os.path.expandvars("%USERPROFILE%"), "Documents")
     else:
         docs = os.path.expanduser("~/Documents")
 
     cluster_name = config.get("server_name", "DST Server")
-    cluster_dir = os.path.join(docs, "Klei", "DoNotStarveTogether", cluster_name)
+    # DST always reads from the fixed "Cluster_1" directory; cluster_name is
+    # only used as the display name inside cluster.ini, not as the folder name.
+    cluster_dir = os.path.join(docs, "Klei", "DoNotStarveTogether", "Cluster_1")
     master_dir = os.path.join(cluster_dir, "Master")
     caves_dir = os.path.join(cluster_dir, "Caves")
 
@@ -216,10 +227,12 @@ cluster_key = dst_cluster_key
     with open(os.path.join(cluster_dir, "cluster.ini"), "w", encoding="utf-8") as f:
         f.write(cluster_ini)
 
-    # cluster_token.txt
-    token = config.get("server_token", "")
-    with open(os.path.join(cluster_dir, "cluster_token.txt"), "w", encoding="utf-8") as f:
-        f.write(token)
+    # cluster_token.txt — strip whitespace; DST requires a clean token + newline
+    token = config.get("server_token", "").strip()
+    token_path = os.path.join(cluster_dir, "cluster_token.txt")
+    with open(token_path, "w", encoding="ascii", errors="replace", newline="\n") as f:
+        f.write(token + "\n")
+    print(f"[Launcher] Token written ({len(token)} chars) to: {token_path}")
 
     # Master/server.ini
     master_port = config.get("port", game.default_port)
