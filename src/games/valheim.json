@@ -43,12 +43,13 @@
         },
         {
             "key": "world_name",
-            "label": "World Name",
-            "type": "string",
+            "label": "World",
+            "type": "world_picker",
             "default": "Dedicated",
             "required": true,
-            "placeholder": "MyWorld",
-            "tooltip": "Name of the world save file"
+            "tooltip": "Select an existing world from your local saves, or create a new one",
+            "worlds_path_windows": "%USERPROFILE%\\AppData\\LocalLow\\IronGate\\Valheim\\worlds_local",
+            "worlds_path_linux": "~/.config/unity3d/IronGate/Valheim/worlds_local"
         },
         {
             "key": "password",
@@ -112,6 +113,12 @@
         "Boss battles and exploration",
         "Dedicated server support"
     ],
+    "mod_support": {
+        "framework": "bepinex",
+        "plugins_subdir": "BepInEx/plugins",
+        "bepinex_marker": "winhttp.dll",
+        "bepinex_download_url": ""
+    },
     "helpful_links": [
         {
             "title": "Official Valheim Server Guide",

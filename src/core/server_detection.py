@@ -5,7 +5,9 @@ All game-specific info (process names, ports) comes from the GameModel.
 """
 
 from __future__ import annotations
+import platform
 import socket
+import subprocess
 import time
 from dataclasses import dataclass, field
 from typing import Optional, TYPE_CHECKING
@@ -31,6 +33,7 @@ class ServerStatus:
     public_ip: str = _UNABLE
     port: int = 0
     connection_string: str = ""
+    firewall_ok: bool = True
 
 
 # ---------------------------------------------------------------------------
@@ -110,6 +113,26 @@ def _detect_active_port(candidate_ports: list[int]) -> int:
 
 
 # ---------------------------------------------------------------------------
+# Firewall rule check
+# ---------------------------------------------------------------------------
+
+def _check_firewall_rules(game: "GameModel") -> bool:
+    """Return True if at least one expected firewall rule exists for this game."""
+    if platform.system().lower() != "windows" or not game.ports:
+        return True
+    p = game.ports[0]
+    rule_name = f"{game.name} Server - {p.port} {p.description}".strip()
+    try:
+        result = subprocess.run(
+            f'netsh advfirewall firewall show rule name="{rule_name}"',
+            shell=True, capture_output=True, text=True, timeout=5,
+        )
+        return "Rule Name:" in result.stdout
+    except Exception:
+        return True  # can't check — don't show a false warning
+
+
+# ---------------------------------------------------------------------------
 # Main public API
 # ---------------------------------------------------------------------------
 
@@ -125,12 +148,14 @@ def get_status(game: "GameModel", skip_public_ip: bool = False) -> ServerStatus:
 
     port = 0
     connection_string = ""
+    firewall_ok = True
 
     if is_running:
         candidate_ports = [p.port for p in game.ports] if game.ports else [game.default_port]
         port = _detect_active_port(candidate_ports) or game.default_port
         if local_ip != _UNABLE:
             connection_string = f"{local_ip}:{port}"
+        firewall_ok = _check_firewall_rules(game)
 
     return ServerStatus(
         is_running=is_running,
@@ -138,6 +163,7 @@ def get_status(game: "GameModel", skip_public_ip: bool = False) -> ServerStatus:
         public_ip=public_ip,
         port=port,
         connection_string=connection_string,
+        firewall_ok=firewall_ok,
     )
 
 

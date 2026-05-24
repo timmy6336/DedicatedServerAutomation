@@ -207,6 +207,18 @@ class DetailsPanel(QWidget):
         self._ip_card = self._make_ip_card()
         layout.addWidget(self._ip_card)
 
+        # Firewall warning
+        self._fw_warning = QLabel("⚠  Port not open. Ensure you are running as administrator.")
+        self._fw_warning.setWordWrap(True)
+        self._fw_warning.setStyleSheet(
+            f"color: {theme.Colors.WARNING}; "
+            f"font-size: {theme.Fonts.SIZE_SM}px; "
+            f"font-family: {theme.Fonts.FAMILY}; "
+            "background: transparent;"
+        )
+        self._fw_warning.setVisible(False)
+        layout.addWidget(self._fw_warning)
+
         # Divider
         div = QFrame()
         div.setFrameShape(QFrame.HLine)
@@ -229,6 +241,11 @@ class DetailsPanel(QWidget):
         self._stop_btn.setStyleSheet(theme.BTN_DANGER)
         self._stop_btn.clicked.connect(self._on_stop)
 
+        self._close_ports_btn = QPushButton("Close Ports")
+        self._close_ports_btn.setStyleSheet(theme.BTN_SECONDARY)
+        self._close_ports_btn.setToolTip("Remove firewall rules and UPnP mappings for this server")
+        self._close_ports_btn.clicked.connect(self._on_close_ports)
+
         self._config_btn = QPushButton("Configure")
         self._config_btn.setStyleSheet(theme.BTN_SECONDARY)
         self._config_btn.clicked.connect(self._on_configure)
@@ -240,6 +257,7 @@ class DetailsPanel(QWidget):
         btn_row.addWidget(self._install_btn)
         btn_row.addWidget(self._start_btn)
         btn_row.addWidget(self._stop_btn)
+        btn_row.addWidget(self._close_ports_btn)
         btn_row.addWidget(self._config_btn)
         btn_row.addStretch()
         btn_row.addWidget(self._uninstall_btn)
@@ -361,6 +379,9 @@ class DetailsPanel(QWidget):
         if status.connection_string:
             self._conn_lbl.setText(status.connection_string)
 
+        if hasattr(self, "_fw_warning"):
+            self._fw_warning.setVisible(status.is_running and not status.firewall_ok)
+
         self._update_buttons(
             installed=self._game.is_installed() if self._game else False,
             running=status.is_running,
@@ -376,6 +397,7 @@ class DetailsPanel(QWidget):
         self._install_btn.setVisible(not installed)
         self._start_btn.setVisible(installed and not running)
         self._stop_btn.setVisible(installed and running)
+        self._close_ports_btn.setVisible(installed)
         self._config_btn.setVisible(installed)
         self._uninstall_btn.setVisible(installed)
 
@@ -437,8 +459,19 @@ class DetailsPanel(QWidget):
             QMessageBox.No,
         )
         if reply == QMessageBox.Yes:
-            server_manager.stop(self._game)
+            config = config_manager.load(self._game.id) or {}
+            server_manager.stop(self._game, config)
             QTimer.singleShot(2000, self._refresh_status_fast)
+
+    def _on_close_ports(self):
+        if not self._game:
+            return
+        config = config_manager.load(self._game.id) or {}
+        server_manager.close_ports(self._game, config)
+        QMessageBox.information(
+            self, "Ports Closed",
+            f"Firewall rules and UPnP mappings for {self._game.name} have been removed.",
+        )
 
     def _on_configure(self):
         if not self._game:

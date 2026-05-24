@@ -15,15 +15,108 @@ from typing import Any, Dict, TYPE_CHECKING
 from PyQt5.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QFormLayout,
     QLabel, QLineEdit, QSpinBox, QCheckBox, QComboBox,
-    QPushButton, QFrame, QScrollArea, QWidget, QSizePolicy,
+    QPushButton, QFrame, QScrollArea, QWidget, QSizePolicy, QTabWidget,
 )
 from PyQt5.QtCore import Qt, QUrl
 from PyQt5.QtGui import QDesktopServices
+import os
+import platform
 
 from ui import theme
 
 if TYPE_CHECKING:
     from core.game_model import GameModel, SettingDef
+
+_TAB_STYLE = f"""
+    QTabWidget::pane {{
+        background: {theme.Colors.BG_SURFACE};
+        border: none;
+    }}
+    QTabBar::tab {{
+        background: {theme.Colors.BG_BASE};
+        color: {theme.Colors.TEXT_SECONDARY};
+        padding: 8px 24px;
+        border: none;
+        font-size: {theme.Fonts.SIZE_SM}px;
+        font-family: {theme.Fonts.FAMILY};
+    }}
+    QTabBar::tab:selected {{
+        color: {theme.Colors.TEXT_PRIMARY};
+        border-bottom: 2px solid {theme.Colors.ACCENT};
+        background: {theme.Colors.BG_SURFACE};
+    }}
+    QTabBar::tab:hover:!selected {{
+        color: {theme.Colors.TEXT_PRIMARY};
+        background: {theme.Colors.BG_ELEVATED};
+    }}
+"""
+
+
+class WorldPickerWidget(QWidget):
+    """
+    Combo + optional text input for selecting or naming a Valheim world.
+    Shows worlds found on disk; selecting "New World..." reveals a name field.
+    """
+    _NEW = "New World..."
+
+    def __init__(self, setting: "SettingDef", current_value: str, parent=None):
+        super().__init__(parent)
+        self.setStyleSheet("background: transparent;")
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(6)
+
+        self._combo = QComboBox()
+        worlds = self._scan(setting)
+        for w in worlds:
+            self._combo.addItem(w)
+        self._combo.addItem(self._NEW)
+        layout.addWidget(self._combo)
+
+        self._new_edit = QLineEdit()
+        self._new_edit.setPlaceholderText("Enter new world name…")
+        layout.addWidget(self._new_edit)
+
+        # Restore previous value
+        idx = self._combo.findText(current_value)
+        if idx >= 0:
+            self._combo.setCurrentIndex(idx)
+        else:
+            # Value not in list — pre-fill new-world field
+            self._combo.setCurrentText(self._NEW)
+            if current_value:
+                self._new_edit.setText(current_value)
+
+        self._combo.currentTextChanged.connect(self._sync_visibility)
+        self._sync_visibility(self._combo.currentText())
+
+    def _sync_visibility(self, text: str) -> None:
+        self._new_edit.setVisible(text == self._NEW)
+
+    def _scan(self, setting: "SettingDef") -> list[str]:
+        if platform.system().lower() == "windows":
+            raw = setting.worlds_path_windows
+            path = os.path.expandvars(raw) if raw else ""
+        else:
+            raw = setting.worlds_path_linux
+            path = os.path.expanduser(raw) if raw else ""
+
+        if not path or not os.path.isdir(path):
+            return []
+        try:
+            names = [f[:-4] for f in os.listdir(path) if f.endswith(".fwl")]
+            return sorted(names)
+        except OSError:
+            return []
+
+    def get_value(self) -> str:
+        if self._combo.currentText() == self._NEW:
+            return self._new_edit.text().strip()
+        return self._combo.currentText()
+
+    def setToolTip(self, tip: str) -> None:
+        super().setToolTip(tip)
+        self._combo.setToolTip(tip)
 
 
 class ConfigDialog(QDialog):
@@ -33,54 +126,25 @@ class ConfigDialog(QDialog):
         self._widgets: Dict[str, Any] = {}
 
         self.setWindowTitle(f"{game.name} — Server Configuration")
-        self.setMinimumWidth(500)
-        self.setMinimumHeight(300)
-        self.setStyleSheet(theme.DIALOG + theme.INPUT + theme.CHECKBOX + theme.BTN_PRIMARY + theme.BTN_SECONDARY)
+        self.setMinimumWidth(540)
+        self.setMinimumHeight(400)
+        self.setAcceptDrops(True)
+        self.setStyleSheet(
+            theme.DIALOG + theme.INPUT + theme.CHECKBOX
+            + theme.BTN_PRIMARY + theme.BTN_SECONDARY + _TAB_STYLE
+        )
 
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
         outer.setSpacing(0)
 
-        # Scrollable form
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll.setFrameShape(QFrame.NoFrame)
-        scroll.setStyleSheet("QScrollArea { background: transparent; }")
-
-        content = QWidget()
-        content.setStyleSheet(f"background: {theme.Colors.BG_SURFACE};")
-        form_layout = QFormLayout(content)
-        form_layout.setContentsMargins(
-            theme.Layout.MARGIN_LG,
-            theme.Layout.MARGIN_LG,
-            theme.Layout.MARGIN_LG,
-            theme.Layout.MARGIN_MD,
-        )
-        form_layout.setSpacing(theme.Layout.SPACING_MD)
-        form_layout.setLabelAlignment(Qt.AlignRight | Qt.AlignVCenter)
-
-        for setting in game.server_settings:
-            widget = self._make_widget(setting, current_config)
-            if widget is None:
-                continue
-            self._widgets[setting.key] = widget
-
-            label = QLabel(setting.label + ("*" if setting.required else ""))
-            label.setStyleSheet(
-                f"color: {theme.Colors.TEXT_PRIMARY}; "
-                f"font-size: {theme.Fonts.SIZE_SM}px; "
-                f"font-family: {theme.Fonts.FAMILY}; "
-                "background: transparent;"
-            )
-            if setting.tooltip:
-                label.setToolTip(setting.tooltip)
-                widget.setToolTip(setting.tooltip)
-
-            row_widget = self._wrap_with_link(widget, setting)
-            form_layout.addRow(label, row_widget)
-
-        scroll.setWidget(content)
-        outer.addWidget(scroll)
+        # Tab widget
+        tabs = QTabWidget()
+        tabs.addTab(self._make_settings_tab(game, current_config), "Settings")
+        if game.mod_support:
+            from ui.components.mods_widget import ModsWidget
+            tabs.addTab(ModsWidget(game), "Mods")
+        outer.addWidget(tabs)
 
         # Separator
         sep = QFrame()
@@ -115,6 +179,46 @@ class ConfigDialog(QDialog):
         outer.addWidget(btn_container)
 
         self._result_config: dict = {}
+
+    def _make_settings_tab(self, game: "GameModel", current_config: dict) -> QWidget:
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setStyleSheet("QScrollArea { background: transparent; }")
+
+        content = QWidget()
+        content.setStyleSheet(f"background: {theme.Colors.BG_SURFACE};")
+        form_layout = QFormLayout(content)
+        form_layout.setContentsMargins(
+            theme.Layout.MARGIN_LG,
+            theme.Layout.MARGIN_LG,
+            theme.Layout.MARGIN_LG,
+            theme.Layout.MARGIN_MD,
+        )
+        form_layout.setSpacing(theme.Layout.SPACING_MD)
+        form_layout.setLabelAlignment(Qt.AlignRight | Qt.AlignVCenter)
+
+        for setting in game.server_settings:
+            widget = self._make_widget(setting, current_config)
+            if widget is None:
+                continue
+            self._widgets[setting.key] = widget
+
+            label = QLabel(setting.label + ("*" if setting.required else ""))
+            label.setStyleSheet(
+                f"color: {theme.Colors.TEXT_PRIMARY}; "
+                f"font-size: {theme.Fonts.SIZE_SM}px; "
+                f"font-family: {theme.Fonts.FAMILY}; "
+                "background: transparent;"
+            )
+            if setting.tooltip:
+                label.setToolTip(setting.tooltip)
+                widget.setToolTip(setting.tooltip)
+
+            form_layout.addRow(label, self._wrap_with_link(widget, setting))
+
+        scroll.setWidget(content)
+        return scroll
 
     # ------------------------------------------------------------------
     # Widget factory
@@ -161,6 +265,9 @@ class ConfigDialog(QDialog):
                 w.setCurrentIndex(idx)
             return w
 
+        elif s.type == "world_picker":
+            return WorldPickerWidget(s, str(value))
+
         return None
 
     def _wrap_with_link(self, widget: Any, s: "SettingDef") -> QWidget:
@@ -189,47 +296,46 @@ class ConfigDialog(QDialog):
     # Save
     # ------------------------------------------------------------------
 
+    def _read_widget_value(self, setting: "SettingDef", w: Any) -> Any:
+        if setting.type in ("string", "password"):
+            return w.text()
+        if setting.type == "int":
+            return w.value()
+        if setting.type == "bool":
+            return w.isChecked()
+        if setting.type in ("choice",):
+            return w.currentText()
+        if setting.type == "world_picker":
+            return w.get_value()
+        return setting.default
+
+    def _validate(self, config: dict) -> str | None:
+        """Return an (title, message) pair if invalid, else None."""
+        from PyQt5.QtWidgets import QMessageBox
+        for setting in self._game.server_settings:
+            val = config.get(setting.key, "")
+            if setting.required and not val:
+                QMessageBox.warning(self, "Required field", f'"{setting.label}" is required.')
+                return "invalid"
+            if setting.type in ("string", "password") and setting.min_length:
+                if len(str(val)) < setting.min_length:
+                    QMessageBox.warning(
+                        self, "Field too short",
+                        f'"{setting.label}" must be at least {setting.min_length} characters.',
+                    )
+                    return "invalid"
+        return None
+
     def _on_save(self):
         config = {}
         for setting in self._game.server_settings:
             w = self._widgets.get(setting.key)
-            if w is None:
-                config[setting.key] = setting.default
-                continue
+            config[setting.key] = (
+                self._read_widget_value(setting, w) if w is not None else setting.default
+            )
 
-            if setting.type in ("string", "password"):
-                config[setting.key] = w.text()
-            elif setting.type == "int":
-                config[setting.key] = w.value()
-            elif setting.type == "bool":
-                config[setting.key] = w.isChecked()
-            elif setting.type == "choice":
-                config[setting.key] = w.currentText()
-            else:
-                config[setting.key] = setting.default
-
-        # Basic validation
-        for setting in self._game.server_settings:
-            if setting.required:
-                val = config.get(setting.key, "")
-                if not val:
-                    from PyQt5.QtWidgets import QMessageBox
-                    QMessageBox.warning(
-                        self,
-                        "Required field",
-                        f'"{setting.label}" is required.',
-                    )
-                    return
-            if setting.type in ("string", "password") and setting.min_length:
-                val = config.get(setting.key, "")
-                if len(str(val)) < setting.min_length:
-                    from PyQt5.QtWidgets import QMessageBox
-                    QMessageBox.warning(
-                        self,
-                        "Field too short",
-                        f'"{setting.label}" must be at least {setting.min_length} characters.',
-                    )
-                    return
+        if self._validate(config) is not None:
+            return
 
         self._result_config = config
         self.accept()

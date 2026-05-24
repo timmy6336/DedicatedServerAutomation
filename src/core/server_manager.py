@@ -92,9 +92,24 @@ def start(game: "GameModel", config: dict) -> bool:
     return launcher.start(game, config)
 
 
-def stop(game: "GameModel") -> bool:
-    """Terminate all server processes for this game."""
-    return launcher.stop(game)
+def close_ports(game: "GameModel", config: dict) -> None:
+    """Remove firewall rules and UPnP mappings for this game."""
+    ports_raw = [
+        {"port": p.port, "protocol": p.protocol, "description": p.description}
+        for p in game.ports
+    ]
+    if config.get("configure_firewall"):
+        firewall.remove_rules_for_game(game.name, ports_raw)
+    if config.get("enable_upnp"):
+        upnp.remove_multiple([p.port for p in game.ports])
+
+
+def stop(game: "GameModel", config: dict | None = None) -> bool:
+    """Terminate all server processes for this game and close ports."""
+    killed = launcher.stop(game)
+    if config:
+        close_ports(game, config)
+    return killed
 
 
 def uninstall(game: "GameModel") -> bool:

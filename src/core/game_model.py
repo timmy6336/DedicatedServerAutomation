@@ -20,6 +20,15 @@ class PortDef:
 
 
 @dataclass
+class ModSupport:
+    """Mod framework config for a game, read from JSON mod_support block."""
+    framework: str = ""           # e.g. "bepinex"
+    plugins_subdir: str = ""      # relative to install dir, e.g. "BepInEx/plugins"
+    bepinex_marker: str = ""      # file that confirms BepInEx is installed
+    bepinex_download_url: str = ""  # empty = auto-fetch latest from GitHub
+
+
+@dataclass
 class SettingDef:
     """
     One configurable server setting, read from the JSON's server_settings list.
@@ -46,6 +55,9 @@ class SettingDef:
     max: int = 65535
     # choice
     options: list[str] = field(default_factory=list)
+    # world_picker
+    worlds_path_windows: str = ""
+    worlds_path_linux: str = ""
     # display
     tooltip: str = ""
 
@@ -89,6 +101,9 @@ class GameModel:
     # ---- multiplayer ----
     max_players: int = 0
     min_players: int = 1
+
+    # ---- mod support ----
+    mod_support: ModSupport | None = None
 
     # ---- raw extras ----
     extra_data: dict = field(default_factory=dict)

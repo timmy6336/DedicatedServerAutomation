@@ -64,3 +64,16 @@ def add_rules_for_game(game_name: str, ports: list[dict]) -> None:
         desc = p.get("description", "")
         rule_name = f"{game_name} Server - {port} {desc}".strip()
         add_rule(rule_name, port, proto)
+
+
+def remove_rules_for_game(game_name: str, ports: list[dict]) -> None:
+    """Remove all firewall rules previously added by add_rules_for_game."""
+    for p in ports:
+        port = p.get("port", 0)
+        desc = p.get("description", "")
+        rule_name = f"{game_name} Server - {port} {desc}".strip()
+        # Try the base name and both TCP/UDP split variants (add_rule may have
+        # created one or two rules depending on the protocol).
+        remove_rule(rule_name)
+        remove_rule(rule_name + " (TCP)")
+        remove_rule(rule_name + " (UDP)")

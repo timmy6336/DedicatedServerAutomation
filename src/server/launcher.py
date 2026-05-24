@@ -82,9 +82,6 @@ title {title} Dedicated Server
 cd /d "{work_dir}"
 echo Starting {title} server...
 {cmd_line}
-echo.
-echo Server has stopped. Press any key to close...
-pause >nul
 """
     try:
         with tempfile.NamedTemporaryFile(

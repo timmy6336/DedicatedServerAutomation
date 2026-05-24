@@ -10,7 +10,7 @@ import os
 from pathlib import Path
 from typing import List
 
-from core.game_model import GameModel, PortDef, SettingDef
+from core.game_model import GameModel, ModSupport, PortDef, SettingDef
 
 
 _GAMES_DIR = Path(__file__).parent.parent / "games"
@@ -57,8 +57,20 @@ def _load_game(json_path: Path) -> GameModel | None:
                 min=s.get("min", 0),
                 max=s.get("max", 65535),
                 options=s.get("options", []),
+                worlds_path_windows=s.get("worlds_path_windows", ""),
+                worlds_path_linux=s.get("worlds_path_linux", ""),
                 tooltip=s.get("tooltip", ""),
             ))
+
+    mod_raw = data.get("mod_support")
+    mod_support = None
+    if mod_raw:
+        mod_support = ModSupport(
+            framework=mod_raw.get("framework", ""),
+            plugins_subdir=mod_raw.get("plugins_subdir", ""),
+            bepinex_marker=mod_raw.get("bepinex_marker", ""),
+            bepinex_download_url=mod_raw.get("bepinex_download_url", ""),
+        )
 
     model = GameModel(
         id=game_id,
@@ -78,6 +90,7 @@ def _load_game(json_path: Path) -> GameModel | None:
         default_port=int(server_info.get("default_port", 0)),
         ports=ports,
         server_settings=settings,
+        mod_support=mod_support,
         max_players=int(multiplayer.get("max_players", 0)),
         min_players=int(multiplayer.get("min_players", 1)),
         extra_data=data,
