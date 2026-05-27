@@ -12,12 +12,12 @@ def _is_windows() -> bool:
     return platform.system().lower() == "windows"
 
 
-def _run(cmd: str) -> bool:
+def _run(cmd: list[str]) -> bool:
     if not _is_windows():
         return True
     try:
         result = subprocess.run(
-            cmd, shell=True, capture_output=True, text=True, timeout=10
+            cmd, shell=False, capture_output=True, text=True, timeout=10
         )
         return result.returncode == 0
     except Exception as exc:
@@ -36,11 +36,11 @@ def add_rule(name: str, port: int, protocol: str = "UDP") -> bool:
             add_rule(name + " (TCP)", port, "TCP") and
             add_rule(name + " (UDP)", port, "UDP")
         )
-    cmd = (
-        f'netsh advfirewall firewall add rule '
-        f'name="{name}" dir=in action=allow protocol={protocol} '
-        f'localport={port}'
-    )
+    cmd = [
+        "netsh", "advfirewall", "firewall", "add", "rule",
+        f"name={name}", "dir=in", "action=allow",
+        f"protocol={protocol}", f"localport={port}",
+    ]
     ok = _run(cmd)
     if ok:
         print(f"[Firewall] Added rule '{name}' port {port}/{protocol}")
@@ -50,7 +50,7 @@ def add_rule(name: str, port: int, protocol: str = "UDP") -> bool:
 
 
 def remove_rule(name: str) -> bool:
-    cmd = f'netsh advfirewall firewall delete rule name="{name}"'
+    cmd = ["netsh", "advfirewall", "firewall", "delete", "rule", f"name={name}"]
     return _run(cmd)
 
 

@@ -52,8 +52,7 @@ def get_local_ip() -> str:
 def get_public_ip() -> str:
     global _public_ip_cache, _public_ip_cache_time
     now = time.time()
-    if (_public_ip_cache and _public_ip_cache != _UNABLE
-            and now - _public_ip_cache_time < _PUBLIC_IP_TTL):
+    if _public_ip_cache is not None and now - _public_ip_cache_time < _PUBLIC_IP_TTL:
         return _public_ip_cache
 
     for url in ("https://api.ipify.org", "https://ipinfo.io/ip"):
@@ -124,8 +123,8 @@ def _check_firewall_rules(game: "GameModel") -> bool:
     rule_name = f"{game.name} Server - {p.port} {p.description}".strip()
     try:
         result = subprocess.run(
-            f'netsh advfirewall firewall show rule name="{rule_name}"',
-            shell=True, capture_output=True, text=True, timeout=5,
+            ["netsh", "advfirewall", "firewall", "show", "rule", f"name={rule_name}"],
+            shell=False, capture_output=True, text=True, timeout=5,
         )
         return "Rule Name:" in result.stdout
     except Exception:

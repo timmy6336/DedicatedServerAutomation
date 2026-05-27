@@ -40,6 +40,7 @@ portable/
 *.exe
 *.msi
 *.dmg
+dist.zip
 
 # Build logs and cache
 *.log

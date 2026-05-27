@@ -77,10 +77,13 @@ def _launch_via_batch(title: str, exe_path: str, work_dir: str, args: list[str])
     cmd_parts = [f'"{exe_path}"'] + [f'"{a}"' if " " in a else a for a in args]
     cmd_line = " ".join(cmd_parts)
 
+    # Strip characters that would break batch file structure (newlines, special chars)
+    safe_title = "".join(c for c in title if c.isalnum() or c in " _-()")
+
     batch = f"""@echo off
-title {title} Dedicated Server
+title {safe_title} Dedicated Server
 cd /d "{work_dir}"
-echo Starting {title} server...
+echo Starting {safe_title} server...
 {cmd_line}
 """
     try:
@@ -90,8 +93,7 @@ echo Starting {title} server...
             f.write(batch)
             batch_path = f.name
 
-        start_cmd = f'cmd /c start "{title} Server" "{batch_path}"'
-        subprocess.Popen(start_cmd, shell=True)
+        subprocess.Popen(["cmd", "/c", "start", f"{safe_title} Server", batch_path])
         print(f"[Launcher] Started {title} via batch: {batch_path}")
         return True
     except Exception as exc:

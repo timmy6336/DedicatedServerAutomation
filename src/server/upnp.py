@@ -14,6 +14,7 @@ RENEWAL_INTERVAL = 1500  # 25 minutes — safely under most router TTLs
 
 _renewal_thread: threading.Thread | None = None
 _stop_event = threading.Event()
+_renewal_lock = threading.Lock()
 
 
 def setup_port_forwarding(port: int, description: str = "Game Server") -> bool:
@@ -81,18 +82,19 @@ def remove_multiple(ports: list[int]) -> None:
 
 def _start_renewal(ports: list[int], description: str) -> None:
     global _renewal_thread
-    _stop_renewal()
-    _stop_event.clear()
+    with _renewal_lock:
+        _stop_renewal()
+        _stop_event.clear()
 
-    def _loop():
-        while not _stop_event.wait(RENEWAL_INTERVAL):
-            print(f"[UPnP] Renewing {len(ports)} port mapping(s)...")
-            for port in ports:
-                setup_port_forwarding(port, description)
+        def _loop():
+            while not _stop_event.wait(RENEWAL_INTERVAL):
+                print(f"[UPnP] Renewing {len(ports)} port mapping(s)...")
+                for port in ports:
+                    setup_port_forwarding(port, description)
 
-    _renewal_thread = threading.Thread(target=_loop, daemon=True, name="upnp-renewal")
-    _renewal_thread.start()
-    print(f"[UPnP] Renewal thread started (interval: {RENEWAL_INTERVAL}s)")
+        _renewal_thread = threading.Thread(target=_loop, daemon=True, name="upnp-renewal")
+        _renewal_thread.start()
+        print(f"[UPnP] Renewal thread started (interval: {RENEWAL_INTERVAL}s)")
 
 
 def _stop_renewal() -> None:
