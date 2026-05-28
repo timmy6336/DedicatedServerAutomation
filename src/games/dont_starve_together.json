@@ -145,6 +145,11 @@
         "Mod support through Steam Workshop",
         "Persistent world saves"
     ],
+    "mod_support": {
+        "framework": "steam_workshop",
+        "workshop_app_id": "322330",
+        "mods_subdir": "mods"
+    },
     "helpful_links": [
         {
             "title": "Get Server Token (required)",
@@ -153,6 +158,10 @@
         {
             "title": "DST Server Setup Guide",
             "url": "https://forums.kleientertainment.com/forums/topic/64441-dedicated-server-quick-setup-guide-linux-windows/"
+        },
+        {
+            "title": "DST Workshop Mods",
+            "url": "https://steamcommunity.com/app/322330/workshop/"
         }
     ]
 }

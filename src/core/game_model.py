@@ -22,10 +22,13 @@ class PortDef:
 @dataclass
 class ModSupport:
     """Mod framework config for a game, read from JSON mod_support block."""
-    framework: str = ""           # e.g. "bepinex"
+    framework: str = ""           # "bepinex" | "steam_workshop"
     plugins_subdir: str = ""      # relative to install dir, e.g. "BepInEx/plugins"
     bepinex_marker: str = ""      # file that confirms BepInEx is installed
     bepinex_download_url: str = ""  # empty = auto-fetch latest from GitHub
+    # steam_workshop only
+    workshop_app_id: str = ""     # Steam appid whose workshop to browse (e.g. "322330" for DST)
+    mods_subdir: str = ""         # subdir inside install path containing server mod files
 
 
 @dataclass

@@ -142,8 +142,12 @@ class ConfigDialog(QDialog):
         tabs = QTabWidget()
         tabs.addTab(self._make_settings_tab(game, current_config), "Settings")
         if game.mod_support:
-            from ui.components.mods_widget import ModsWidget
-            tabs.addTab(ModsWidget(game), "Mods")
+            if game.mod_support.framework == "steam_workshop":
+                from ui.components.dst_mods_widget import DSTModsWidget
+                tabs.addTab(DSTModsWidget(game), "Mods")
+            else:
+                from ui.components.mods_widget import ModsWidget
+                tabs.addTab(ModsWidget(game), "Mods")
         outer.addWidget(tabs)
 
         # Separator

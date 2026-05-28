@@ -70,6 +70,8 @@ def _load_game(json_path: Path) -> GameModel | None:
             plugins_subdir=mod_raw.get("plugins_subdir", ""),
             bepinex_marker=mod_raw.get("bepinex_marker", ""),
             bepinex_download_url=mod_raw.get("bepinex_download_url", ""),
+            workshop_app_id=mod_raw.get("workshop_app_id", ""),
+            mods_subdir=mod_raw.get("mods_subdir", ""),
         )
 
     model = GameModel(
