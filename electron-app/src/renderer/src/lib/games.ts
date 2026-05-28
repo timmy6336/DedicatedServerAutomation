@@ -37,7 +37,16 @@ export interface Game {
   serverSettings: SettingDef[]
   bannerColor: string
   accentColor: string
-  installSteps?: string[]  // custom labels for the 3-step install wizard
+  installSteps?: string[]
+}
+
+const DISCORD_WEBHOOK_SETTING: SettingDef = {
+  key: 'discord_webhook',
+  label: 'Discord Webhook URL',
+  type: 'string',
+  default: '',
+  placeholder: 'https://discord.com/api/webhooks/…',
+  tooltip: 'Post server start/stop notifications to a Discord channel'
 }
 
 export const GAMES: Game[] = [
@@ -67,7 +76,8 @@ export const GAMES: Game[] = [
       { key: 'max_players', label: 'Max Players', type: 'int', default: 32, min: 1, max: 32 },
       { key: 'server_name', label: 'Server Name', type: 'string', default: 'My Palworld Server', placeholder: 'Server Name' },
       { key: 'server_password', label: 'Server Password', type: 'password', default: '', placeholder: 'Leave blank for public' },
-      { key: 'admin_password', label: 'Admin Password', type: 'password', default: '', required: true }
+      { key: 'admin_password', label: 'Admin Password', type: 'password', default: '', required: true },
+      DISCORD_WEBHOOK_SETTING
     ]
   },
   {
@@ -96,7 +106,8 @@ export const GAMES: Game[] = [
       { key: 'world_name', label: 'World Name', type: 'string', default: 'Dedicated', required: true },
       { key: 'port', label: 'Port', type: 'int', default: 2456, min: 1024, max: 65535 },
       { key: 'password', label: 'Password', type: 'password', default: '', placeholder: 'Min 5 chars if set' },
-      { key: 'public', label: 'Public Server', type: 'bool', default: true }
+      { key: 'public', label: 'Public Server', type: 'bool', default: true },
+      DISCORD_WEBHOOK_SETTING
     ]
   },
   {
@@ -127,7 +138,8 @@ export const GAMES: Game[] = [
       { key: 'world_size', label: 'World Size', type: 'choice', default: '3500', options: ['2000', '3500', '4000', '6000'] },
       { key: 'seed', label: 'World Seed', type: 'int', default: 12345, min: 0, max: 2147483647 },
       { key: 'rcon_port', label: 'RCON Port', type: 'int', default: 28016, min: 1024, max: 65535 },
-      { key: 'rcon_password', label: 'RCON Password', type: 'password', default: '', required: true }
+      { key: 'rcon_password', label: 'RCON Password', type: 'password', default: '', required: true },
+      DISCORD_WEBHOOK_SETTING
     ]
   },
   {
@@ -158,7 +170,8 @@ export const GAMES: Game[] = [
       { key: 'game_mode', label: 'Game Mode', type: 'choice', default: 'survival', options: ['survival', 'endless', 'wilderness'] },
       { key: 'password', label: 'Password', type: 'password', default: '' },
       { key: 'pvp', label: 'PvP Enabled', type: 'bool', default: false },
-      { key: 'server_token', label: 'Cluster Token', type: 'password', default: '', required: true, helpUrl: 'https://accounts.klei.com/account/game/servers' }
+      { key: 'server_token', label: 'Cluster Token', type: 'password', default: '', required: true, helpUrl: 'https://accounts.klei.com/account/game/servers' },
+      DISCORD_WEBHOOK_SETTING
     ]
   },
   {
@@ -195,7 +208,163 @@ export const GAMES: Game[] = [
       { key: 'pvp', label: 'PvP Enabled', type: 'bool', default: true },
       { key: 'online_mode', label: 'Online Mode (auth)', type: 'bool', default: true, tooltip: 'Disable only for offline/LAN play' },
       { key: 'rcon_password', label: 'RCON Password', type: 'password', default: '', placeholder: 'Leave blank to disable RCON' },
-      { key: 'rcon_port', label: 'RCON Port', type: 'int', default: 25575, min: 1024, max: 65535 }
+      { key: 'rcon_port', label: 'RCON Port', type: 'int', default: 25575, min: 1024, max: 65535 },
+      DISCORD_WEBHOOK_SETTING
+    ]
+  },
+  {
+    id: 'ark',
+    name: 'ARK: Survival Evolved',
+    description: 'Open-world survival game with dinosaurs. Tame creatures, build bases, and explore a prehistoric landscape.',
+    genre: 'Survival / Action',
+    platforms: ['Windows', 'Linux'],
+    steamAppId: '376030',
+    installMode: 'steam',
+    launchMode: 'steam',
+    serverDirName: 'ark_server',
+    executable: 'ShooterGameServer.exe',
+    executableSubdir: 'ShooterGame/Binaries/Win64',
+    launchArgs: 'TheIsland?listen?SessionName={server_name}?ServerPassword={password}?ServerAdminPassword={admin_password}?MaxPlayers={max_players}?Port={port}?QueryPort={query_port}',
+    processNames: ['ShooterGameServer.exe', 'ShooterGameServer'],
+    defaultPort: 7777,
+    ports: [
+      { port: 7777, protocol: 'UDP', description: 'Game' },
+      { port: 7778, protocol: 'UDP', description: 'Raw UDP' },
+      { port: 27015, protocol: 'UDP', description: 'Steam Query' }
+    ],
+    bannerColor: 'from-amber-950 to-stone-950',
+    accentColor: '#d97706',
+    serverSettings: [
+      { key: 'server_name', label: 'Session Name', type: 'string', default: 'My ARK Server', required: true },
+      { key: 'password', label: 'Join Password', type: 'password', default: '', placeholder: 'Leave blank for public' },
+      { key: 'admin_password', label: 'Admin Password', type: 'password', default: 'changeme', required: true },
+      { key: 'max_players', label: 'Max Players', type: 'int', default: 70, min: 1, max: 255 },
+      { key: 'port', label: 'Game Port', type: 'int', default: 7777, min: 1024, max: 65535 },
+      { key: 'query_port', label: 'Query Port', type: 'int', default: 27015, min: 1024, max: 65535 },
+      DISCORD_WEBHOOK_SETTING
+    ]
+  },
+  {
+    id: 'sevendays',
+    name: '7 Days to Die',
+    description: 'Open-world survival horror combining first-person shooter, tower defense, and RPG elements in a zombie apocalypse.',
+    genre: 'Survival / Horror',
+    platforms: ['Windows', 'Linux'],
+    steamAppId: '294420',
+    installMode: 'steam',
+    launchMode: 'steam',
+    serverDirName: '7dtd_server',
+    executable: '7DaysToDieServer.exe',
+    executableSubdir: '',
+    launchArgs: '-configfile=serverconfig.xml',
+    processNames: ['7DaysToDieServer.exe', '7DaysToDieServer'],
+    defaultPort: 26900,
+    ports: [
+      { port: 26900, protocol: 'UDP', description: 'Game' },
+      { port: 26901, protocol: 'UDP', description: 'Query' },
+      { port: 26902, protocol: 'UDP', description: 'Steam' },
+      { port: 8080, protocol: 'TCP', description: 'Web Panel' }
+    ],
+    bannerColor: 'from-red-950 to-zinc-950',
+    accentColor: '#ef4444',
+    serverSettings: [
+      { key: 'server_name', label: 'Server Name', type: 'string', default: 'My 7DTD Server', required: true },
+      { key: 'server_password', label: 'Server Password', type: 'password', default: '' },
+      { key: 'max_players', label: 'Max Players', type: 'int', default: 8, min: 1, max: 16 },
+      { key: 'port', label: 'Server Port', type: 'int', default: 26900, min: 1024, max: 65535 },
+      {
+        key: 'difficulty', label: 'Difficulty', type: 'choice', default: 'Nomad',
+        options: ['Scavenger', 'Adventurer', 'Nomad', 'Warrior', 'Survivalist', 'Insane']
+      },
+      DISCORD_WEBHOOK_SETTING
+    ]
+  },
+  {
+    id: 'zomboid',
+    name: 'Project Zomboid',
+    description: 'Deeply detailed isometric zombie survival with crafting, base-building, and NPCs in a persistent world.',
+    genre: 'Survival / Horror',
+    platforms: ['Windows', 'Linux'],
+    steamAppId: '380870',
+    installMode: 'steam',
+    launchMode: 'steam',
+    serverDirName: 'zomboid_server',
+    executable: 'ProjectZomboidServer.exe',
+    executableSubdir: '',
+    launchArgs: '-servername {server_name} -adminpassword {admin_password} -port {port}',
+    processNames: ['ProjectZomboidServer.exe', 'java'],
+    defaultPort: 16261,
+    ports: [
+      { port: 16261, protocol: 'UDP', description: 'Game' },
+      { port: 16262, protocol: 'UDP', description: 'Direct' }
+    ],
+    bannerColor: 'from-zinc-900 to-neutral-950',
+    accentColor: '#71717a',
+    serverSettings: [
+      { key: 'server_name', label: 'Server Name', type: 'string', default: 'pzserver', required: true },
+      { key: 'admin_password', label: 'Admin Password', type: 'password', default: '', required: true },
+      { key: 'max_players', label: 'Max Players', type: 'int', default: 32, min: 1, max: 100 },
+      { key: 'port', label: 'Server Port', type: 'int', default: 16261, min: 1024, max: 65535 },
+      { key: 'public', label: 'Public Server', type: 'bool', default: false },
+      DISCORD_WEBHOOK_SETTING
+    ]
+  },
+  {
+    id: 'vrising',
+    name: 'V Rising',
+    description: 'Vampire survival game with castle-building, crafting, and cooperative multiplayer in a gothic world.',
+    genre: 'Survival / Action RPG',
+    platforms: ['Windows'],
+    steamAppId: '1829350',
+    installMode: 'steam',
+    launchMode: 'steam',
+    serverDirName: 'vrising_server',
+    executable: 'VRisingServer.exe',
+    executableSubdir: '',
+    launchArgs: '-persistentDataPath .\\SaveData -serverName "{server_name}" -gamePort {port} -queryPort {query_port} -maxConnectedUsers {max_players}',
+    processNames: ['VRisingServer.exe'],
+    defaultPort: 9876,
+    ports: [
+      { port: 9876, protocol: 'UDP', description: 'Game' },
+      { port: 9877, protocol: 'UDP', description: 'Query' }
+    ],
+    bannerColor: 'from-purple-950 to-rose-950',
+    accentColor: '#a855f7',
+    serverSettings: [
+      { key: 'server_name', label: 'Server Name', type: 'string', default: 'My V Rising Server', required: true },
+      { key: 'max_players', label: 'Max Players', type: 'int', default: 40, min: 1, max: 40 },
+      { key: 'port', label: 'Game Port', type: 'int', default: 9876, min: 1024, max: 65535 },
+      { key: 'query_port', label: 'Query Port', type: 'int', default: 9877, min: 1024, max: 65535 },
+      DISCORD_WEBHOOK_SETTING
+    ]
+  },
+  {
+    id: 'enshrouded',
+    name: 'Enshrouded',
+    description: 'Survival action RPG set in a voxel world. Build, craft, and battle across a vast landscape with friends.',
+    genre: 'Survival / Action RPG',
+    platforms: ['Windows'],
+    steamAppId: '2278520',
+    installMode: 'steam',
+    launchMode: 'steam',
+    serverDirName: 'enshrouded_server',
+    executable: 'enshrouded_server.exe',
+    executableSubdir: '',
+    launchArgs: '',
+    processNames: ['enshrouded_server.exe'],
+    defaultPort: 15636,
+    ports: [
+      { port: 15636, protocol: 'UDP', description: 'Game' },
+      { port: 15637, protocol: 'UDP', description: 'Query' }
+    ],
+    bannerColor: 'from-violet-950 to-slate-950',
+    accentColor: '#7c3aed',
+    serverSettings: [
+      { key: 'server_name', label: 'Server Name', type: 'string', default: 'My Enshrouded Server', required: true },
+      { key: 'password', label: 'Server Password', type: 'password', default: '' },
+      { key: 'max_players', label: 'Max Players', type: 'int', default: 16, min: 1, max: 16 },
+      { key: 'port', label: 'Game Port', type: 'int', default: 15636, min: 1024, max: 65535 },
+      DISCORD_WEBHOOK_SETTING
     ]
   }
 ]

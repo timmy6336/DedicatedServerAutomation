@@ -4,8 +4,8 @@ import {
   existsSync, mkdirSync, createWriteStream, writeFileSync,
   copyFileSync, readdirSync, unlinkSync, statSync, rmSync
 } from 'fs'
-import { join, basename, extname } from 'path'
-import { get as httpGet } from 'https'
+import { join, basename } from 'path'
+import { get as httpGet, request as httpRequest } from 'https'
 import { readFile, writeFile } from 'fs/promises'
 import * as os from 'os'
 
@@ -25,6 +25,11 @@ interface ModEntry {
   size: number
   addedAt: number
 }
+interface BackupEntry {
+  id: string
+  label: string
+  sizeBytes: number
+}
 
 // ── running processes keyed by instanceId ─────────────────────────────────────
 const runningProcesses = new Map<string, ChildProcess>()
@@ -37,6 +42,8 @@ const instanceDir = (gameId: string, instanceId: string) =>
   join(userData(), 'servers', gameId, instanceId)
 const modLibDir = (gameId: string) =>
   join(userData(), 'mod-library', gameId)
+const backupBase = (gameId: string, instanceId: string) =>
+  join(userData(), 'backups', gameId, instanceId)
 
 async function readJson<T>(path: string, fallback: T): Promise<T> {
   try { return JSON.parse(await readFile(path, 'utf-8')) }
@@ -110,6 +117,48 @@ function broadcast(channel: string, ...args: unknown[]): void {
   BrowserWindow.getAllWindows().forEach(w => w.webContents.send(channel, ...args))
 }
 
+// ── Discord webhook ───────────────────────────────────────────────────────────
+function fireDiscordWebhook(url: string, content: string): void {
+  if (!url?.startsWith('https://')) return
+  try {
+    const body = JSON.stringify({ content, username: 'Server Manager' })
+    const urlObj = new URL(url)
+    const req = httpRequest({
+      hostname: urlObj.hostname,
+      path: urlObj.pathname + urlObj.search,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) }
+    })
+    req.write(body)
+    req.end()
+    req.on('error', () => { /* silently ignore */ })
+  } catch { /* ignore */ }
+}
+
+// ── directory helpers ─────────────────────────────────────────────────────────
+function copyDirSync(src: string, dest: string): void {
+  if (!existsSync(dest)) mkdirSync(dest, { recursive: true })
+  for (const entry of readdirSync(src, { withFileTypes: true })) {
+    const srcPath = join(src, entry.name)
+    const destPath = join(dest, entry.name)
+    if (entry.isDirectory()) copyDirSync(srcPath, destPath)
+    else copyFileSync(srcPath, destPath)
+  }
+}
+
+function getDirSize(dir: string): number {
+  if (!existsSync(dir)) return 0
+  let size = 0
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = join(dir, entry.name)
+    try {
+      if (entry.isDirectory()) size += getDirSize(full)
+      else size += statSync(full).size
+    } catch { /* skip unreadable files */ }
+  }
+  return size
+}
+
 // ── copy enabled mods into instance mods/ directory ──────────────────────────
 function applyMods(gameId: string, instanceId: string, enabledMods: string[]): void {
   const instDir = instanceDir(gameId, instanceId)
@@ -118,7 +167,6 @@ function applyMods(gameId: string, instanceId: string, enabledMods: string[]): v
 
   if (!existsSync(modsDir)) mkdirSync(modsDir, { recursive: true })
 
-  // Remove mods no longer enabled
   if (existsSync(modsDir)) {
     for (const f of readdirSync(modsDir)) {
       if (!enabledMods.includes(f)) {
@@ -127,7 +175,6 @@ function applyMods(gameId: string, instanceId: string, enabledMods: string[]): v
     }
   }
 
-  // Copy newly enabled mods
   for (const filename of enabledMods) {
     const src = join(libDir, filename)
     const dest = join(modsDir, filename)
@@ -360,16 +407,16 @@ export function registerIpcHandlers(): void {
 
   // ── Start / Stop ──────────────────────────────────────────────────────────
 
-  ipcMain.handle('server:start', (_, instanceId: string, gameId: string, launchMode: string, exeRelPath: string, args: string[]) => {
+  ipcMain.handle('server:start', async (_, instanceId: string, gameId: string, launchMode: string, exeRelPath: string, args: string[]) => {
     const existing = runningProcesses.get(instanceId)
     if (existing && !existing.killed) return true
 
     const instDir = instanceDir(gameId, instanceId)
-    // Apply mods before launch
-    readInstances().then(all => {
-      const inst = all.find(i => i.id === instanceId)
-      if (inst?.enabledMods.length) applyMods(gameId, instanceId, inst.enabledMods)
-    })
+
+    // Apply mods and read instance config before launch
+    const allInst = await readInstances()
+    const inst = allInst.find(i => i.id === instanceId)
+    if (inst?.enabledMods.length) applyMods(gameId, instanceId, inst.enabledMods)
 
     try {
       let cmd: string, cmdArgs: string[], cwd: string
@@ -379,9 +426,44 @@ export function registerIpcHandlers(): void {
         const exePath = join(instDir, exeRelPath)
         cmd = exePath; cmdArgs = args; cwd = join(exePath, '..')
       }
-      const proc = spawn(cmd, cmdArgs, { cwd, detached: true, stdio: 'ignore' })
+
+      const proc = spawn(cmd, cmdArgs, {
+        cwd,
+        detached: true,
+        windowsHide: true,
+        stdio: ['ignore', 'pipe', 'pipe']
+      })
+
+      let lineBuf = ''
+      function emitLines(chunk: Buffer) {
+        lineBuf += chunk.toString()
+        const parts = lineBuf.split('\n')
+        lineBuf = parts.pop() ?? ''
+        for (const line of parts) {
+          if (line.trim()) broadcast('server:log', { instanceId, line })
+        }
+      }
+
+      proc.stdout?.on('data', emitLines)
+      proc.stderr?.on('data', emitLines)
+      proc.on('exit', (code) => {
+        broadcast('server:exit', { instanceId, code })
+        runningProcesses.delete(instanceId)
+        const webhookUrl = inst?.config?.discord_webhook as string
+        if (webhookUrl && code !== 0) {
+          fireDiscordWebhook(webhookUrl, `⚠️ **${inst?.name}** crashed (exit code ${code}).`)
+        }
+      })
+
       proc.unref()
       runningProcesses.set(instanceId, proc)
+
+      // Fire start webhook
+      const webhookUrl = inst?.config?.discord_webhook as string
+      if (webhookUrl) {
+        fireDiscordWebhook(webhookUrl, `🟢 **${inst?.name}** is now **Online**!`)
+      }
+
       return true
     } catch (e) {
       broadcast('server:error', String(e))
@@ -389,16 +471,29 @@ export function registerIpcHandlers(): void {
     }
   })
 
-  ipcMain.handle('server:stop', (_, instanceId: string, processNames: string[]) => {
+  ipcMain.handle('server:stop', async (_, instanceId: string, processNames: string[]) => {
     const proc = runningProcesses.get(instanceId)
-    if (proc && !proc.killed) { proc.kill(); runningProcesses.delete(instanceId); return true }
-    try {
-      if (process.platform === 'win32')
-        for (const n of processNames) spawnSync('taskkill', ['/F', '/IM', n])
-      else
-        for (const n of processNames) spawnSync('pkill', ['-f', n])
-      return true
-    } catch { return false }
+    if (proc && !proc.killed) {
+      proc.kill()
+      runningProcesses.delete(instanceId)
+    } else {
+      try {
+        if (process.platform === 'win32')
+          for (const n of processNames) spawnSync('taskkill', ['/F', '/IM', n])
+        else
+          for (const n of processNames) spawnSync('pkill', ['-f', n])
+      } catch { /* ignore */ }
+    }
+
+    // Fire stop webhook
+    const allInst = await readInstances()
+    const inst = allInst.find(i => i.id === instanceId)
+    const webhookUrl = inst?.config?.discord_webhook as string
+    if (webhookUrl) {
+      fireDiscordWebhook(webhookUrl, `🔴 **${inst?.name}** is now **Offline**.`)
+    }
+
+    return true
   })
 
   // ── Mod library ───────────────────────────────────────────────────────────
@@ -446,7 +541,6 @@ export function registerIpcHandlers(): void {
     const updated = registry.filter(m => !(m.gameId === gameId && m.filename === filename))
     await writeModsRegistry(updated)
 
-    // Remove from all instances of this game
     const instances = await readInstances()
     let changed = false
     for (const inst of instances) {
@@ -467,5 +561,57 @@ export function registerIpcHandlers(): void {
       properties: ['openFile', 'multiSelections']
     })
     return result.canceled ? [] : result.filePaths
+  })
+
+  // ── Backups ───────────────────────────────────────────────────────────────
+
+  ipcMain.handle('backup:create', (_, gameId: string, instanceId: string) => {
+    const instDir = instanceDir(gameId, instanceId)
+    if (!existsSync(instDir)) return false
+    const bkpId = Date.now().toString()
+    const dest = join(backupBase(gameId, instanceId), bkpId)
+    try {
+      copyDirSync(instDir, dest)
+      return bkpId
+    } catch (e) {
+      broadcast('server:error', `Backup failed: ${e}`)
+      return false
+    }
+  })
+
+  ipcMain.handle('backup:list', (_, gameId: string, instanceId: string): BackupEntry[] => {
+    const bkpDir = backupBase(gameId, instanceId)
+    if (!existsSync(bkpDir)) return []
+    return readdirSync(bkpDir, { withFileTypes: true })
+      .filter(e => e.isDirectory())
+      .sort((a, b) => Number(b.name) - Number(a.name))
+      .map(e => {
+        const id = e.name
+        const ts = Number(id)
+        const sizeBytes = getDirSize(join(bkpDir, id))
+        const label = isNaN(ts) ? id : new Date(ts).toLocaleString()
+        return { id, label, sizeBytes }
+      })
+  })
+
+  ipcMain.handle('backup:restore', (_, gameId: string, instanceId: string, bkpId: string) => {
+    const instDir = instanceDir(gameId, instanceId)
+    const bkpPath = join(backupBase(gameId, instanceId), bkpId)
+    if (!existsSync(bkpPath)) return false
+    try {
+      if (existsSync(instDir)) rmSync(instDir, { recursive: true, force: true })
+      copyDirSync(bkpPath, instDir)
+      return true
+    } catch (e) {
+      broadcast('server:error', `Restore failed: ${e}`)
+      return false
+    }
+  })
+
+  ipcMain.handle('backup:delete', (_, gameId: string, instanceId: string, bkpId: string) => {
+    const bkpPath = join(backupBase(gameId, instanceId), bkpId)
+    if (!existsSync(bkpPath)) return false
+    try { rmSync(bkpPath, { recursive: true, force: true }); return true }
+    catch { return false }
   })
 }

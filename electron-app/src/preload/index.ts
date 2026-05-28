@@ -46,6 +46,16 @@ const api = {
   removeMod:   (gameId: string, filename: string) => ipcRenderer.invoke('mods:remove', gameId, filename),
   openModPicker: (gameId: string) => ipcRenderer.invoke('mods:openPicker', gameId),
 
+  // Backups
+  createBackup:  (gameId: string, instanceId: string) =>
+    ipcRenderer.invoke('backup:create', gameId, instanceId),
+  listBackups:   (gameId: string, instanceId: string) =>
+    ipcRenderer.invoke('backup:list', gameId, instanceId),
+  restoreBackup: (gameId: string, instanceId: string, bkpId: string) =>
+    ipcRenderer.invoke('backup:restore', gameId, instanceId, bkpId),
+  deleteBackup:  (gameId: string, instanceId: string, bkpId: string) =>
+    ipcRenderer.invoke('backup:delete', gameId, instanceId, bkpId),
+
   // Event listeners
   on: (channel: string, fn: (...args: unknown[]) => void) => {
     const wrapped = (_: Electron.IpcRendererEvent, ...args: unknown[]) => fn(...args)

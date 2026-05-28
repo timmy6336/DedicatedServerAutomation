@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { type Game } from '../lib/games'
 import { type ServerInstance } from '../lib/instances'
-import { Play, Square, Settings, Download, Globe, Monitor, Package } from 'lucide-react'
+import { Play, Square, Settings, Download, Globe, Monitor, Package, ScrollText, HardDrive } from 'lucide-react'
 import { cn } from '../lib/utils'
 import InstallWizard from './InstallWizard'
 import ConfigModal from './ConfigModal'
 import ModsPanel from './ModsPanel'
+import LogsPanel from './LogsPanel'
+import BackupsPanel from './BackupsPanel'
 
 interface Props {
   game: Game
@@ -14,7 +16,9 @@ interface Props {
 }
 
 type ServerState = 'checking' | 'not_installed' | 'stopped' | 'running'
-type Tab = 'overview' | 'mods'
+type Tab = 'overview' | 'mods' | 'logs' | 'backups'
+
+const GAMES_WITH_MODS = ['minecraft', 'valheim', 'rust', 'sevendays', 'zomboid', 'vrising']
 
 export default function ServerPanel({ game, instance, onInstanceUpdated }: Props) {
   const [state, setState] = useState<ServerState>('checking')
@@ -38,10 +42,21 @@ export default function ServerPanel({ game, instance, onInstanceUpdated }: Props
   }, [game, instance.id])
 
   useEffect(() => {
+    setState('checking')
+    setTab('overview')
     refresh()
     const id = setInterval(refresh, 10_000)
     return () => clearInterval(id)
   }, [refresh])
+
+  // Listen for unexpected exits so the panel status updates promptly
+  useEffect(() => {
+    const unsub = window.api.on('server:exit', (data: unknown) => {
+      const { instanceId } = data as { instanceId: string }
+      if (instanceId === instance.id) refresh()
+    })
+    return unsub
+  }, [instance.id, refresh])
 
   async function handleStart() {
     setActionPending(true)
@@ -61,7 +76,14 @@ export default function ServerPanel({ game, instance, onInstanceUpdated }: Props
     setTimeout(() => { refresh(); setActionPending(false) }, 1500)
   }
 
-  const hasMods = ['minecraft', 'valheim', 'rust'].includes(game.id)
+  const hasMods = GAMES_WITH_MODS.includes(game.id)
+
+  const tabs: { id: Tab; label: string; icon: React.ReactNode; badge?: number }[] = [
+    { id: 'overview', label: 'Overview', icon: <Monitor size={13} /> },
+    ...(hasMods ? [{ id: 'mods' as Tab, label: 'Mods', icon: <Package size={13} />, badge: instance.enabledMods.length || undefined }] : []),
+    { id: 'logs', label: 'Logs', icon: <ScrollText size={13} /> },
+    { id: 'backups', label: 'Backups', icon: <HardDrive size={13} /> },
+  ]
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
@@ -85,26 +107,26 @@ export default function ServerPanel({ game, instance, onInstanceUpdated }: Props
 
       {/* Tab bar */}
       <div className="flex items-center gap-0 px-8 border-b border-[#27272a] bg-[#09090b] shrink-0">
-        {(['overview', hasMods ? 'mods' : null] as const).filter(Boolean).map(t => (
+        {tabs.map(t => (
           <button
-            key={t!}
-            onClick={() => setTab(t!)}
+            key={t.id}
+            onClick={() => setTab(t.id)}
             className={cn(
               'flex items-center gap-1.5 px-4 py-3 text-sm border-b-2 -mb-px transition-colors',
-              tab === t
+              tab === t.id
                 ? 'border-current font-medium text-white'
                 : 'border-transparent text-[#71717a] hover:text-[#a1a1aa]'
             )}
-            style={tab === t ? { borderColor: game.accentColor, color: game.accentColor } : undefined}
+            style={tab === t.id ? { borderColor: game.accentColor, color: game.accentColor } : undefined}
           >
-            {t === 'overview' ? <Monitor size={13} /> : <Package size={13} />}
-            {t === 'overview' ? 'Overview' : 'Mods'}
-            {t === 'mods' && instance.enabledMods.length > 0 && (
+            {t.icon}
+            {t.label}
+            {t.badge !== undefined && t.badge > 0 && (
               <span
                 className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
                 style={{ backgroundColor: game.accentColor + '22', color: game.accentColor }}
               >
-                {instance.enabledMods.length}
+                {t.badge}
               </span>
             )}
           </button>
@@ -112,7 +134,7 @@ export default function ServerPanel({ game, instance, onInstanceUpdated }: Props
       </div>
 
       {/* Tab content */}
-      {tab === 'overview' ? (
+      {tab === 'overview' && (
         <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6">
           {/* Actions */}
           <div className="flex gap-3">
@@ -188,13 +210,23 @@ export default function ServerPanel({ game, instance, onInstanceUpdated }: Props
             ))}
           </div>
         </div>
-      ) : (
+      )}
+
+      {tab === 'mods' && hasMods && (
         <div className="flex-1 overflow-hidden">
-          <ModsPanel
-            game={game}
-            instance={instance}
-            onInstanceUpdated={onInstanceUpdated}
-          />
+          <ModsPanel game={game} instance={instance} onInstanceUpdated={onInstanceUpdated} />
+        </div>
+      )}
+
+      {tab === 'logs' && (
+        <div className="flex-1 overflow-hidden">
+          <LogsPanel instanceId={instance.id} serverRunning={state === 'running'} />
+        </div>
+      )}
+
+      {tab === 'backups' && (
+        <div className="flex-1 overflow-hidden">
+          <BackupsPanel game={game} instance={instance} serverRunning={state === 'running'} />
         </div>
       )}
 
