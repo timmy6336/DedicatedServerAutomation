@@ -24,11 +24,12 @@ npm run dev
 
 ## 2. Sidebar — Game & Instance Tree
 
-- [ ] All 5 games appear: Palworld, Valheim, Rust, Don't Starve Together, Minecraft
+- [ ] All 10 games appear: Palworld, Valheim, Rust, Don't Starve Together, Minecraft, ARK: Survival Evolved, 7 Days to Die, Project Zomboid, V Rising, Enshrouded
 - [ ] Each game shows its instance count badge
 - [ ] Clicking a game header expands / collapses its section
 - [ ] "New server" button appears when a game is expanded
 - [ ] Empty state shown in main panel when no instance is selected
+- [ ] Sidebar scrolls when all 10 games are expanded
 
 ---
 
@@ -59,10 +60,11 @@ npm run dev
 - [ ] Status auto-refreshes every 10 seconds (no manual refresh needed)
 - [ ] Port list renders correctly for each game
 - [ ] Platform badges (Windows / Linux / macOS) shown correctly
+- [ ] Switching between instances resets the tab back to Overview
 
 ---
 
-## 5. Install Wizard — Steam Games (Palworld, Valheim, Rust, DST)
+## 5. Install Wizard — Steam Games (Palworld, Valheim, Rust, DST, ARK, 7DTD, Zomboid, V Rising, Enshrouded)
 
 - [ ] Clicking "Install Server" opens the wizard
 - [ ] Wizard title shows correct game name and Steam App ID
@@ -105,13 +107,60 @@ npm run dev
 - [ ] **Choice** fields show a dropdown with correct options
 - [ ] Required fields marked with a red asterisk
 - [ ] Fields with `helpUrl` (e.g. DST cluster token) show a clickable "Get token" link
+- [ ] **Discord Webhook URL** field appears in every game's config
 - [ ] "Save Changes" saves and closes after ~800ms
 - [ ] "Cancel" closes without saving
 - [ ] Two instances of the same game can have **different** configs (verify by saving different port values)
 
 ---
 
-## 8. Mods Tab — Minecraft
+## 8. Logs Tab
+
+- [ ] "Logs" tab visible on every server panel
+- [ ] Empty state message shown when server has not been started this session
+- [ ] Starting the server causes log lines to stream into the panel in real time
+- [ ] Log panel auto-scrolls to the bottom as new lines arrive
+- [ ] Scrolling up pauses auto-scroll; "↓ Scroll to bottom" button appears
+- [ ] Clicking "↓ Scroll to bottom" resumes auto-scroll and hides the button
+- [ ] **Color coding** — error/exception lines appear red, warn lines yellow, others grey
+- [ ] "Clear" button empties the log panel
+- [ ] "Clear" button is disabled when the log is already empty
+- [ ] Switching to another tab and back preserves the log buffer within the session
+- [ ] Switching to a **different instance** clears the buffer (each instance has its own log)
+- [ ] Buffer capped at ~1000 lines; oldest lines are dropped when exceeded
+
+---
+
+## 9. Backups Tab
+
+- [ ] "Backups" tab visible on every server panel
+- [ ] Empty state shown with description when no backups exist
+- [ ] **Create Backup** button copies the entire server directory to a timestamped snapshot
+- [ ] After creation, the backup appears in the list with a human-readable date and file size
+- [ ] Multiple backups appear newest-first
+- [ ] Clicking **Restore** shows an inline confirmation ("Overwrite current files? Yes / Cancel")
+- [ ] Confirming restore overwrites the server directory with the backup contents
+- [ ] Cancelling restore does nothing
+- [ ] **Delete** (trash icon) removes the backup from list and disk immediately
+- [ ] Yellow warning banner shown when the server is running
+- [ ] Create Backup and Restore buttons disabled while server is running
+- [ ] File sizes display correctly (B / KB / MB / GB)
+
+---
+
+## 10. Discord Webhook Integration
+
+- [ ] Open Configure for any server, paste a valid Discord webhook URL into the field, save
+- [ ] **Start the server** → Discord channel receives "🟢 **Server Name** is now **Online**!"
+- [ ] **Stop the server** → Discord channel receives "🔴 **Server Name** is now **Offline**."
+- [ ] If the server **crashes** (exits with non-zero code) → channel receives "⚠️ **Server Name** crashed (exit code N)."
+- [ ] Leaving the webhook URL blank → no messages sent, no errors
+- [ ] Invalid/unreachable URL → app continues normally (webhook errors are silent)
+- [ ] Two instances of the same game each post to their own webhook if configured separately
+
+---
+
+## 11. Mods Tab — Minecraft
 
 - [ ] "Mods" tab visible on a Minecraft server panel
 - [ ] Tab shows a count badge when mods are enabled
@@ -132,43 +181,90 @@ npm run dev
 
 ---
 
-## 9. Mods Tab — Valheim & Rust
+## 12. Mods Tab — Valheim & Rust
 
 - [ ] "Mods" tab visible (same as Minecraft)
 - [ ] `.zip` and `.dll` files accepted via Browse / drag-drop
-- [ ] Palworld and DST do **not** show a Mods tab
 
 ---
 
-## 10. Server Start / Stop
+## 13. Mods Tab — 7 Days to Die, Project Zomboid, V Rising
+
+- [ ] "Mods" tab visible for all three games
+- [ ] `.jar`, `.zip`, and `.dll` files accepted via Browse / drag-drop
+- [ ] Toggle, per-instance isolation, and library delete all work the same as Minecraft
+
+---
+
+## 14. Games Without a Mods Tab
+
+- [ ] Palworld, Don't Starve Together, ARK: Survival Evolved, and Enshrouded do **not** show a Mods tab
+
+---
+
+## 15. New Games — Per-Game Spot Checks
+
+### ARK: Survival Evolved
+- [ ] Genre "Survival / Action"; accent colour amber
+- [ ] Ports: 7777 UDP (Game), 7778 UDP (Raw UDP), 27015 UDP (Steam Query)
+- [ ] Settings: Session Name, Join Password, Admin Password, Max Players, Game Port, Query Port, Discord Webhook
+
+### 7 Days to Die
+- [ ] Genre "Survival / Horror"; accent colour red
+- [ ] Ports: 26900 UDP (Game), 26901 UDP (Query), 26902 UDP (Steam), 8080 TCP (Web Panel)
+- [ ] Settings: Server Name, Server Password, Max Players, Difficulty (choice field), Discord Webhook
+
+### Project Zomboid
+- [ ] Accent colour zinc/grey
+- [ ] Ports: 16261 UDP (Game), 16262 UDP (Direct)
+- [ ] Settings: Server Name, Admin Password, Max Players, Public Server toggle, Discord Webhook
+
+### V Rising
+- [ ] Genre "Survival / Action RPG"; accent colour purple
+- [ ] Ports: 9876 UDP (Game), 9877 UDP (Query)
+- [ ] Settings: Server Name, Max Players (max 40), Game Port, Query Port, Discord Webhook
+
+### Enshrouded
+- [ ] Accent colour violet
+- [ ] Ports: 15636 UDP (Game), 15637 UDP (Query)
+- [ ] Settings: Server Name, Password, Max Players (max 16), Game Port, Discord Webhook
+
+---
+
+## 16. Server Start / Stop
 
 - [ ] "Start Server" launches the server process
 - [ ] Status badge changes to "Online" (may take up to 10s for next poll)
 - [ ] Local IP and port shown in connection info cards
 - [ ] "Stop Server" terminates the process
 - [ ] Status badge returns to "Offline"
+- [ ] Status badge updates **immediately** if the server crashes (no waiting for the 10s poll)
 - [ ] **Minecraft** — start command runs `java -jar server.jar nogui` (check Task Manager / `ps`)
 - [ ] **Enabled mods** are copied to `mods/` before server starts
 - [ ] Starting a second instance of the same game while the first is running works independently
 
 ---
 
-## 11. Persistence Across Restarts
+## 17. Persistence Across Restarts
 
 - [ ] Close and reopen the app
 - [ ] All previously created instances appear in the sidebar
-- [ ] Saved configs reload correctly
+- [ ] Saved configs reload correctly (including Discord webhook URL)
 - [ ] Mod library entries persist
 - [ ] Enabled mod selections per instance persist
+- [ ] Backup list persists (backups are on disk; reappear on next open)
 
 ---
 
-## 12. Edge Cases
+## 18. Edge Cases
 
 - [ ] Create 3+ instances for the same game — sidebar scrolls if needed
 - [ ] Long instance name truncates gracefully in the sidebar
-- [ ] Renaming an instance (future feature) — not yet implemented, verify no crash
 - [ ] Installing the same game twice (two instances) — each gets its own directory, no conflict
 - [ ] Adding the same mod file twice — no duplicate in the library (file overwritten, single entry)
-- [ ] Dropping a non-mod file (e.g. `.txt`) onto the drop zone — ignored
+- [ ] Dropping a non-mod file (e.g. `.txt`) onto the mod drop zone — ignored
 - [ ] No internet connection during install — wizard shows a clear error message
+- [ ] Creating a backup of a not-yet-installed instance — fails gracefully, no crash
+- [ ] Restoring a backup when the instance directory no longer exists — handled without crash
+- [ ] Discord webhook with a malformed URL (missing `https://`) — silently ignored, no crash
+- [ ] Log panel with 1000+ lines — oldest lines are dropped, UI remains responsive
