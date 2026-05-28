@@ -1,0 +1,41 @@
+{
+  "name": "dedicated-server-automation",
+  "version": "2.0.0",
+  "description": "Dedicated game server management",
+  "main": "./out/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "preview": "electron-vite preview",
+    "package": "electron-vite build && electron-builder"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@electron-toolkit/preload": "^3.0.1",
+    "@electron-toolkit/utils": "^4.0.0",
+    "@tailwindcss/vite": "^4.1.8",
+    "@types/node": "^22.15.29",
+    "@types/react": "^19.1.5",
+    "@types/react-dom": "^19.1.5",
+    "@vitejs/plugin-react": "^4.5.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "electron": "^36.3.1",
+    "electron-builder": "^26.0.12",
+    "electron-vite": "^3.1.0",
+    "lucide-react": "^0.511.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "tailwind-merge": "^3.3.0",
+    "tailwindcss": "^4.1.8",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5"
+  },
+  "build": {
+    "appId": "com.dedicatedserverautomation.app",
+    "productName": "Dedicated Server Automation",
+    "win": {
+      "target": "nsis"
+    }
+  }
+}
