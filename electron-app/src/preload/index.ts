@@ -7,28 +7,32 @@ const api = {
   close:    () => ipcRenderer.send('window:close'),
 
   // Config
-  loadConfig: (gameId: string) => ipcRenderer.invoke('config:load', gameId),
+  loadConfig: (gameId: string) =>
+    ipcRenderer.invoke('config:load', gameId),
   saveConfig: (gameId: string, config: Record<string, unknown>) =>
     ipcRenderer.invoke('config:save', gameId, config),
 
   // Server state
   isInstalled: (gameId: string, subdir: string, exe: string) =>
     ipcRenderer.invoke('server:isInstalled', gameId, subdir, exe),
-  isRunning: (processNames: string[]) =>
-    ipcRenderer.invoke('server:isRunning', processNames),
-  getLocalIp: () => ipcRenderer.invoke('server:localIp'),
+  isRunning: (gameId: string, processNames: string[]) =>
+    ipcRenderer.invoke('server:isRunning', gameId, processNames),
+  getLocalIp: () =>
+    ipcRenderer.invoke('server:localIp'),
+  checkJava: (): Promise<string | null> =>
+    ipcRenderer.invoke('server:checkJava'),
 
-  // Install flow
-  startInstall: (gameId: string, steamAppId: string) =>
-    ipcRenderer.invoke('install:start', gameId, steamAppId),
+  // Install — installMode: 'steam' | 'mojang'
+  startInstall: (gameId: string, steamAppId: string, installMode: string) =>
+    ipcRenderer.invoke('install:start', gameId, steamAppId, installMode),
 
-  // Server lifecycle
-  startServer: (gameId: string, exePath: string, args: string[]) =>
-    ipcRenderer.invoke('server:start', gameId, exePath, args),
+  // Server lifecycle — launchMode passed so main knows how to spawn
+  startServer: (gameId: string, exePath: string, args: string[], launchMode: string) =>
+    ipcRenderer.invoke('server:start', gameId, exePath, args, launchMode),
   stopServer: (gameId: string, processNames: string[]) =>
     ipcRenderer.invoke('server:stop', gameId, processNames),
 
-  // Event listeners
+  // Event listeners — returns unsubscribe fn
   on: (channel: string, fn: (...args: unknown[]) => void) => {
     const wrapped = (_: Electron.IpcRendererEvent, ...args: unknown[]) => fn(...args)
     ipcRenderer.on(channel, wrapped)

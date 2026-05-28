@@ -9,13 +9,12 @@ interface StepState {
   status: 'waiting' | 'active' | 'done' | 'error'
 }
 
-const INITIAL_STEPS: StepState[] = [
-  { label: 'Download SteamCMD', progress: 0, status: 'waiting' },
-  { label: 'Install server files', progress: 0, status: 'waiting' },
-  { label: 'Complete', progress: 0, status: 'waiting' }
-]
-
+const DEFAULT_STEP_LABELS = ['Download SteamCMD', 'Install server files', 'Complete']
 const STEP_ICONS = [Download, HardDrive, Rocket]
+
+function makeInitialSteps(labels: string[]): StepState[] {
+  return labels.map(label => ({ label, progress: 0, status: 'waiting' as const }))
+}
 
 interface Props {
   game: Game
@@ -23,7 +22,9 @@ interface Props {
 }
 
 export default function InstallWizard({ game, onClose }: Props) {
-  const [steps, setSteps] = useState<StepState[]>(INITIAL_STEPS)
+  const [steps, setSteps] = useState<StepState[]>(() =>
+    makeInitialSteps(game.installSteps ?? DEFAULT_STEP_LABELS)
+  )
   const [logs, setLogs] = useState<string[]>([])
   const [started, setStarted] = useState(false)
   const [finished, setFinished] = useState(false)
@@ -73,7 +74,7 @@ export default function InstallWizard({ game, onClose }: Props) {
   async function startInstall() {
     setStarted(true)
     setSteps(prev => [{ ...prev[0], status: 'active' }, ...prev.slice(1)])
-    await window.api.startInstall(game.id, game.steamAppId)
+    await window.api.startInstall(game.id, game.steamAppId, game.installMode)
   }
 
   const activeStep = steps.findIndex(s => s.status === 'active')

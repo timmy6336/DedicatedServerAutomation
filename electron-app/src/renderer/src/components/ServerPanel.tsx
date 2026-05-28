@@ -21,7 +21,7 @@ export default function ServerPanel({ game }: Props) {
   const refresh = useCallback(async () => {
     const installed = await window.api.isInstalled(game.id, game.executableSubdir, game.executable)
     if (!installed) { setState('not_installed'); return }
-    const running = await window.api.isRunning(game.processNames)
+    const running = await window.api.isRunning(game.id, game.processNames)
     setState(running ? 'running' : 'stopped')
     if (running) {
       const ip = await window.api.getLocalIp()
@@ -42,9 +42,18 @@ export default function ServerPanel({ game }: Props) {
       String(config[k] ?? '')
     )
     const args = formatted.trim() ? formatted.trim().split(/\s+/) : []
-    const base = await window.api.getLocalIp() // just to trigger IPC warm-up
-    void base
-    await window.api.startServer(game.id, game.executable, args)
+
+    // For Java servers, pass the install directory as exePath so the main
+    // process can set cwd correctly and run: java <args>
+    const installBase = await window.api.getLocalIp() // warm up IPC
+    void installBase
+    const exeOrDir = game.launchMode === 'java'
+      ? game.id   // main process resolves full path from gameId
+      : (game.executableSubdir
+          ? `${game.serverDirName}/${game.executableSubdir}/${game.executable}`
+          : `${game.serverDirName}/${game.executable}`)
+
+    await window.api.startServer(game.id, exeOrDir, args, game.launchMode)
     setTimeout(() => { refresh(); setActionPending(false) }, 2000)
   }
 

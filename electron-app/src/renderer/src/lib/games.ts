@@ -25,7 +25,8 @@ export interface Game {
   genre: string
   platforms: string[]
   steamAppId: string
-  launchMode: 'steam' | 'dst_dual_shard'
+  installMode: 'steam' | 'mojang'
+  launchMode: 'steam' | 'java' | 'dst_dual_shard'
   serverDirName: string
   executable: string
   executableSubdir: string
@@ -34,8 +35,9 @@ export interface Game {
   defaultPort: number
   ports: PortDef[]
   serverSettings: SettingDef[]
-  bannerColor: string    // tailwind gradient from color
+  bannerColor: string
   accentColor: string
+  installSteps?: string[]  // custom labels for the 3-step install wizard
 }
 
 export const GAMES: Game[] = [
@@ -46,6 +48,7 @@ export const GAMES: Game[] = [
     genre: 'Survival / Crafting',
     platforms: ['Windows'],
     steamAppId: '2394010',
+    installMode: 'steam',
     launchMode: 'steam',
     serverDirName: 'PalServer',
     executable: 'PalServer.exe',
@@ -74,6 +77,7 @@ export const GAMES: Game[] = [
     genre: 'Survival / RPG',
     platforms: ['Windows', 'Linux'],
     steamAppId: '896660',
+    installMode: 'steam',
     launchMode: 'steam',
     serverDirName: 'valheim_dedicated_server',
     executable: 'valheim_dedicated_server.exe',
@@ -102,6 +106,7 @@ export const GAMES: Game[] = [
     genre: 'Survival / PvP',
     platforms: ['Windows', 'Linux'],
     steamAppId: '258550',
+    installMode: 'steam',
     launchMode: 'steam',
     serverDirName: 'rust_dedicated_server',
     executable: 'RustDedicated.exe',
@@ -132,6 +137,7 @@ export const GAMES: Game[] = [
     genre: 'Survival',
     platforms: ['Windows', 'Linux'],
     steamAppId: '343050',
+    installMode: 'steam',
     launchMode: 'dst_dual_shard',
     serverDirName: 'DST_Dedicated',
     executable: 'dontstarve_dedicated_server_nullrenderer_x64.exe',
@@ -153,6 +159,43 @@ export const GAMES: Game[] = [
       { key: 'password', label: 'Password', type: 'password', default: '' },
       { key: 'pvp', label: 'PvP Enabled', type: 'bool', default: false },
       { key: 'server_token', label: 'Cluster Token', type: 'password', default: '', required: true, helpUrl: 'https://accounts.klei.com/account/game/servers' }
+    ]
+  },
+  {
+    id: 'minecraft',
+    name: 'Minecraft',
+    description: 'The iconic sandbox survival game. Build, explore, and survive in an infinite procedurally generated world.',
+    genre: 'Sandbox / Survival',
+    platforms: ['Windows', 'Linux', 'macOS'],
+    steamAppId: '',
+    installMode: 'mojang',
+    launchMode: 'java',
+    serverDirName: 'minecraft_server',
+    executable: 'server.jar',
+    executableSubdir: '',
+    launchArgs: '-Xmx{max_memory}G -Xms{min_memory}G -jar server.jar nogui',
+    processNames: ['java'],
+    defaultPort: 25565,
+    ports: [
+      { port: 25565, protocol: 'TCP', description: 'Game' },
+      { port: 25575, protocol: 'TCP', description: 'RCON' }
+    ],
+    bannerColor: 'from-green-950 to-stone-950',
+    accentColor: '#22c55e',
+    installSteps: ['Check Java & fetch version', 'Download server JAR', 'Configure & finalize'],
+    serverSettings: [
+      { key: 'port', label: 'Server Port', type: 'int', default: 25565, min: 1024, max: 65535 },
+      { key: 'max_players', label: 'Max Players', type: 'int', default: 20, min: 1, max: 1000 },
+      { key: 'motd', label: 'Server Description (MOTD)', type: 'string', default: 'A Minecraft Server', placeholder: 'Shown in the server list' },
+      { key: 'difficulty', label: 'Difficulty', type: 'choice', default: 'normal', options: ['peaceful', 'easy', 'normal', 'hard'] },
+      { key: 'gamemode', label: 'Default Gamemode', type: 'choice', default: 'survival', options: ['survival', 'creative', 'adventure', 'spectator'] },
+      { key: 'max_memory', label: 'Max RAM (GB)', type: 'int', default: 4, min: 1, max: 64 },
+      { key: 'min_memory', label: 'Min RAM (GB)', type: 'int', default: 2, min: 1, max: 64 },
+      { key: 'whitelist', label: 'Whitelist Only', type: 'bool', default: false },
+      { key: 'pvp', label: 'PvP Enabled', type: 'bool', default: true },
+      { key: 'online_mode', label: 'Online Mode (auth)', type: 'bool', default: true, tooltip: 'Disable only for offline/LAN play' },
+      { key: 'rcon_password', label: 'RCON Password', type: 'password', default: '', placeholder: 'Leave blank to disable RCON' },
+      { key: 'rcon_port', label: 'RCON Port', type: 'int', default: 25575, min: 1024, max: 65535 }
     ]
   }
 ]
