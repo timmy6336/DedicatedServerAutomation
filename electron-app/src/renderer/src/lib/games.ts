@@ -41,6 +41,7 @@ export interface Game {
   modsSubdir?: string       // path relative to instance dir where mod files are placed
   modExtensions?: string[]  // accepted file extensions shown in picker / drop zone
   modsNote?: string         // optional caveat shown in the Mods panel header
+  clientGamePath?: string   // Steam game folder path shown in mod-pack export instructions
 }
 
 const DISCORD_WEBHOOK_SETTING: SettingDef = {
@@ -109,6 +110,7 @@ export const GAMES: Game[] = [
     modsSubdir: 'BepInEx/plugins',
     modExtensions: ['dll', 'zip'],
     modsNote: 'Requires BepInEx installed in the server directory first.',
+    clientGamePath: 'Steam\\steamapps\\common\\Valheim',
     serverSettings: [
       { key: 'server_name', label: 'Server Name', type: 'string', default: 'My Valheim Server', required: true },
       { key: 'world_name', label: 'World Name', type: 'string', default: 'Dedicated', required: true },
@@ -352,6 +354,7 @@ export const GAMES: Game[] = [
     modsSubdir: 'BepInEx/plugins',
     modExtensions: ['dll', 'zip'],
     modsNote: 'Requires BepInEx installed in the server directory first.',
+    clientGamePath: 'Steam\\steamapps\\common\\VRising',
     serverSettings: [
       { key: 'server_name', label: 'Server Name', type: 'string', default: 'My V Rising Server', required: true },
       { key: 'max_players', label: 'Max Players', type: 'int', default: 40, min: 1, max: 40 },

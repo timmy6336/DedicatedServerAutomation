@@ -44,7 +44,9 @@ const api = {
   listMods:    (gameId: string) => ipcRenderer.invoke('mods:list', gameId),
   addMods:     (gameId: string, paths: string[]) => ipcRenderer.invoke('mods:add', gameId, paths),
   removeMod:   (gameId: string, filename: string) => ipcRenderer.invoke('mods:remove', gameId, filename),
-  openModPicker: (gameId: string) => ipcRenderer.invoke('mods:openPicker', gameId),
+  openModPicker:   (gameId: string) => ipcRenderer.invoke('mods:openPicker', gameId),
+  exportBepInEx:   (gameId: string, instanceId: string, instanceName: string) =>
+    ipcRenderer.invoke('mods:exportBepInEx', gameId, instanceId, instanceName),
 
   // Backups
   createBackup:  (gameId: string, instanceId: string) =>

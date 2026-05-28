@@ -565,6 +565,37 @@ export function registerIpcHandlers(): void {
     return true
   })
 
+  ipcMain.handle('mods:exportBepInEx', async (_, gameId: string, instanceId: string, instanceName: string) => {
+    const instDir = instanceDir(gameId, instanceId)
+    const bepInExDir = join(instDir, 'BepInEx')
+    if (!existsSync(bepInExDir)) {
+      return { error: 'BepInEx folder not found in the server directory. Add mods first.' }
+    }
+
+    const safeName = instanceName.replace(/[^a-zA-Z0-9_-]/g, '_')
+    const result = await dialog.showSaveDialog({
+      title: 'Save BepInEx Mod Pack',
+      defaultPath: `${safeName}_BepInEx_Pack.zip`,
+      filters: [{ name: 'ZIP Archive', extensions: ['zip'] }]
+    })
+    if (result.canceled || !result.filePath) return { canceled: true }
+
+    const dest = result.filePath
+    try {
+      if (process.platform === 'win32') {
+        spawnSync('powershell', [
+          '-Command',
+          `Compress-Archive -LiteralPath "${bepInExDir}" -DestinationPath "${dest}" -Force`
+        ], { encoding: 'utf-8' })
+      } else {
+        spawnSync('zip', ['-r', dest, 'BepInEx'], { cwd: instDir, encoding: 'utf-8' })
+      }
+      return { path: dest }
+    } catch (e) {
+      return { error: String(e) }
+    }
+  })
+
   ipcMain.handle('mods:openPicker', async (_, gameId: string) => {
     const extensions = MODS_CONFIG[gameId]?.extensions ?? ['zip', 'dll', 'jar']
     const result = await dialog.showOpenDialog({

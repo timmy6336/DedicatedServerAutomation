@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { type Game } from '../lib/games'
 import { type ServerInstance, type ModEntry } from '../lib/instances'
-import { Plus, Trash2, Package, FolderOpen } from 'lucide-react'
+import { Plus, Trash2, Package, FolderOpen, Archive, CheckCircle2, AlertCircle } from 'lucide-react'
 import { cn } from '../lib/utils'
 
 interface Props {
@@ -14,6 +14,8 @@ export default function ModsPanel({ game, instance, onInstanceUpdated }: Props) 
   const [library, setLibrary] = useState<ModEntry[]>([])
   const [draggingOver, setDraggingOver] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [exportState, setExportState] = useState<{ path?: string; error?: string } | null>(null)
+  const [exporting, setExporting] = useState(false)
   const dropRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -23,6 +25,15 @@ export default function ModsPanel({ game, instance, onInstanceUpdated }: Props) 
   async function loadLibrary() {
     const mods = await window.api.listMods(game.id) as ModEntry[]
     setLibrary(mods)
+  }
+
+  async function handleExportBepInEx() {
+    setExporting(true)
+    setExportState(null)
+    const result = await window.api.exportBepInEx(game.id, instance.id, instance.name) as
+      { path?: string; error?: string; canceled?: boolean }
+    setExporting(false)
+    if (!result.canceled) setExportState(result)
   }
 
   async function addFiles(paths: string[]) {
@@ -104,6 +115,54 @@ export default function ModsPanel({ game, instance, onInstanceUpdated }: Props) 
           </button>
         </div>
       </div>
+
+      {/* BepInEx export card — Valheim / V Rising only */}
+      {game.modsSubdir === 'BepInEx/plugins' && (
+        <div className="px-8 pb-2 shrink-0">
+          <div className="rounded-xl bg-[#18181b] border border-[#27272a] px-4 py-3 flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 mb-0.5">
+                <Archive size={13} className="text-[#71717a] shrink-0" />
+                <p className="text-sm font-medium">Share Mod Pack</p>
+              </div>
+              <p className="text-xs text-[#71717a]">
+                Zip the BepInEx folder so players can install the same mods on their own client.
+                They extract the zip directly into their {game.name} game directory.
+              </p>
+              {exportState?.path && (
+                <div className="mt-2 flex items-start gap-2 text-xs text-emerald-400">
+                  <CheckCircle2 size={12} className="mt-0.5 shrink-0" />
+                  <span>
+                    Saved to <span className="font-mono break-all">{exportState.path}</span>
+                    <br />
+                    <span className="text-[#71717a]">
+                      Players: extract the zip into their{' '}
+                      {game.clientGamePath
+                        ? <span className="font-mono">…\{game.clientGamePath}\</span>
+                        : `${game.name} game folder`}{' '}
+                      (right-click the zip → Extract Here).
+                    </span>
+                  </span>
+                </div>
+              )}
+              {exportState?.error && (
+                <div className="mt-2 flex items-center gap-2 text-xs text-red-400">
+                  <AlertCircle size={12} className="shrink-0" />
+                  {exportState.error}
+                </div>
+              )}
+            </div>
+            <button
+              onClick={handleExportBepInEx}
+              disabled={exporting}
+              className="shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#111113] border border-[#27272a] text-sm text-[#a1a1aa] hover:text-white hover:border-[#3f3f46] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              <Archive size={13} />
+              {exporting ? 'Zipping…' : 'Export .zip'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Drop zone + mod list */}
       <div className="flex-1 overflow-hidden flex flex-col px-8 pb-6 gap-4">
