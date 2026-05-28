@@ -159,10 +159,22 @@ function getDirSize(dir: string): number {
   return size
 }
 
-// ── copy enabled mods into instance mods/ directory ──────────────────────────
+// ── per-game mod configuration (mirrors games.ts modsSubdir/modExtensions) ────
+const MODS_CONFIG: Record<string, { subdir: string; extensions: string[] }> = {
+  minecraft:  { subdir: 'mods',             extensions: ['jar'] },
+  palworld:   { subdir: 'Pal/Content/Paks', extensions: ['pak'] },
+  valheim:    { subdir: 'BepInEx/plugins',  extensions: ['dll', 'zip'] },
+  rust:       { subdir: 'oxide/plugins',    extensions: ['dll', 'cs'] },
+  sevendays:  { subdir: 'Mods',             extensions: ['dll', 'zip'] },
+  zomboid:    { subdir: 'Mods',             extensions: ['zip'] },
+  vrising:    { subdir: 'BepInEx/plugins',  extensions: ['dll', 'zip'] },
+}
+
+// ── copy enabled mods into the game's correct mod directory ──────────────────
 function applyMods(gameId: string, instanceId: string, enabledMods: string[]): void {
+  const modsSubdir = MODS_CONFIG[gameId]?.subdir ?? 'mods'
   const instDir = instanceDir(gameId, instanceId)
-  const modsDir = join(instDir, 'mods')
+  const modsDir = join(instDir, modsSubdir)
   const libDir = modLibDir(gameId)
 
   if (!existsSync(modsDir)) mkdirSync(modsDir, { recursive: true })
@@ -554,7 +566,7 @@ export function registerIpcHandlers(): void {
   })
 
   ipcMain.handle('mods:openPicker', async (_, gameId: string) => {
-    const extensions = gameId === 'minecraft' ? ['jar'] : ['zip', 'dll', 'jar']
+    const extensions = MODS_CONFIG[gameId]?.extensions ?? ['zip', 'dll', 'jar']
     const result = await dialog.showOpenDialog({
       title: 'Select Mod Files',
       filters: [{ name: 'Mod files', extensions }],

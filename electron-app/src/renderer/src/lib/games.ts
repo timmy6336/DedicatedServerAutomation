@@ -38,6 +38,9 @@ export interface Game {
   bannerColor: string
   accentColor: string
   installSteps?: string[]
+  modsSubdir?: string       // path relative to instance dir where mod files are placed
+  modExtensions?: string[]  // accepted file extensions shown in picker / drop zone
+  modsNote?: string         // optional caveat shown in the Mods panel header
 }
 
 const DISCORD_WEBHOOK_SETTING: SettingDef = {
@@ -71,6 +74,8 @@ export const GAMES: Game[] = [
     ],
     bannerColor: 'from-emerald-900 to-teal-950',
     accentColor: '#10b981',
+    modsSubdir: 'Pal/Content/Paks',
+    modExtensions: ['pak'],
     serverSettings: [
       { key: 'port', label: 'Server Port', type: 'int', default: 8211, min: 1024, max: 65535 },
       { key: 'max_players', label: 'Max Players', type: 'int', default: 32, min: 1, max: 32 },
@@ -101,6 +106,9 @@ export const GAMES: Game[] = [
     ],
     bannerColor: 'from-blue-950 to-indigo-950',
     accentColor: '#6366f1',
+    modsSubdir: 'BepInEx/plugins',
+    modExtensions: ['dll', 'zip'],
+    modsNote: 'Requires BepInEx installed in the server directory first.',
     serverSettings: [
       { key: 'server_name', label: 'Server Name', type: 'string', default: 'My Valheim Server', required: true },
       { key: 'world_name', label: 'World Name', type: 'string', default: 'Dedicated', required: true },
@@ -131,6 +139,9 @@ export const GAMES: Game[] = [
     ],
     bannerColor: 'from-orange-950 to-red-950',
     accentColor: '#f97316',
+    modsSubdir: 'oxide/plugins',
+    modExtensions: ['dll', 'cs'],
+    modsNote: 'Requires Oxide/uMod installed in the server directory first.',
     serverSettings: [
       { key: 'server_name', label: 'Server Name', type: 'string', default: 'My Rust Server', required: true },
       { key: 'port', label: 'Game Port', type: 'int', default: 28015, min: 1024, max: 65535 },
@@ -196,6 +207,8 @@ export const GAMES: Game[] = [
     bannerColor: 'from-green-950 to-stone-950',
     accentColor: '#22c55e',
     installSteps: ['Check Java & fetch version', 'Download server JAR', 'Configure & finalize'],
+    modsSubdir: 'mods',
+    modExtensions: ['jar'],
     serverSettings: [
       { key: 'port', label: 'Server Port', type: 'int', default: 25565, min: 1024, max: 65535 },
       { key: 'max_players', label: 'Max Players', type: 'int', default: 20, min: 1, max: 1000 },
@@ -267,6 +280,9 @@ export const GAMES: Game[] = [
     ],
     bannerColor: 'from-red-950 to-zinc-950',
     accentColor: '#ef4444',
+    modsSubdir: 'Mods',
+    modExtensions: ['dll', 'zip'],
+    modsNote: 'Each mod must be a folder inside Mods/ containing ModInfo.xml. Drop the mod zip here and extract it manually.',
     serverSettings: [
       { key: 'server_name', label: 'Server Name', type: 'string', default: 'My 7DTD Server', required: true },
       { key: 'server_password', label: 'Server Password', type: 'password', default: '' },
@@ -300,6 +316,9 @@ export const GAMES: Game[] = [
     ],
     bannerColor: 'from-zinc-900 to-neutral-950',
     accentColor: '#71717a',
+    modsSubdir: 'Mods',
+    modExtensions: ['zip'],
+    modsNote: 'Project Zomboid mods are typically managed via Steam Workshop. File-drop places zips into the Mods/ folder.',
     serverSettings: [
       { key: 'server_name', label: 'Server Name', type: 'string', default: 'pzserver', required: true },
       { key: 'admin_password', label: 'Admin Password', type: 'password', default: '', required: true },
@@ -330,6 +349,9 @@ export const GAMES: Game[] = [
     ],
     bannerColor: 'from-purple-950 to-rose-950',
     accentColor: '#a855f7',
+    modsSubdir: 'BepInEx/plugins',
+    modExtensions: ['dll', 'zip'],
+    modsNote: 'Requires BepInEx installed in the server directory first.',
     serverSettings: [
       { key: 'server_name', label: 'Server Name', type: 'string', default: 'My V Rising Server', required: true },
       { key: 'max_players', label: 'Max Players', type: 'int', default: 40, min: 1, max: 40 },

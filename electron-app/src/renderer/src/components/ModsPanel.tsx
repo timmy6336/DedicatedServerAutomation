@@ -77,7 +77,7 @@ export default function ModsPanel({ game, instance, onInstanceUpdated }: Props) 
     await addFiles(paths.filter(Boolean))
   }
 
-  const modExtensions = game.id === 'minecraft' ? ['.jar'] : ['.jar', '.zip', '.dll']
+  const displayExtensions = (game.modExtensions ?? ['jar', 'zip', 'dll']).map(e => `.${e}`)
   const enabledSet = new Set(instance.enabledMods)
 
   return (
@@ -90,6 +90,9 @@ export default function ModsPanel({ game, instance, onInstanceUpdated }: Props) 
             {library.length} mod{library.length !== 1 ? 's' : ''} installed ·{' '}
             {instance.enabledMods.length} enabled on <span className="text-[#a1a1aa]">{instance.name}</span>
           </p>
+          {game.modsNote && (
+            <p className="text-xs text-yellow-500/80 mt-1">{game.modsNote}</p>
+          )}
         </div>
         <div className="flex gap-2">
           <button
@@ -119,7 +122,7 @@ export default function ModsPanel({ game, instance, onInstanceUpdated }: Props) 
         >
           <Plus size={16} className="mx-auto mb-1 opacity-60" />
           <p className="text-xs">
-            Drop {modExtensions.join(', ')} files here to add to library
+            Drop {displayExtensions.join(', ')} files here to add to library
           </p>
         </div>
 

@@ -18,7 +18,7 @@ interface Props {
 type ServerState = 'checking' | 'not_installed' | 'stopped' | 'running'
 type Tab = 'overview' | 'mods' | 'logs' | 'backups'
 
-const GAMES_WITH_MODS = ['minecraft', 'valheim', 'rust', 'sevendays', 'zomboid', 'vrising']
+const GAMES_WITH_MODS = ['minecraft', 'palworld', 'valheim', 'rust', 'sevendays', 'zomboid', 'vrising']
 
 export default function ServerPanel({ game, instance, onInstanceUpdated }: Props) {
   const [state, setState] = useState<ServerState>('checking')

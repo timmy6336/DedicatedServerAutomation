@@ -181,28 +181,60 @@ npm run dev
 
 ---
 
-## 12. Mods Tab — Valheim & Rust
+## 12. Mods Tab — Palworld
 
-- [ ] "Mods" tab visible (same as Minecraft)
-- [ ] `.zip` and `.dll` files accepted via Browse / drag-drop
-
----
-
-## 13. Mods Tab — 7 Days to Die, Project Zomboid, V Rising
-
-- [ ] "Mods" tab visible for all three games
-- [ ] `.jar`, `.zip`, and `.dll` files accepted via Browse / drag-drop
-- [ ] Toggle, per-instance isolation, and library delete all work the same as Minecraft
+- [ ] "Mods" tab visible on Palworld server panel
+- [ ] Drop zone shows `.pak` as the accepted extension
+- [ ] Browse picker is filtered to `.pak` files
+- [ ] On toggle, `.pak` file is copied to / removed from `Pal/Content/Paks/` inside the instance directory
 
 ---
 
-## 14. Games Without a Mods Tab
+## 13. Mods Tab — Valheim & V Rising
 
-- [ ] Palworld, Don't Starve Together, ARK: Survival Evolved, and Enshrouded do **not** show a Mods tab
+- [ ] "Mods" tab visible for both games
+- [ ] Drop zone shows `.dll`, `.zip`; Browse picker is filtered to `.dll` and `.zip`
+- [ ] Warning note shown: "Requires BepInEx installed in the server directory first."
+- [ ] On toggle, files are copied to / removed from `BepInEx/plugins/` inside the instance directory
 
 ---
 
-## 15. New Games — Per-Game Spot Checks
+## 14. Mods Tab — Rust
+
+- [ ] "Mods" tab visible
+- [ ] Drop zone shows `.dll`, `.cs`; Browse picker filtered to `.dll` and `.cs`
+- [ ] Warning note shown: "Requires Oxide/uMod installed in the server directory first."
+- [ ] On toggle, files are copied to / removed from `oxide/plugins/` inside the instance directory
+
+---
+
+## 15. Mods Tab — 7 Days to Die
+
+- [ ] "Mods" tab visible
+- [ ] Drop zone shows `.dll`, `.zip`
+- [ ] Warning note shown about ModInfo.xml folder structure requirement
+- [ ] On toggle, files are copied to / removed from `Mods/` (capital M) inside the instance directory
+
+---
+
+## 16. Mods Tab — Project Zomboid
+
+- [ ] "Mods" tab visible
+- [ ] Drop zone shows `.zip` only
+- [ ] Warning note shown about Workshop being the primary mod source
+- [ ] On toggle, zip is copied to / removed from `Mods/` (capital M) inside the instance directory
+
+---
+
+## 17. Games Without a Mods Tab
+
+- [ ] Don't Starve Together does **not** show a Mods tab (uses Steam Workshop IDs + Lua config, not file-drop)
+- [ ] ARK: Survival Evolved does **not** show a Mods tab (Steam Workshop only)
+- [ ] Enshrouded does **not** show a Mods tab (requires community mod loader, no standard server mod folder)
+
+---
+
+## 18. New Games — Per-Game Spot Checks
 
 ### ARK: Survival Evolved
 - [ ] Genre "Survival / Action"; accent colour amber
@@ -231,7 +263,7 @@ npm run dev
 
 ---
 
-## 16. Server Start / Stop
+## 19. Server Start / Stop
 
 - [ ] "Start Server" launches the server process
 - [ ] Status badge changes to "Online" (may take up to 10s for next poll)
@@ -240,12 +272,12 @@ npm run dev
 - [ ] Status badge returns to "Offline"
 - [ ] Status badge updates **immediately** if the server crashes (no waiting for the 10s poll)
 - [ ] **Minecraft** — start command runs `java -jar server.jar nogui` (check Task Manager / `ps`)
-- [ ] **Enabled mods** are copied to `mods/` before server starts
+- [ ] **Enabled mods** are copied to the game's correct mod directory before server starts
 - [ ] Starting a second instance of the same game while the first is running works independently
 
 ---
 
-## 17. Persistence Across Restarts
+## 20. Persistence Across Restarts
 
 - [ ] Close and reopen the app
 - [ ] All previously created instances appear in the sidebar
@@ -256,7 +288,7 @@ npm run dev
 
 ---
 
-## 18. Edge Cases
+## 21. Edge Cases
 
 - [ ] Create 3+ instances for the same game — sidebar scrolls if needed
 - [ ] Long instance name truncates gracefully in the sidebar
