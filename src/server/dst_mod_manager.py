@@ -207,29 +207,40 @@ def get_workshop_details(workshop_ids: list[str]) -> list[dict]:
         return []
 
 
-def search_workshop(query: str, page: int = 1, per_page: int = 20) -> list[dict]:
+def search_workshop(query: str = "", page: int = 1, per_page: int = 20) -> list[dict]:
     """
-    Search Steam Workshop for DST mods (appid 322330).
-    Returns list of mod dicts on success, empty list on failure.
-    The Steam API accepts an empty key for public workshop searches.
+    Browse/search Steam Workshop for DST mods (appid 322330).
+
+    - query="" (default): returns the most-subscribed (popular) mods, great for
+      an initial "discover" view when the widget first opens.
+    - query="text": full-text search ranked by relevance.
+    - page/per_page: used to implement pagination ("Load More").
+
+    Returns a list of mod dicts on success, empty list on failure.
+    The Steam API accepts an empty key for public workshop browsing.
     """
     try:
         import urllib.parse
         import urllib.request
 
-        params = {
+        trimmed = query.strip()
+        params: dict[str, str] = {
             "key": "",
             "appid": DST_WORKSHOP_APPID,
-            "query_type": "1",
+            # query_type 0 = ranked by vote/relevance (good for text search)
+            # query_type 12 = ranked by total unique subscriptions (popular)
+            "query_type": "0" if trimmed else "12",
             "numperpage": str(per_page),
             "page": str(page),
-            "search_text": query,
             "return_metadata": "1",
             "return_short_description": "1",
             "return_previews": "1",
             "return_children": "0",
             "return_tags": "0",
         }
+        if trimmed:
+            params["search_text"] = trimmed
+
         url = _QUERY_URL + "?" + urllib.parse.urlencode(params)
         req = urllib.request.Request(url, headers={"User-Agent": "DedicatedServerAutomation/1.0"})
         with urllib.request.urlopen(req, timeout=12) as resp:
