@@ -1,0 +1,156 @@
+{
+    "name": "Rust",
+    "display_name": "Rust",
+    "description": "Rust is a multiplayer survival game where players must work together or against each other to survive in a harsh open world. Build bases, gather resources, craft weapons, and defend against both wildlife and other players.",
+    "image": "images/rust_image.jpg",
+    "developer": "Facepunch Studios",
+    "publisher": "Facepunch Studios",
+    "release_date": "2018-02-08",
+    "genre": "Survival, Action, Multiplayer",
+    "platforms": ["Windows", "Mac", "Linux"],
+    "multiplayer": {
+        "min_players": 1,
+        "max_players": 300,
+        "cooperative": true,
+        "competitive": true
+    },
+    "server_info": {
+        "app_id": "258550",
+        "executable": "RustDedicated.exe",
+        "executable_linux": "RustDedicated",
+        "server_dir_name": "rust_dedicated_server",
+        "executable_subdir": "",
+        "default_port": 28015,
+        "protocol": "UDP",
+        "launch_mode": "steam",
+        "process_names": [
+            "RustDedicated.exe",
+            "RustDedicated",
+            "rust_server.exe",
+            "rust_server"
+        ],
+        "launch_args": "-batchmode +server.hostname \"{server_name}\" +server.port {port} +server.level \"Procedural Map\" +server.seed {seed} +server.worldsize {world_size} +server.maxplayers {max_players} +server.saveinterval {save_interval} +rcon.web 1 +rcon.port 28016 +rcon.password \"{password}\""
+    },
+    "ports": [
+        {"port": 28015, "protocol": "UDP", "description": "Game traffic"},
+        {"port": 28016, "protocol": "UDP", "description": "Query / RCON"},
+        {"port": 28082, "protocol": "TCP", "description": "Rust+ companion app"}
+    ],
+    "server_settings": [
+        {
+            "key": "server_name",
+            "label": "Server Name",
+            "type": "string",
+            "default": "Rust Server",
+            "required": true,
+            "placeholder": "My Rust Server",
+            "tooltip": "Name shown in the server browser"
+        },
+        {
+            "key": "password",
+            "label": "RCON Password",
+            "type": "password",
+            "default": "",
+            "placeholder": "Admin password",
+            "tooltip": "Password for remote console (RCON) access"
+        },
+        {
+            "key": "max_players",
+            "label": "Max Players",
+            "type": "int",
+            "default": 100,
+            "min": 1,
+            "max": 300,
+            "tooltip": "Maximum concurrent players. Requires more RAM at higher counts."
+        },
+        {
+            "key": "world_size",
+            "label": "World Size",
+            "type": "choice",
+            "default": "3000",
+            "options": ["1000", "2000", "3000", "4000"],
+            "tooltip": "Procedural map size. Larger = more RAM and disk space required."
+        },
+        {
+            "key": "seed",
+            "label": "World Seed",
+            "type": "int",
+            "default": 12345,
+            "min": 1,
+            "max": 2147483647,
+            "tooltip": "Seed for procedural world generation"
+        },
+        {
+            "key": "port",
+            "label": "Port",
+            "type": "int",
+            "default": 28015,
+            "min": 1024,
+            "max": 65535,
+            "tooltip": "UDP port for the game server"
+        },
+        {
+            "key": "save_interval",
+            "label": "Save Interval (seconds)",
+            "type": "int",
+            "default": 600,
+            "min": 60,
+            "max": 3600,
+            "tooltip": "How often the world auto-saves (in seconds)"
+        },
+        {
+            "key": "pve_mode",
+            "label": "PvE Mode (no player damage)",
+            "type": "bool",
+            "default": false,
+            "tooltip": "Disable player-vs-player damage"
+        },
+        {
+            "key": "enable_upnp",
+            "label": "Auto Port Forward (UPnP)",
+            "type": "bool",
+            "default": true,
+            "tooltip": "Automatically configure port forwarding on your router"
+        },
+        {
+            "key": "configure_firewall",
+            "label": "Configure Windows Firewall",
+            "type": "bool",
+            "default": true,
+            "tooltip": "Add firewall rules for the server ports"
+        }
+    ],
+    "system_requirements": {
+        "minimum": {
+            "os": "Windows 10 64bit",
+            "processor": "Intel Core i7-3770 or AMD FX-9590",
+            "memory": "10 GB RAM",
+            "storage": "25 GB available space"
+        },
+        "recommended": {
+            "os": "Windows 10 64bit",
+            "processor": "Intel Core i7-4690K or AMD Ryzen 5 1600",
+            "memory": "16 GB RAM",
+            "storage": "25 GB available space (SSD recommended)"
+        }
+    },
+    "features": [
+        "Intense PvP survival gameplay",
+        "Large-scale multiplayer up to 300 players",
+        "Base building and fortification",
+        "Resource gathering and crafting",
+        "Clan and team mechanics",
+        "Modding support through Oxide/uMod",
+        "Administrative tools and RCON"
+    ],
+    "helpful_links": [
+        {
+            "title": "Rust Dedicated Server Guide",
+            "url": "https://developer.valvesoftware.com/wiki/Rust_Dedicated_Server"
+        },
+        {
+            "title": "Oxide Mod Framework",
+            "url": "https://umod.org/"
+        }
+    ]
+}

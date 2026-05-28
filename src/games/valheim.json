@@ -1,0 +1,132 @@
+{
+    "name": "Valheim",
+    "display_name": "Valheim",
+    "description": "A brutal exploration and survival game for 1-10 players, set in a procedurally-generated purgatory inspired by Viking culture.",
+    "image": "images/valheim_image.jpg",
+    "developer": "Iron Gate AB",
+    "publisher": "Coffee Stain Publishing",
+    "release_date": "2021-02-02",
+    "genre": "Survival, Action, Adventure",
+    "platforms": ["Windows", "Linux"],
+    "multiplayer": {
+        "min_players": 1,
+        "max_players": 10,
+        "cooperative": true,
+        "competitive": false
+    },
+    "server_info": {
+        "app_id": "896660",
+        "executable": "valheim_server.exe",
+        "executable_linux": "valheim_server.sh",
+        "server_dir_name": "Valheim dedicated server",
+        "executable_subdir": "",
+        "default_port": 2456,
+        "protocol": "UDP",
+        "launch_mode": "steam",
+        "process_names": ["valheim_server.exe", "valheim_server", "valheim_server.sh"],
+        "launch_args": "-nographics -batchmode -name \"{server_name}\" -port {port} -world \"{world_name}\" -password \"{password}\" -public {public}"
+    },
+    "ports": [
+        {"port": 2456, "protocol": "UDP", "description": "Game traffic"},
+        {"port": 2457, "protocol": "UDP", "description": "Steam query"},
+        {"port": 2458, "protocol": "UDP", "description": "Additional comms"}
+    ],
+    "server_settings": [
+        {
+            "key": "server_name",
+            "label": "Server Name",
+            "type": "string",
+            "default": "Valheim Server",
+            "required": true,
+            "placeholder": "My Valheim Server",
+            "tooltip": "Name shown in the server browser"
+        },
+        {
+            "key": "world_name",
+            "label": "World",
+            "type": "world_picker",
+            "default": "Dedicated",
+            "required": true,
+            "tooltip": "Select an existing world from your local saves, or create a new one",
+            "worlds_path_windows": "%USERPROFILE%\\AppData\\LocalLow\\IronGate\\Valheim\\worlds_local",
+            "worlds_path_linux": "~/.config/unity3d/IronGate/Valheim/worlds_local"
+        },
+        {
+            "key": "password",
+            "label": "Server Password",
+            "type": "password",
+            "default": "",
+            "min_length": 5,
+            "placeholder": "Minimum 5 characters",
+            "tooltip": "Password players must enter to join. Minimum 5 characters."
+        },
+        {
+            "key": "port",
+            "label": "Port",
+            "type": "int",
+            "default": 2456,
+            "min": 1024,
+            "max": 65535,
+            "tooltip": "UDP port for the game server. Ports port, port+1, and port+2 will be used."
+        },
+        {
+            "key": "public",
+            "label": "Public Server",
+            "type": "bool",
+            "default": true,
+            "tooltip": "List this server in the public server browser"
+        },
+        {
+            "key": "enable_upnp",
+            "label": "Auto Port Forward (UPnP)",
+            "type": "bool",
+            "default": true,
+            "tooltip": "Automatically configure port forwarding on your router"
+        },
+        {
+            "key": "configure_firewall",
+            "label": "Configure Windows Firewall",
+            "type": "bool",
+            "default": true,
+            "tooltip": "Add firewall rules for the server ports"
+        }
+    ],
+    "system_requirements": {
+        "minimum": {
+            "os": "Windows 7 or later",
+            "processor": "2.6 GHz Dual Core",
+            "memory": "4 GB RAM",
+            "storage": "2 GB available space"
+        },
+        "recommended": {
+            "os": "Windows 10",
+            "processor": "Intel Core i5 or equivalent",
+            "memory": "8 GB RAM",
+            "storage": "4 GB available space"
+        }
+    },
+    "features": [
+        "Procedurally generated world",
+        "Co-op multiplayer up to 10 players",
+        "Viking-themed survival gameplay",
+        "Building and crafting system",
+        "Boss battles and exploration",
+        "Dedicated server support"
+    ],
+    "mod_support": {
+        "framework": "bepinex",
+        "plugins_subdir": "BepInEx/plugins",
+        "bepinex_marker": "winhttp.dll",
+        "bepinex_download_url": ""
+    },
+    "helpful_links": [
+        {
+            "title": "Official Valheim Server Guide",
+            "url": "https://valheim.fandom.com/wiki/Dedicated_server"
+        },
+        {
+            "title": "Port Forwarding Guide",
+            "url": "https://portforward.com/valheim/"
+        }
+    ]
+}

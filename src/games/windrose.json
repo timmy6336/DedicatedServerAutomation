@@ -1,0 +1,108 @@
+{
+    "name": "Windrose",
+    "display_name": "Windrose",
+    "description": "Windrose is a cooperative survival adventure game where players explore, gather resources, build settlements, and face challenges together in a procedurally generated world.",
+    "image": "images/windrose_image.jpg",
+    "developer": "Windrose Studios",
+    "publisher": "Windrose Studios",
+    "genre": "Survival, Adventure, Co-op",
+    "platforms": ["Windows"],
+    "multiplayer": {
+        "min_players": 1,
+        "max_players": 8,
+        "cooperative": true,
+        "competitive": false
+    },
+    "server_info": {
+        "app_id": "4129620",
+        "executable": "WindroseServer-Win64-Shipping.exe",
+        "executable_linux": "",
+        "server_dir_name": "Windrose Dedicated Server",
+        "executable_subdir": "Windrose/Binaries/Win64",
+        "default_port": 7777,
+        "protocol": "UDP",
+        "launch_mode": "steam",
+        "process_names": [
+            "WindroseServer-Win64-Shipping.exe"
+        ],
+        "launch_args": "-log -MULTIHOME=0.0.0.0 -PORT={port} -QUERYPORT={query_port} -MaxPlayers={max_players}"
+    },
+    "ports": [
+        {"port": 7777, "protocol": "UDP", "description": "Game traffic"},
+        {"port": 7778, "protocol": "UDP", "description": "Server query"}
+    ],
+    "server_settings": [
+        {
+            "key": "port",
+            "label": "Game Port",
+            "type": "int",
+            "default": 7777,
+            "min": 1024,
+            "max": 65534,
+            "tooltip": "UDP port for the game server. The query port will use port+1."
+        },
+        {
+            "key": "query_port",
+            "label": "Query Port",
+            "type": "int",
+            "default": 7778,
+            "min": 1025,
+            "max": 65535,
+            "tooltip": "UDP port for server queries (typically game port + 1)"
+        },
+        {
+            "key": "max_players",
+            "label": "Max Players",
+            "type": "int",
+            "default": 4,
+            "min": 1,
+            "max": 8,
+            "tooltip": "Maximum concurrent players. Up to 8 supported; 4 recommended for best performance."
+        },
+        {
+            "key": "enable_upnp",
+            "label": "Auto Port Forward (UPnP)",
+            "type": "bool",
+            "default": true,
+            "tooltip": "Automatically configure port forwarding on your router"
+        },
+        {
+            "key": "configure_firewall",
+            "label": "Configure Windows Firewall",
+            "type": "bool",
+            "default": true,
+            "tooltip": "Add firewall rules for the server ports"
+        }
+    ],
+    "system_requirements": {
+        "minimum": {
+            "os": "Windows 10 64-bit",
+            "processor": "Intel Core i5 or AMD equivalent",
+            "memory": "8 GB RAM",
+            "storage": "10 GB available space"
+        },
+        "recommended": {
+            "os": "Windows 10/11 64-bit",
+            "processor": "Intel Core i7 or AMD Ryzen 5",
+            "memory": "16 GB RAM",
+            "storage": "15 GB available space (SSD recommended)"
+        }
+    },
+    "features": [
+        "Co-op multiplayer up to 8 players",
+        "Procedurally generated world",
+        "Survival and resource gathering",
+        "Base building and crafting",
+        "Dedicated server support"
+    ],
+    "helpful_links": [
+        {
+            "title": "Windrose Dedicated Server Guide",
+            "url": "https://playwindrose.com/dedicated-server-guide/"
+        },
+        {
+            "title": "Steam Community Guide",
+            "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=3706337486"
+        }
+    ]
+}

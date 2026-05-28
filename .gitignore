@@ -3,14 +3,34 @@
 .env
 steamcmd/
 palworld_server/
+dst_server/
 
-# PyInstaller build artifacts
-build/
-dist/
-*.spec
+# Python cache files and directories
 __pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
 *.pyc
 *.pyo
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST   
 
 # Executable build files
 DedicatedServerAutomation.spec
@@ -20,6 +40,7 @@ portable/
 *.exe
 *.msi
 *.dmg
+dist.zip
 
 # Build logs and cache
 *.log
@@ -31,3 +52,6 @@ xref-*.html
 *.tmp
 *.temp
 temp/
+
+markdowns/
+*.md

@@ -1,0 +1,106 @@
+{
+    "name": "Palworld",
+    "display_name": "Palworld",
+    "description": "Palworld is a multiplayer, open-world survival crafting game where you can befriend and collect mysterious creatures called \"Pal\" in a vast world! Make your Pals fight, build, farm, and work in factories.",
+    "image": "images/palworld_image.jpg",
+    "developer": "Pocketpair",
+    "publisher": "Pocketpair",
+    "release_date": "2024-01-19",
+    "genre": "Survival, Action, Adventure, RPG",
+    "platforms": ["Windows", "Xbox Series X|S", "PlayStation 5", "Mac"],
+    "multiplayer": {
+        "min_players": 1,
+        "max_players": 32,
+        "cooperative": true,
+        "competitive": true
+    },
+    "server_info": {
+        "app_id": "2394010",
+        "executable": "PalServer.exe",
+        "executable_linux": "PalServer.sh",
+        "server_dir_name": "Palworld Dedicated Server",
+        "executable_subdir": "",
+        "default_port": 8211,
+        "protocol": "UDP",
+        "launch_mode": "steam",
+        "process_names": [
+            "PalServer.exe",
+            "PalServer-Win64-Test-Cmd.exe",
+            "PalServer-Win64-Shipping-Cmd.exe",
+            "PalServer"
+        ],
+        "launch_args": "-port={port} -players={max_players} -useperfthreads -NoAsyncLoadingThread -UseMultithreadForDS"
+    },
+    "ports": [
+        {"port": 8211, "protocol": "UDP", "description": "Game traffic"},
+        {"port": 8212, "protocol": "UDP", "description": "Server query"},
+        {"port": 25575, "protocol": "TCP", "description": "RCON"}
+    ],
+    "server_settings": [
+        {
+            "key": "max_players",
+            "label": "Max Players",
+            "type": "int",
+            "default": 32,
+            "min": 1,
+            "max": 32,
+            "tooltip": "Maximum number of players allowed on the server"
+        },
+        {
+            "key": "port",
+            "label": "Port",
+            "type": "int",
+            "default": 8211,
+            "min": 1024,
+            "max": 65535,
+            "tooltip": "UDP port for the game server"
+        },
+        {
+            "key": "enable_upnp",
+            "label": "Auto Port Forward (UPnP)",
+            "type": "bool",
+            "default": true,
+            "tooltip": "Automatically configure port forwarding on your router"
+        },
+        {
+            "key": "configure_firewall",
+            "label": "Configure Windows Firewall",
+            "type": "bool",
+            "default": true,
+            "tooltip": "Add firewall rules for the server ports"
+        }
+    ],
+    "system_requirements": {
+        "minimum": {
+            "os": "Windows 10 or later (64-Bit)",
+            "processor": "Intel Core i5-3570K 3.4 GHz or AMD FX-8310",
+            "memory": "16 GB RAM",
+            "storage": "40 GB available space"
+        },
+        "recommended": {
+            "os": "Windows 10 or later (64-Bit)",
+            "processor": "Intel Core i9-9900K or AMD Ryzen 7 3700X",
+            "memory": "32 GB RAM",
+            "storage": "40 GB available space (SSD recommended)"
+        }
+    },
+    "features": [
+        "Collect and befriend mysterious Pals",
+        "Multiplayer survival crafting up to 32 players",
+        "Build bases and factories with Pal automation",
+        "Combat system with Pals and weapons",
+        "Open-world exploration and adventure",
+        "Breeding and genetics system for Pals",
+        "Dedicated server support"
+    ],
+    "helpful_links": [
+        {
+            "title": "Official Palworld Server Setup Guide",
+            "url": "https://tech.palworldgame.com/dedicated-server-guide"
+        },
+        {
+            "title": "Port Forwarding Guide for Palworld",
+            "url": "https://portforward.com/palworld/"
+        }
+    ]
+}
