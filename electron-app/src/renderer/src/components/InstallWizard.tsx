@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { type Game } from '../lib/games'
+import { type ServerInstance } from '../lib/instances'
 import { cn } from '../lib/utils'
 import { Check, X, Download, HardDrive, Rocket } from 'lucide-react'
 
@@ -18,10 +19,11 @@ function makeInitialSteps(labels: string[]): StepState[] {
 
 interface Props {
   game: Game
+  instance: ServerInstance
   onClose: () => void
 }
 
-export default function InstallWizard({ game, onClose }: Props) {
+export default function InstallWizard({ game, instance, onClose }: Props) {
   const [steps, setSteps] = useState<StepState[]>(() =>
     makeInitialSteps(game.installSteps ?? DEFAULT_STEP_LABELS)
   )
@@ -74,7 +76,7 @@ export default function InstallWizard({ game, onClose }: Props) {
   async function startInstall() {
     setStarted(true)
     setSteps(prev => [{ ...prev[0], status: 'active' }, ...prev.slice(1)])
-    await window.api.startInstall(game.id, game.steamAppId, game.installMode)
+    await window.api.startInstall(game.id, instance.id, game.steamAppId, game.installMode)
   }
 
   const activeStep = steps.findIndex(s => s.status === 'active')

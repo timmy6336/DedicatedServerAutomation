@@ -6,33 +6,47 @@ const api = {
   maximize: () => ipcRenderer.send('window:maximize'),
   close:    () => ipcRenderer.send('window:close'),
 
-  // Config
-  loadConfig: (gameId: string) =>
-    ipcRenderer.invoke('config:load', gameId),
-  saveConfig: (gameId: string, config: Record<string, unknown>) =>
-    ipcRenderer.invoke('config:save', gameId, config),
+  // Instance management
+  listInstances:    (gameId: string) =>
+    ipcRenderer.invoke('instance:list', gameId),
+  createInstance:   (gameId: string, name: string) =>
+    ipcRenderer.invoke('instance:create', gameId, name),
+  deleteInstance:   (instanceId: string, gameId: string) =>
+    ipcRenderer.invoke('instance:delete', instanceId, gameId),
+  renameInstance:   (instanceId: string, name: string) =>
+    ipcRenderer.invoke('instance:rename', instanceId, name),
+  saveConfig:       (instanceId: string, config: Record<string, unknown>) =>
+    ipcRenderer.invoke('instance:saveConfig', instanceId, config),
+  loadConfig:       (instanceId: string) =>
+    ipcRenderer.invoke('instance:loadConfig', instanceId),
+  setEnabledMods:   (instanceId: string, gameId: string, enabledMods: string[]) =>
+    ipcRenderer.invoke('instance:setEnabledMods', instanceId, gameId, enabledMods),
 
   // Server state
-  isInstalled: (gameId: string, subdir: string, exe: string) =>
-    ipcRenderer.invoke('server:isInstalled', gameId, subdir, exe),
-  isRunning: (gameId: string, processNames: string[]) =>
-    ipcRenderer.invoke('server:isRunning', gameId, processNames),
-  getLocalIp: () =>
-    ipcRenderer.invoke('server:localIp'),
-  checkJava: (): Promise<string | null> =>
-    ipcRenderer.invoke('server:checkJava'),
+  isInstalled: (gameId: string, instanceId: string, subdir: string, exe: string) =>
+    ipcRenderer.invoke('server:isInstalled', gameId, instanceId, subdir, exe),
+  isRunning:   (instanceId: string, processNames: string[]) =>
+    ipcRenderer.invoke('server:isRunning', instanceId, processNames),
+  getLocalIp:  () => ipcRenderer.invoke('server:localIp'),
+  checkJava:   (): Promise<string | null> => ipcRenderer.invoke('server:checkJava'),
 
-  // Install — installMode: 'steam' | 'mojang'
-  startInstall: (gameId: string, steamAppId: string, installMode: string) =>
-    ipcRenderer.invoke('install:start', gameId, steamAppId, installMode),
+  // Install
+  startInstall: (gameId: string, instanceId: string, steamAppId: string, installMode: string) =>
+    ipcRenderer.invoke('install:start', gameId, instanceId, steamAppId, installMode),
 
-  // Server lifecycle — launchMode passed so main knows how to spawn
-  startServer: (gameId: string, exePath: string, args: string[], launchMode: string) =>
-    ipcRenderer.invoke('server:start', gameId, exePath, args, launchMode),
-  stopServer: (gameId: string, processNames: string[]) =>
-    ipcRenderer.invoke('server:stop', gameId, processNames),
+  // Server lifecycle
+  startServer: (instanceId: string, gameId: string, launchMode: string, exeRelPath: string, args: string[]) =>
+    ipcRenderer.invoke('server:start', instanceId, gameId, launchMode, exeRelPath, args),
+  stopServer:  (instanceId: string, processNames: string[]) =>
+    ipcRenderer.invoke('server:stop', instanceId, processNames),
 
-  // Event listeners — returns unsubscribe fn
+  // Mod library
+  listMods:    (gameId: string) => ipcRenderer.invoke('mods:list', gameId),
+  addMods:     (gameId: string, paths: string[]) => ipcRenderer.invoke('mods:add', gameId, paths),
+  removeMod:   (gameId: string, filename: string) => ipcRenderer.invoke('mods:remove', gameId, filename),
+  openModPicker: (gameId: string) => ipcRenderer.invoke('mods:openPicker', gameId),
+
+  // Event listeners
   on: (channel: string, fn: (...args: unknown[]) => void) => {
     const wrapped = (_: Electron.IpcRendererEvent, ...args: unknown[]) => fn(...args)
     ipcRenderer.on(channel, wrapped)

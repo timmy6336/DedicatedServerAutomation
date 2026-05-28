@@ -1,25 +1,27 @@
 import { useState, useEffect } from 'react'
 import { type Game, type SettingDef } from '../lib/games'
+import { type ServerInstance } from '../lib/instances'
 import { X, ExternalLink } from 'lucide-react'
 import { cn } from '../lib/utils'
 
 interface Props {
   game: Game
+  instance: ServerInstance
   onClose: () => void
 }
 
-export default function ConfigModal({ game, onClose }: Props) {
+export default function ConfigModal({ game, instance, onClose }: Props) {
   const [config, setConfig] = useState<Record<string, unknown>>({})
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
   useEffect(() => {
-    window.api.loadConfig(game.id).then((saved) => {
+    window.api.loadConfig(instance.id).then((saved) => {
       const defaults: Record<string, unknown> = {}
       for (const s of game.serverSettings) defaults[s.key] = s.default
-      setConfig({ ...defaults, ...(saved ?? {}) })
+      setConfig({ ...defaults, ...(saved as Record<string, unknown> | null ?? {}) })
     })
-  }, [game])
+  }, [game, instance.id])
 
   function set(key: string, value: unknown) {
     setConfig(prev => ({ ...prev, [key]: value }))
@@ -28,7 +30,7 @@ export default function ConfigModal({ game, onClose }: Props) {
 
   async function save() {
     setSaving(true)
-    await window.api.saveConfig(game.id, config)
+    await window.api.saveConfig(instance.id, config)
     setSaving(false)
     setSaved(true)
     setTimeout(onClose, 800)

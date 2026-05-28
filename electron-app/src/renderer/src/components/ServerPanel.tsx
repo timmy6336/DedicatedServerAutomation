@@ -1,33 +1,41 @@
 import { useState, useEffect, useCallback } from 'react'
 import { type Game } from '../lib/games'
-import { Play, Square, Settings, Download, Wifi, WifiOff, Globe, Monitor } from 'lucide-react'
+import { type ServerInstance } from '../lib/instances'
+import { Play, Square, Settings, Download, Globe, Monitor, Package } from 'lucide-react'
 import { cn } from '../lib/utils'
 import InstallWizard from './InstallWizard'
 import ConfigModal from './ConfigModal'
+import ModsPanel from './ModsPanel'
 
 interface Props {
   game: Game
+  instance: ServerInstance
+  onInstanceUpdated: (updated: ServerInstance) => void
 }
 
 type ServerState = 'checking' | 'not_installed' | 'stopped' | 'running'
+type Tab = 'overview' | 'mods'
 
-export default function ServerPanel({ game }: Props) {
+export default function ServerPanel({ game, instance, onInstanceUpdated }: Props) {
   const [state, setState] = useState<ServerState>('checking')
   const [localIp, setLocalIp] = useState<string>('—')
+  const [tab, setTab] = useState<Tab>('overview')
   const [showInstall, setShowInstall] = useState(false)
   const [showConfig, setShowConfig] = useState(false)
   const [actionPending, setActionPending] = useState(false)
 
   const refresh = useCallback(async () => {
-    const installed = await window.api.isInstalled(game.id, game.executableSubdir, game.executable)
+    const installed = await window.api.isInstalled(
+      game.id, instance.id, game.executableSubdir, game.executable
+    )
     if (!installed) { setState('not_installed'); return }
-    const running = await window.api.isRunning(game.id, game.processNames)
+    const running = await window.api.isRunning(instance.id, game.processNames)
     setState(running ? 'running' : 'stopped')
     if (running) {
       const ip = await window.api.getLocalIp()
-      setLocalIp(ip)
+      setLocalIp(ip as string)
     }
-  }, [game])
+  }, [game, instance.id])
 
   useEffect(() => {
     refresh()
@@ -37,144 +45,170 @@ export default function ServerPanel({ game }: Props) {
 
   async function handleStart() {
     setActionPending(true)
-    const config = (await window.api.loadConfig(game.id)) ?? {}
-    const formatted = game.launchArgs.replace(/\{(\w+)\}/g, (_, k) =>
-      String(config[k] ?? '')
-    )
+    const config = (await window.api.loadConfig(instance.id) as Record<string, unknown> | null) ?? {}
+    const formatted = game.launchArgs.replace(/\{(\w+)\}/g, (_, k) => String(config[k] ?? ''))
     const args = formatted.trim() ? formatted.trim().split(/\s+/) : []
-
-    // For Java servers, pass the install directory as exePath so the main
-    // process can set cwd correctly and run: java <args>
-    const installBase = await window.api.getLocalIp() // warm up IPC
-    void installBase
-    const exeOrDir = game.launchMode === 'java'
-      ? game.id   // main process resolves full path from gameId
-      : (game.executableSubdir
-          ? `${game.serverDirName}/${game.executableSubdir}/${game.executable}`
-          : `${game.serverDirName}/${game.executable}`)
-
-    await window.api.startServer(game.id, exeOrDir, args, game.launchMode)
+    const exeRelPath = game.executableSubdir
+      ? `${game.executableSubdir}/${game.executable}`
+      : game.executable
+    await window.api.startServer(instance.id, game.id, game.launchMode, exeRelPath, args)
     setTimeout(() => { refresh(); setActionPending(false) }, 2000)
   }
 
   async function handleStop() {
     setActionPending(true)
-    await window.api.stopServer(game.id, game.processNames)
+    await window.api.stopServer(instance.id, game.processNames)
     setTimeout(() => { refresh(); setActionPending(false) }, 1500)
   }
+
+  const hasMods = ['minecraft', 'valheim', 'rust'].includes(game.id)
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
       {/* Hero header */}
-      <div className={cn('relative px-8 pt-8 pb-6 bg-gradient-to-br shrink-0', game.bannerColor)}>
+      <div className={cn('relative px-8 pt-7 pb-5 bg-gradient-to-br shrink-0', game.bannerColor)}>
         <div className="absolute inset-0 bg-[#09090b]/60" />
         <div className="relative z-10">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-widest mb-1"
+              <p className="text-[11px] font-semibold uppercase tracking-widest mb-0.5"
                  style={{ color: game.accentColor }}>
                 {game.genre}
               </p>
-              <h1 className="text-3xl font-bold text-white mb-1">{game.name}</h1>
-              <p className="text-sm text-[#a1a1aa] max-w-lg">{game.description}</p>
+              <h1 className="text-2xl font-bold text-white">{instance.name}</h1>
+              <p className="text-xs text-[#71717a] mt-0.5">{game.name}</p>
             </div>
             <StatusBadge state={state} />
           </div>
         </div>
       </div>
 
-      {/* Body */}
-      <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6">
-
-        {/* Action buttons */}
-        <div className="flex gap-3">
-          {state === 'not_installed' && (
-            <Button
-              variant="primary"
-              icon={<Download size={15} />}
-              onClick={() => setShowInstall(true)}
-              style={{ backgroundColor: game.accentColor }}
-            >
-              Install Server
-            </Button>
-          )}
-          {state === 'stopped' && (
-            <>
-              <Button
-                variant="primary"
-                icon={<Play size={15} />}
-                onClick={handleStart}
-                loading={actionPending}
-                style={{ backgroundColor: game.accentColor }}
+      {/* Tab bar */}
+      <div className="flex items-center gap-0 px-8 border-b border-[#27272a] bg-[#09090b] shrink-0">
+        {(['overview', hasMods ? 'mods' : null] as const).filter(Boolean).map(t => (
+          <button
+            key={t!}
+            onClick={() => setTab(t!)}
+            className={cn(
+              'flex items-center gap-1.5 px-4 py-3 text-sm border-b-2 -mb-px transition-colors',
+              tab === t
+                ? 'border-current font-medium text-white'
+                : 'border-transparent text-[#71717a] hover:text-[#a1a1aa]'
+            )}
+            style={tab === t ? { borderColor: game.accentColor, color: game.accentColor } : undefined}
+          >
+            {t === 'overview' ? <Monitor size={13} /> : <Package size={13} />}
+            {t === 'overview' ? 'Overview' : 'Mods'}
+            {t === 'mods' && instance.enabledMods.length > 0 && (
+              <span
+                className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
+                style={{ backgroundColor: game.accentColor + '22', color: game.accentColor }}
               >
-                Start Server
-              </Button>
-              <Button variant="secondary" icon={<Settings size={15} />} onClick={() => setShowConfig(true)}>
-                Configure
-              </Button>
-            </>
-          )}
-          {state === 'running' && (
-            <>
-              <Button variant="danger" icon={<Square size={15} />} onClick={handleStop} loading={actionPending}>
-                Stop Server
-              </Button>
-              <Button variant="secondary" icon={<Settings size={15} />} onClick={() => setShowConfig(true)}>
-                Configure
-              </Button>
-            </>
-          )}
-          {state === 'checking' && (
-            <div className="h-9 w-32 rounded-lg bg-[#18181b] animate-pulse" />
-          )}
-        </div>
+                {instance.enabledMods.length}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
 
-        {/* Connection info */}
-        {state === 'running' && (
-          <div className="grid grid-cols-2 gap-4 max-w-lg">
-            <InfoCard icon={<Monitor size={14} />} label="Local IP" value={`${localIp}:${game.defaultPort}`} />
-            <InfoCard icon={<Globe size={14} />} label="Default Port" value={String(game.defaultPort)} />
+      {/* Tab content */}
+      {tab === 'overview' ? (
+        <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6">
+          {/* Actions */}
+          <div className="flex gap-3">
+            {state === 'not_installed' && (
+              <Button variant="primary" icon={<Download size={15} />}
+                onClick={() => setShowInstall(true)} style={{ backgroundColor: game.accentColor }}>
+                Install Server
+              </Button>
+            )}
+            {state === 'stopped' && (
+              <>
+                <Button variant="primary" icon={<Play size={15} />}
+                  onClick={handleStart} loading={actionPending}
+                  style={{ backgroundColor: game.accentColor }}>
+                  Start Server
+                </Button>
+                <Button variant="secondary" icon={<Settings size={15} />}
+                  onClick={() => setShowConfig(true)}>
+                  Configure
+                </Button>
+              </>
+            )}
+            {state === 'running' && (
+              <>
+                <Button variant="danger" icon={<Square size={15} />}
+                  onClick={handleStop} loading={actionPending}>
+                  Stop Server
+                </Button>
+                <Button variant="secondary" icon={<Settings size={15} />}
+                  onClick={() => setShowConfig(true)}>
+                  Configure
+                </Button>
+              </>
+            )}
+            {state === 'checking' && (
+              <div className="h-9 w-32 rounded-lg bg-[#18181b] animate-pulse" />
+            )}
           </div>
-        )}
 
-        {/* Port info */}
-        <div>
-          <h3 className="text-xs font-semibold uppercase tracking-widest text-[#52525b] mb-3">
-            Required Ports
-          </h3>
-          <div className="flex flex-wrap gap-2">
-            {game.ports.map((p) => (
-              <div
-                key={`${p.port}-${p.protocol}`}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-[#18181b] border border-[#27272a] text-sm"
-              >
-                <span className="font-mono font-medium">{p.port}</span>
-                <span className="text-[#71717a]">{p.protocol}</span>
-                {p.description && <span className="text-[#52525b] text-xs">{p.description}</span>}
-              </div>
+          {/* Connection info */}
+          {state === 'running' && (
+            <div className="grid grid-cols-2 gap-4 max-w-lg">
+              <InfoCard icon={<Monitor size={14} />} label="Local IP"
+                value={`${localIp}:${game.defaultPort}`} />
+              <InfoCard icon={<Globe size={14} />} label="Game Port"
+                value={String(game.defaultPort)} />
+            </div>
+          )}
+
+          {/* Ports */}
+          <div>
+            <h3 className="text-xs font-semibold uppercase tracking-widest text-[#52525b] mb-3">
+              Required Ports
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {game.ports.map(p => (
+                <div key={`${p.port}-${p.protocol}`}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-[#18181b] border border-[#27272a] text-sm">
+                  <span className="font-mono font-medium">{p.port}</span>
+                  <span className="text-[#71717a]">{p.protocol}</span>
+                  {p.description && <span className="text-[#52525b] text-xs">{p.description}</span>}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Platforms */}
+          <div className="flex gap-2">
+            {game.platforms.map(p => (
+              <span key={p} className="px-2 py-1 text-xs rounded bg-[#18181b] border border-[#27272a] text-[#a1a1aa]">
+                {p}
+              </span>
             ))}
           </div>
         </div>
-
-        {/* Platform badges */}
-        <div className="flex gap-2">
-          {game.platforms.map((p) => (
-            <span key={p} className="px-2 py-1 text-xs rounded bg-[#18181b] border border-[#27272a] text-[#a1a1aa]">
-              {p}
-            </span>
-          ))}
+      ) : (
+        <div className="flex-1 overflow-hidden">
+          <ModsPanel
+            game={game}
+            instance={instance}
+            onInstanceUpdated={onInstanceUpdated}
+          />
         </div>
-      </div>
+      )}
 
       {showInstall && (
         <InstallWizard
           game={game}
+          instance={instance}
           onClose={() => { setShowInstall(false); refresh() }}
         />
       )}
       {showConfig && (
         <ConfigModal
           game={game}
+          instance={instance}
           onClose={() => setShowConfig(false)}
         />
       )}
@@ -182,18 +216,18 @@ export default function ServerPanel({ game }: Props) {
   )
 }
 
-// ── sub-components ───────────────────────────────────────────────────────────
+// ── sub-components ────────────────────────────────────────────────────────────
 
 function StatusBadge({ state }: { state: ServerState }) {
-  const configs = {
-    checking:      { label: 'Checking…',     color: 'bg-[#3f3f46] text-[#a1a1aa]', dot: 'bg-[#71717a]' },
-    not_installed: { label: 'Not Installed',  color: 'bg-[#27272a] text-[#71717a]', dot: 'bg-[#3f3f46]' },
-    stopped:       { label: 'Offline',        color: 'bg-red-950/60 text-red-400',   dot: 'bg-red-500' },
-    running:       { label: 'Online',         color: 'bg-emerald-950/60 text-emerald-400', dot: 'bg-emerald-500 animate-pulse' }
+  const cfg = {
+    checking:      { label: 'Checking…',    cls: 'bg-[#3f3f46] text-[#a1a1aa]',          dot: 'bg-[#71717a]' },
+    not_installed: { label: 'Not Installed', cls: 'bg-[#27272a] text-[#71717a]',          dot: 'bg-[#3f3f46]' },
+    stopped:       { label: 'Offline',       cls: 'bg-red-950/60 text-red-400',            dot: 'bg-red-500' },
+    running:       { label: 'Online',        cls: 'bg-emerald-950/60 text-emerald-400',    dot: 'bg-emerald-500 animate-pulse' }
   }
-  const { label, color, dot } = configs[state]
+  const { label, cls, dot } = cfg[state]
   return (
-    <div className={cn('flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium', color)}>
+    <div className={cn('flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium', cls)}>
       <span className={cn('w-1.5 h-1.5 rounded-full', dot)} />
       {label}
     </div>
@@ -203,11 +237,8 @@ function StatusBadge({ state }: { state: ServerState }) {
 function InfoCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
     <div className="bg-[#111113] border border-[#27272a] rounded-lg px-4 py-3">
-      <div className="flex items-center gap-1.5 text-[#71717a] text-xs mb-1">
-        {icon}
-        <span>{label}</span>
-      </div>
-      <p className="font-mono text-sm text-[#fafafa]">{value}</p>
+      <div className="flex items-center gap-1.5 text-[#71717a] text-xs mb-1">{icon}<span>{label}</span></div>
+      <p className="font-mono text-sm text-white">{value}</p>
     </div>
   )
 }
@@ -225,17 +256,15 @@ function Button({ variant, icon, onClick, loading, style, children }: ButtonProp
   const base = 'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all disabled:opacity-50'
   const variants = {
     primary:   'text-white',
-    secondary: 'bg-[#18181b] border border-[#27272a] text-[#a1a1aa] hover:text-[#fafafa] hover:border-[#3f3f46]',
+    secondary: 'bg-[#18181b] border border-[#27272a] text-[#a1a1aa] hover:text-white hover:border-[#3f3f46]',
     danger:    'bg-red-950/40 border border-red-900/50 text-red-400 hover:bg-red-950/60'
   }
   return (
-    <button
-      className={cn(base, variants[variant])}
-      onClick={onClick}
-      disabled={loading}
-      style={variant === 'primary' ? style : undefined}
-    >
-      {loading ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : icon}
+    <button className={cn(base, variants[variant])} onClick={onClick} disabled={loading}
+      style={variant === 'primary' ? style : undefined}>
+      {loading
+        ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+        : icon}
       {children}
     </button>
   )

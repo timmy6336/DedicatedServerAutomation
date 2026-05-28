@@ -1,55 +1,77 @@
-import { ipcMain, BrowserWindow, app } from 'electron'
+import { ipcMain, BrowserWindow, app, dialog } from 'electron'
 import { spawnSync, spawn, ChildProcess } from 'child_process'
-import { existsSync, mkdirSync, createWriteStream, writeFileSync } from 'fs'
-import { join } from 'path'
+import {
+  existsSync, mkdirSync, createWriteStream, writeFileSync,
+  copyFileSync, readdirSync, unlinkSync, statSync, rmSync
+} from 'fs'
+import { join, basename, extname } from 'path'
 import { get as httpGet } from 'https'
 import { readFile, writeFile } from 'fs/promises'
 import * as os from 'os'
 
-// ── active server processes keyed by game id ────────────────────────────────
+// ── types (mirrored from renderer for main-process use) ──────────────────────
+interface ServerInstance {
+  id: string
+  gameId: string
+  name: string
+  config: Record<string, unknown>
+  enabledMods: string[]
+  createdAt: number
+}
+interface ModEntry {
+  filename: string
+  name: string
+  gameId: string
+  size: number
+  addedAt: number
+}
+
+// ── running processes keyed by instanceId ─────────────────────────────────────
 const runningProcesses = new Map<string, ChildProcess>()
 
-// ── persistent config store ─────────────────────────────────────────────────
-const configPath = join(app.getPath('userData'), 'server-configs.json')
+// ── storage helpers ───────────────────────────────────────────────────────────
+const userData = () => app.getPath('userData')
+const instancesPath = () => join(userData(), 'instances.json')
+const modsRegistryPath = () => join(userData(), 'mods-registry.json')
+const instanceDir = (gameId: string, instanceId: string) =>
+  join(userData(), 'servers', gameId, instanceId)
+const modLibDir = (gameId: string) =>
+  join(userData(), 'mod-library', gameId)
 
-async function readConfigs(): Promise<Record<string, Record<string, unknown>>> {
-  try {
-    const raw = await readFile(configPath, 'utf-8')
-    return JSON.parse(raw)
-  } catch {
-    return {}
-  }
+async function readJson<T>(path: string, fallback: T): Promise<T> {
+  try { return JSON.parse(await readFile(path, 'utf-8')) }
+  catch { return fallback }
+}
+async function writeJson(path: string, data: unknown): Promise<void> {
+  const dir = join(path, '..')
+  if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
+  await writeFile(path, JSON.stringify(data, null, 2), 'utf-8')
 }
 
-async function writeConfigs(data: Record<string, Record<string, unknown>>): Promise<void> {
-  await writeFile(configPath, JSON.stringify(data, null, 2), 'utf-8')
+async function readInstances(): Promise<ServerInstance[]> {
+  return readJson<ServerInstance[]>(instancesPath(), [])
+}
+async function writeInstances(list: ServerInstance[]): Promise<void> {
+  await writeJson(instancesPath(), list)
+}
+async function readModsRegistry(): Promise<ModEntry[]> {
+  return readJson<ModEntry[]>(modsRegistryPath(), [])
+}
+async function writeModsRegistry(list: ModEntry[]): Promise<void> {
+  await writeJson(modsRegistryPath(), list)
 }
 
-// ── install directory ────────────────────────────────────────────────────────
-function getInstallBase(): string {
-  return join(app.getPath('userData'), 'servers')
-}
-
-function getSteamCmdPath(): string {
-  const base = join(app.getPath('userData'), 'steamcmd')
-  const exe = process.platform === 'win32' ? 'steamcmd.exe' : 'steamcmd.sh'
-  return join(base, exe)
-}
-
-// ── download helper with redirect following ──────────────────────────────────
+// ── download with redirect following ─────────────────────────────────────────
 function downloadFile(url: string, dest: string, onProgress: (pct: number) => void): Promise<void> {
   return new Promise((resolve, reject) => {
     const dir = join(dest, '..')
     if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
-
-    function follow(target: string, redirects = 0) {
-      if (redirects > 5) { reject(new Error('Too many redirects')); return }
+    function follow(target: string, hops = 0) {
+      if (hops > 5) { reject(new Error('Too many redirects')); return }
       const file = createWriteStream(dest)
       httpGet(target, (res) => {
         if (res.statusCode && res.statusCode >= 300 && res.headers.location) {
-          file.destroy()
-          follow(res.headers.location, redirects + 1)
-          return
+          file.destroy(); follow(res.headers.location, hops + 1); return
         }
         const total = parseInt(res.headers['content-length'] || '0', 10)
         let received = 0
@@ -66,22 +88,17 @@ function downloadFile(url: string, dest: string, onProgress: (pct: number) => vo
   })
 }
 
-// ── fetch JSON over HTTPS ─────────────────────────────────────────────────────
 function fetchJson<T>(url: string): Promise<T> {
   return new Promise((resolve, reject) => {
-    function follow(target: string, redirects = 0) {
-      if (redirects > 5) { reject(new Error('Too many redirects')); return }
+    function follow(target: string, hops = 0) {
+      if (hops > 5) { reject(new Error('Too many redirects')); return }
       httpGet(target, (res) => {
         if (res.statusCode && res.statusCode >= 300 && res.headers.location) {
-          follow(res.headers.location, redirects + 1)
-          return
+          follow(res.headers.location, hops + 1); return
         }
         let body = ''
         res.on('data', (c: Buffer) => { body += c.toString() })
-        res.on('end', () => {
-          try { resolve(JSON.parse(body)) }
-          catch (e) { reject(e) }
-        })
+        res.on('end', () => { try { resolve(JSON.parse(body)) } catch (e) { reject(e) } })
         res.on('error', reject)
       }).on('error', reject)
     }
@@ -89,142 +106,123 @@ function fetchJson<T>(url: string): Promise<T> {
   })
 }
 
-// ── broadcast to all renderer windows ───────────────────────────────────────
 function broadcast(channel: string, ...args: unknown[]): void {
   BrowserWindow.getAllWindows().forEach(w => w.webContents.send(channel, ...args))
 }
 
-// ── Minecraft install via Mojang API ─────────────────────────────────────────
-async function installMinecraft(installDir: string): Promise<boolean> {
-  // Step 0: Check Java + fetch version manifest
+// ── copy enabled mods into instance mods/ directory ──────────────────────────
+function applyMods(gameId: string, instanceId: string, enabledMods: string[]): void {
+  const instDir = instanceDir(gameId, instanceId)
+  const modsDir = join(instDir, 'mods')
+  const libDir = modLibDir(gameId)
+
+  if (!existsSync(modsDir)) mkdirSync(modsDir, { recursive: true })
+
+  // Remove mods no longer enabled
+  if (existsSync(modsDir)) {
+    for (const f of readdirSync(modsDir)) {
+      if (!enabledMods.includes(f)) {
+        try { unlinkSync(join(modsDir, f)) } catch { /* ignore */ }
+      }
+    }
+  }
+
+  // Copy newly enabled mods
+  for (const filename of enabledMods) {
+    const src = join(libDir, filename)
+    const dest = join(modsDir, filename)
+    if (existsSync(src) && !existsSync(dest)) {
+      copyFileSync(src, dest)
+    }
+  }
+}
+
+// ── Minecraft install ─────────────────────────────────────────────────────────
+async function installMinecraft(instDir: string): Promise<boolean> {
   broadcast('install:step', { step: 0, label: 'Checking Java & fetching version info…', progress: 0 })
 
   const javaCheck = spawnSync('java', ['-version'], { encoding: 'utf-8', stdio: 'pipe' })
-  if (javaCheck.status !== 0 && javaCheck.error) {
+  if (javaCheck.error) {
     broadcast('install:error', 'Java is not installed. Please install Java 21+ from https://adoptium.net and try again.')
     return false
   }
-  broadcast('install:log', `Java found: ${(javaCheck.stderr || javaCheck.stdout || '').trim().split('\n')[0]}`)
-  broadcast('install:step', { step: 0, label: 'Fetching latest Minecraft version…', progress: 40 })
+  broadcast('install:log', `Java: ${(javaCheck.stderr || javaCheck.stdout || '').trim().split('\n')[0]}`)
+  broadcast('install:step', { step: 0, label: 'Fetching latest Minecraft version…', progress: 50 })
 
-  interface VersionManifest {
-    latest: { release: string }
-    versions: Array<{ id: string; type: string; url: string }>
-  }
-  interface VersionMeta {
-    downloads: { server: { url: string; sha1: string; size: number } }
-  }
+  interface Manifest { latest: { release: string }; versions: Array<{ id: string; type: string; url: string }> }
+  interface VersionMeta { downloads: { server: { url: string; size: number } } }
 
-  let manifest: VersionManifest
-  try {
-    manifest = await fetchJson<VersionManifest>(
-      'https://launchermeta.mojang.com/mc/game/version_manifest_v2.json'
-    )
-  } catch (e) {
-    broadcast('install:error', `Failed to fetch version manifest: ${e}`)
-    return false
-  }
+  let manifest: Manifest
+  try { manifest = await fetchJson<Manifest>('https://launchermeta.mojang.com/mc/game/version_manifest_v2.json') }
+  catch (e) { broadcast('install:error', `Failed to fetch manifest: ${e}`); return false }
 
   const latestId = manifest.latest.release
-  const versionEntry = manifest.versions.find(v => v.id === latestId && v.type === 'release')
-  if (!versionEntry) {
-    broadcast('install:error', 'Could not find latest release in version manifest.')
-    return false
-  }
+  const entry = manifest.versions.find(v => v.id === latestId && v.type === 'release')
+  if (!entry) { broadcast('install:error', 'Could not find latest release.'); return false }
 
-  broadcast('install:log', `Latest release: ${latestId}`)
-  broadcast('install:step', { step: 0, label: `Found Minecraft ${latestId}`, progress: 80 })
+  const meta = await fetchJson<VersionMeta>(entry.url)
+  const { url: jarUrl, size: jarSize } = meta.downloads.server
 
-  const versionMeta = await fetchJson<VersionMeta>(versionEntry.url)
-  const serverUrl = versionMeta.downloads.server.url
-  const serverSize = versionMeta.downloads.server.size
+  broadcast('install:log', `Minecraft ${latestId} — ${(jarSize / 1024 / 1024).toFixed(1)} MB`)
   broadcast('install:step', { step: 0, label: `Found Minecraft ${latestId}`, progress: 100 })
-  broadcast('install:log', `Server JAR: ${serverUrl}`)
-  broadcast('install:log', `Size: ${(serverSize / 1024 / 1024).toFixed(1)} MB`)
 
-  // Step 1: Download server.jar
   broadcast('install:step', { step: 1, label: 'Downloading server.jar…', progress: 0 })
-  const jarPath = join(installDir, 'server.jar')
+  const jarPath = join(instDir, 'server.jar')
   try {
-    await downloadFile(serverUrl, jarPath, (pct) => {
+    await downloadFile(jarUrl, jarPath, (pct) =>
       broadcast('install:step', { step: 1, label: 'Downloading server.jar…', progress: pct })
-    })
-  } catch (e) {
-    broadcast('install:error', `Download failed: ${e}`)
-    return false
-  }
-  broadcast('install:log', `Downloaded server.jar to ${jarPath}`)
+    )
+  } catch (e) { broadcast('install:error', `Download failed: ${e}`); return false }
 
-  // Step 2: Accept EULA + write server.properties stub
-  broadcast('install:step', { step: 2, label: 'Writing config files…', progress: 30 })
-  writeFileSync(join(installDir, 'eula.txt'), '#By setting eula=true you agree to the Minecraft EULA\neula=true\n', 'utf-8')
-  broadcast('install:log', 'eula.txt: accepted')
-
-  // Minimal server.properties — full values written at launch from saved config
-  const props = [
-    'server-port=25565',
-    'max-players=20',
-    'online-mode=true',
-    'difficulty=normal',
-    'gamemode=survival',
-    'white-list=false',
-    'pvp=true',
-    'motd=A Minecraft Server',
-    'enable-rcon=false',
-  ].join('\n')
-  writeFileSync(join(installDir, 'server.properties'), props + '\n', 'utf-8')
-  broadcast('install:log', 'server.properties written')
+  broadcast('install:step', { step: 2, label: 'Writing config files…', progress: 50 })
+  writeFileSync(join(instDir, 'eula.txt'), '#Minecraft EULA accepted by Dedicated Server Automation\neula=true\n', 'utf-8')
+  writeFileSync(join(instDir, 'server.properties'), [
+    'server-port=25565', 'max-players=20', 'online-mode=true',
+    'difficulty=normal', 'gamemode=survival', 'white-list=false',
+    'pvp=true', 'motd=A Minecraft Server', 'enable-rcon=false',
+  ].join('\n') + '\n', 'utf-8')
+  broadcast('install:log', 'eula.txt + server.properties written')
   broadcast('install:step', { step: 2, label: 'Setup complete!', progress: 100 })
-
   return true
 }
 
-// ── SteamCMD install ─────────────────────────────────────────────────────────
-async function installViaSteam(installDir: string, steamAppId: string): Promise<boolean> {
-  const steamCmdPath = getSteamCmdPath()
-  const steamCmdDir = join(steamCmdPath, '..')
+// ── SteamCMD install ──────────────────────────────────────────────────────────
+async function installViaSteam(instDir: string, steamAppId: string): Promise<boolean> {
+  const steamCmdDir = join(userData(), 'steamcmd')
+  const exe = process.platform === 'win32' ? 'steamcmd.exe' : 'steamcmd.sh'
+  const steamCmdPath = join(steamCmdDir, exe)
+
   if (!existsSync(steamCmdDir)) mkdirSync(steamCmdDir, { recursive: true })
 
-  // Step 0: Download SteamCMD if needed
   if (!existsSync(steamCmdPath)) {
     broadcast('install:step', { step: 0, label: 'Downloading SteamCMD…', progress: 0 })
     const isWin = process.platform === 'win32'
     const url = isWin
       ? 'https://steamcdn-a.akamaihd.net/client/installer/steamcmd.zip'
       : 'https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz'
-    const ext = isWin ? '.zip' : '.tar.gz'
-    const archive = steamCmdPath.replace(/\.(exe|sh)$/, ext)
+    const archive = join(steamCmdDir, isWin ? 'steamcmd.zip' : 'steamcmd.tar.gz')
     try {
-      await downloadFile(url, archive, (pct) => {
+      await downloadFile(url, archive, (pct) =>
         broadcast('install:step', { step: 0, label: 'Downloading SteamCMD…', progress: pct })
-      })
+      )
       broadcast('install:step', { step: 0, label: 'Extracting SteamCMD…', progress: 100 })
-      if (isWin) {
-        spawnSync('powershell', ['-Command', `Expand-Archive -Path "${archive}" -DestinationPath "${steamCmdDir}" -Force`])
-      } else {
-        spawnSync('tar', ['-xzf', archive, '-C', steamCmdDir])
-        spawnSync('chmod', ['+x', steamCmdPath])
-      }
-      broadcast('install:log', 'SteamCMD ready')
-    } catch (e) {
-      broadcast('install:error', String(e))
-      return false
-    }
+      if (isWin) spawnSync('powershell', ['-Command', `Expand-Archive -Path "${archive}" -DestinationPath "${steamCmdDir}" -Force`])
+      else { spawnSync('tar', ['-xzf', archive, '-C', steamCmdDir]); spawnSync('chmod', ['+x', steamCmdPath]) }
+    } catch (e) { broadcast('install:error', String(e)); return false }
   } else {
     broadcast('install:step', { step: 0, label: 'SteamCMD already installed', progress: 100 })
   }
 
-  // Step 1: Install game via SteamCMD
   broadcast('install:step', { step: 1, label: 'Installing server files…', progress: 0 })
   return new Promise<boolean>((resolve) => {
-    const args = ['+force_install_dir', installDir, '+login', 'anonymous', '+app_update', steamAppId, 'validate', '+quit']
-    const proc = spawn(steamCmdPath, args)
+    const proc = spawn(steamCmdPath, [
+      '+force_install_dir', instDir, '+login', 'anonymous',
+      '+app_update', steamAppId, 'validate', '+quit'
+    ])
     let buf = ''
-
-    proc.stdout?.on('data', (chunk: Buffer) => {
-      buf += chunk.toString()
-      const lines = buf.split('\n')
-      buf = lines.pop() ?? ''
+    proc.stdout?.on('data', (c: Buffer) => {
+      buf += c.toString()
+      const lines = buf.split('\n'); buf = lines.pop() ?? ''
       for (const line of lines) {
         broadcast('install:log', line)
         const m = line.match(/progress:\s*([\d.]+)/)
@@ -240,111 +238,150 @@ async function installViaSteam(installDir: string, steamAppId: string): Promise<
   })
 }
 
-// ── IPC registration ─────────────────────────────────────────────────────────
+// ── IPC registration ──────────────────────────────────────────────────────────
 export function registerIpcHandlers(): void {
 
   // Window controls
   ipcMain.on('window:minimize', () => BrowserWindow.getFocusedWindow()?.minimize())
   ipcMain.on('window:maximize', () => {
     const win = BrowserWindow.getFocusedWindow()
-    if (win?.isMaximized()) win.unmaximize()
-    else win?.maximize()
+    win?.isMaximized() ? win.unmaximize() : win?.maximize()
   })
   ipcMain.on('window:close', () => BrowserWindow.getFocusedWindow()?.close())
 
-  // Config persistence
-  ipcMain.handle('config:load', async (_, gameId: string) => {
-    const all = await readConfigs()
-    return all[gameId] ?? null
+  // ── Instance management ──────────────────────────────────────────────────
+
+  ipcMain.handle('instance:list', async (_, gameId: string) => {
+    const all = await readInstances()
+    return all.filter(i => i.gameId === gameId)
   })
 
-  ipcMain.handle('config:save', async (_, gameId: string, config: Record<string, unknown>) => {
-    const all = await readConfigs()
-    all[gameId] = config
-    await writeConfigs(all)
+  ipcMain.handle('instance:create', async (_, gameId: string, name: string) => {
+    const all = await readInstances()
+    const id = `${gameId}-${Date.now().toString(36)}`
+    const inst: ServerInstance = { id, gameId, name, config: {}, enabledMods: [], createdAt: Date.now() }
+    all.push(inst)
+    await writeInstances(all)
+    mkdirSync(instanceDir(gameId, id), { recursive: true })
+    return inst
+  })
+
+  ipcMain.handle('instance:delete', async (_, instanceId: string, gameId: string) => {
+    const all = await readInstances()
+    const updated = all.filter(i => i.id !== instanceId)
+    await writeInstances(updated)
+    const dir = instanceDir(gameId, instanceId)
+    if (existsSync(dir)) rmSync(dir, { recursive: true, force: true })
     return true
   })
 
-  // Check if game server is installed
-  ipcMain.handle('server:isInstalled', (_, gameId: string, executableSubdir: string, executable: string) => {
-    const base = join(getInstallBase(), gameId)
+  ipcMain.handle('instance:rename', async (_, instanceId: string, name: string) => {
+    const all = await readInstances()
+    const inst = all.find(i => i.id === instanceId)
+    if (!inst) return false
+    inst.name = name
+    await writeInstances(all)
+    return true
+  })
+
+  ipcMain.handle('instance:saveConfig', async (_, instanceId: string, config: Record<string, unknown>) => {
+    const all = await readInstances()
+    const inst = all.find(i => i.id === instanceId)
+    if (!inst) return false
+    inst.config = config
+    await writeInstances(all)
+    return true
+  })
+
+  ipcMain.handle('instance:loadConfig', async (_, instanceId: string) => {
+    const all = await readInstances()
+    return all.find(i => i.id === instanceId)?.config ?? null
+  })
+
+  ipcMain.handle('instance:setEnabledMods', async (_, instanceId: string, gameId: string, enabledMods: string[]) => {
+    const all = await readInstances()
+    const inst = all.find(i => i.id === instanceId)
+    if (!inst) return false
+    inst.enabledMods = enabledMods
+    await writeInstances(all)
+    applyMods(gameId, instanceId, enabledMods)
+    return true
+  })
+
+  // ── Server state ─────────────────────────────────────────────────────────
+
+  ipcMain.handle('server:isInstalled', (_, gameId: string, instanceId: string, executableSubdir: string, executable: string) => {
+    const base = instanceDir(gameId, instanceId)
     const exePath = executableSubdir ? join(base, executableSubdir, executable) : join(base, executable)
     return existsSync(exePath)
   })
 
-  // Check if server is running
-  ipcMain.handle('server:isRunning', (_, gameId: string, processNames: string[]) => {
-    const proc = runningProcesses.get(gameId)
+  ipcMain.handle('server:isRunning', (_, instanceId: string, processNames: string[]) => {
+    const proc = runningProcesses.get(instanceId)
     if (proc && !proc.killed) return true
     try {
       if (process.platform === 'win32') {
-        const result = spawnSync('tasklist', ['/FO', 'CSV', '/NH'], { encoding: 'utf-8' })
-        const lower = (result.stdout || '').toLowerCase()
+        const r = spawnSync('tasklist', ['/FO', 'CSV', '/NH'], { encoding: 'utf-8' })
+        const lower = (r.stdout || '').toLowerCase()
         return processNames.some(n => lower.includes(n.toLowerCase()))
       } else {
-        const result = spawnSync('pgrep', ['-f', processNames[0]], { encoding: 'utf-8' })
-        return result.status === 0
+        return spawnSync('pgrep', ['-f', processNames[0]], { encoding: 'utf-8' }).status === 0
       }
-    } catch {
-      return false
-    }
+    } catch { return false }
   })
 
-  // Get local IP
   ipcMain.handle('server:localIp', () => {
     const nets = os.networkInterfaces()
-    for (const iface of Object.values(nets)) {
-      for (const addr of iface ?? []) {
+    for (const iface of Object.values(nets))
+      for (const addr of iface ?? [])
         if (addr.family === 'IPv4' && !addr.internal) return addr.address
-      }
-    }
     return '127.0.0.1'
   })
 
-  // Check Java
   ipcMain.handle('server:checkJava', () => {
-    const result = spawnSync('java', ['-version'], { encoding: 'utf-8', stdio: 'pipe' })
-    if (result.error) return null
-    const output = (result.stderr || result.stdout || '').trim().split('\n')[0]
-    return output || null
+    const r = spawnSync('java', ['-version'], { encoding: 'utf-8', stdio: 'pipe' })
+    if (r.error) return null
+    return (r.stderr || r.stdout || '').trim().split('\n')[0] || null
   })
 
-  // Install — routes to Steam or Mojang based on installMode
-  ipcMain.handle('install:start', async (_, gameId: string, steamAppId: string, installMode: string) => {
-    const installDir = join(getInstallBase(), gameId)
-    if (!existsSync(installDir)) mkdirSync(installDir, { recursive: true })
+  // ── Install ───────────────────────────────────────────────────────────────
+
+  ipcMain.handle('install:start', async (_, gameId: string, instanceId: string, steamAppId: string, installMode: string) => {
+    const instDir = instanceDir(gameId, instanceId)
+    if (!existsSync(instDir)) mkdirSync(instDir, { recursive: true })
 
     if (installMode === 'mojang') {
-      const ok = await installMinecraft(installDir)
+      const ok = await installMinecraft(instDir)
       broadcast('install:done', ok)
       return ok
-    } else {
-      return installViaSteam(installDir, steamAppId)
     }
+    return installViaSteam(instDir, steamAppId)
   })
 
-  // Start server — handles native exe and Java JAR
-  ipcMain.handle('server:start', (_, gameId: string, exePath: string, args: string[], launchMode: string) => {
-    const existing = runningProcesses.get(gameId)
+  // ── Start / Stop ──────────────────────────────────────────────────────────
+
+  ipcMain.handle('server:start', (_, instanceId: string, gameId: string, launchMode: string, exeRelPath: string, args: string[]) => {
+    const existing = runningProcesses.get(instanceId)
     if (existing && !existing.killed) return true
 
+    const instDir = instanceDir(gameId, instanceId)
+    // Apply mods before launch
+    readInstances().then(all => {
+      const inst = all.find(i => i.id === instanceId)
+      if (inst?.enabledMods.length) applyMods(gameId, instanceId, inst.enabledMods)
+    })
+
     try {
-      let cmd: string
-      let cmdArgs: string[]
-
+      let cmd: string, cmdArgs: string[], cwd: string
       if (launchMode === 'java') {
-        // exePath is the installDir; args already contain -jar server.jar etc.
-        cmd = 'java'
-        cmdArgs = args
+        cmd = 'java'; cmdArgs = args; cwd = instDir
       } else {
-        cmd = exePath
-        cmdArgs = args
+        const exePath = join(instDir, exeRelPath)
+        cmd = exePath; cmdArgs = args; cwd = join(exePath, '..')
       }
-
-      const cwd = launchMode === 'java' ? exePath : join(exePath, '..')
       const proc = spawn(cmd, cmdArgs, { cwd, detached: true, stdio: 'ignore' })
       proc.unref()
-      runningProcesses.set(gameId, proc)
+      runningProcesses.set(instanceId, proc)
       return true
     } catch (e) {
       broadcast('server:error', String(e))
@@ -352,23 +389,83 @@ export function registerIpcHandlers(): void {
     }
   })
 
-  // Stop server
-  ipcMain.handle('server:stop', (_, gameId: string, processNames: string[]) => {
-    const proc = runningProcesses.get(gameId)
-    if (proc && !proc.killed) {
-      proc.kill()
-      runningProcesses.delete(gameId)
-      return true
-    }
+  ipcMain.handle('server:stop', (_, instanceId: string, processNames: string[]) => {
+    const proc = runningProcesses.get(instanceId)
+    if (proc && !proc.killed) { proc.kill(); runningProcesses.delete(instanceId); return true }
     try {
-      if (process.platform === 'win32') {
-        for (const name of processNames) spawnSync('taskkill', ['/F', '/IM', name])
-      } else {
-        for (const name of processNames) spawnSync('pkill', ['-f', name])
-      }
+      if (process.platform === 'win32')
+        for (const n of processNames) spawnSync('taskkill', ['/F', '/IM', n])
+      else
+        for (const n of processNames) spawnSync('pkill', ['-f', n])
       return true
-    } catch {
-      return false
+    } catch { return false }
+  })
+
+  // ── Mod library ───────────────────────────────────────────────────────────
+
+  ipcMain.handle('mods:list', async (_, gameId: string) => {
+    const all = await readModsRegistry()
+    return all.filter(m => m.gameId === gameId)
+  })
+
+  ipcMain.handle('mods:add', async (_, gameId: string, sourcePaths: string[]) => {
+    const libDir = modLibDir(gameId)
+    if (!existsSync(libDir)) mkdirSync(libDir, { recursive: true })
+
+    const registry = await readModsRegistry()
+    const added: ModEntry[] = []
+
+    for (const src of sourcePaths) {
+      if (!existsSync(src)) continue
+      const filename = basename(src)
+      const dest = join(libDir, filename)
+      copyFileSync(src, dest)
+      const size = statSync(dest).size
+      const existing = registry.findIndex(m => m.gameId === gameId && m.filename === filename)
+      const entry: ModEntry = {
+        filename,
+        name: filename.replace(/\.(jar|zip|dll)$/i, ''),
+        gameId,
+        size,
+        addedAt: Date.now()
+      }
+      if (existing >= 0) registry[existing] = entry
+      else registry.push(entry)
+      added.push(entry)
     }
+    await writeModsRegistry(registry)
+    return added
+  })
+
+  ipcMain.handle('mods:remove', async (_, gameId: string, filename: string) => {
+    const libDir = modLibDir(gameId)
+    const filePath = join(libDir, filename)
+    if (existsSync(filePath)) unlinkSync(filePath)
+
+    const registry = await readModsRegistry()
+    const updated = registry.filter(m => !(m.gameId === gameId && m.filename === filename))
+    await writeModsRegistry(updated)
+
+    // Remove from all instances of this game
+    const instances = await readInstances()
+    let changed = false
+    for (const inst of instances) {
+      if (inst.gameId !== gameId) continue
+      const before = inst.enabledMods.length
+      inst.enabledMods = inst.enabledMods.filter(f => f !== filename)
+      if (inst.enabledMods.length !== before) changed = true
+    }
+    if (changed) await writeInstances(instances)
+    return true
+  })
+
+  ipcMain.handle('mods:openPicker', async (_, gameId: string) => {
+    const extensions = gameId === 'minecraft' ? ['jar'] : ['zip', 'dll', 'jar']
+    const result = await dialog.showOpenDialog({
+      title: 'Select Mod Files',
+      filters: [{ name: 'Mod files', extensions }],
+      properties: ['openFile', 'multiSelections']
+    })
+    return result.canceled ? [] : result.filePaths
   })
 }
