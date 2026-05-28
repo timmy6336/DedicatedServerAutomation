@@ -3,7 +3,7 @@ import { Minus, Square, X, Server } from 'lucide-react'
 export default function TitleBar() {
   return (
     <div
-      className="flex items-center justify-between h-10 px-4 bg-[#09090b] border-b border-[#27272a] shrink-0 select-none"
+      className="flex items-center justify-between h-11 px-4 bg-[#09090b] border-b border-[#27272a] shrink-0 select-none"
       style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
     >
       <div className="flex items-center gap-2">

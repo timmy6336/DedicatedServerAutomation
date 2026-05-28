@@ -34,6 +34,10 @@ interface BackupEntry {
 // ── running processes keyed by instanceId ─────────────────────────────────────
 const runningProcesses = new Map<string, ChildProcess>()
 
+// ── active install process (for cancellation) ────────────────────────────────
+let activeInstallProc: ChildProcess | null = null
+let installCancelled = false
+
 // ── storage helpers ───────────────────────────────────────────────────────────
 const userData = () => app.getPath('userData')
 const instancesPath = () => join(userData(), 'instances.json')
@@ -79,6 +83,9 @@ function downloadFile(url: string, dest: string, onProgress: (pct: number) => vo
       httpGet(target, (res) => {
         if (res.statusCode && res.statusCode >= 300 && res.headers.location) {
           file.destroy(); follow(res.headers.location, hops + 1); return
+        }
+        if (res.statusCode && res.statusCode >= 400) {
+          file.destroy(); reject(new Error(`HTTP ${res.statusCode} ${res.statusMessage}`)); return
         }
         const total = parseInt(res.headers['content-length'] || '0', 10)
         let received = 0
@@ -265,19 +272,30 @@ async function installViaSteam(instDir: string, steamAppId: string): Promise<boo
         broadcast('install:step', { step: 0, label: 'Downloading SteamCMD…', progress: pct })
       )
       broadcast('install:step', { step: 0, label: 'Extracting SteamCMD…', progress: 100 })
-      if (isWin) spawnSync('powershell', ['-Command', `Expand-Archive -Path "${archive}" -DestinationPath "${steamCmdDir}" -Force`])
-      else { spawnSync('tar', ['-xzf', archive, '-C', steamCmdDir]); spawnSync('chmod', ['+x', steamCmdPath]) }
+      if (isWin) {
+        const r = spawnSync('powershell', ['-Command', `Expand-Archive -Path "${archive}" -DestinationPath "${steamCmdDir}" -Force`], { encoding: 'utf-8' })
+        if (r.error) throw r.error
+      } else {
+        spawnSync('tar', ['-xzf', archive, '-C', steamCmdDir])
+        spawnSync('chmod', ['+x', steamCmdPath])
+      }
+      if (!existsSync(steamCmdPath)) {
+        broadcast('install:error', `SteamCMD extraction failed — ${exe} not found after extraction. Check that PowerShell can run Expand-Archive.`)
+        return false
+      }
     } catch (e) { broadcast('install:error', String(e)); return false }
   } else {
     broadcast('install:step', { step: 0, label: 'SteamCMD already installed', progress: 100 })
   }
 
   broadcast('install:step', { step: 1, label: 'Installing server files…', progress: 0 })
+  installCancelled = false
   return new Promise<boolean>((resolve) => {
     const proc = spawn(steamCmdPath, [
       '+force_install_dir', instDir, '+login', 'anonymous',
       '+app_update', steamAppId, 'validate', '+quit'
     ])
+    activeInstallProc = proc
     let buf = ''
     proc.stdout?.on('data', (c: Buffer) => {
       buf += c.toString()
@@ -290,9 +308,16 @@ async function installViaSteam(instDir: string, steamAppId: string): Promise<boo
     })
     proc.stderr?.on('data', (c: Buffer) => broadcast('install:log', c.toString()))
     proc.on('close', (code) => {
-      broadcast('install:step', { step: 1, label: 'Installation complete', progress: 100 })
-      broadcast('install:done', code === 0)
-      resolve(code === 0)
+      activeInstallProc = null
+      if (installCancelled) {
+        broadcast('install:cancelled')
+        resolve(false)
+      } else {
+        broadcast('install:step', { step: 1, label: 'Installation complete', progress: 100 })
+        broadcast('install:done', code === 0)
+        resolve(code === 0)
+      }
+      installCancelled = false
     })
   })
 }
@@ -404,6 +429,15 @@ export function registerIpcHandlers(): void {
   })
 
   // ── Install ───────────────────────────────────────────────────────────────
+
+  ipcMain.handle('install:cancel', () => {
+    if (activeInstallProc && !activeInstallProc.killed) {
+      installCancelled = true
+      activeInstallProc.kill()
+      return true
+    }
+    return false
+  })
 
   ipcMain.handle('install:start', async (_, gameId: string, instanceId: string, steamAppId: string, installMode: string) => {
     const instDir = instanceDir(gameId, instanceId)

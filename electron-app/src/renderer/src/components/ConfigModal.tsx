@@ -38,24 +38,24 @@ export default function ConfigModal({ game, instance, onClose }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-      <div className="w-[520px] max-h-[80vh] bg-[#111113] border border-[#27272a] rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+      <div className="w-[560px] max-h-[85vh] bg-[#111113] border border-[#27272a] rounded-2xl shadow-2xl flex flex-col overflow-hidden">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#27272a] shrink-0">
+        <div className="flex items-center justify-between px-7 py-5 border-b border-[#27272a] shrink-0">
           <div>
-            <h2 className="text-base font-semibold">{game.name} Configuration</h2>
-            <p className="text-xs text-[#71717a] mt-0.5">Settings saved locally</p>
+            <h2 className="text-lg font-semibold">{game.name} Configuration</h2>
+            <p className="text-sm text-[#71717a] mt-0.5">Settings saved locally for {instance.name}</p>
           </div>
           <button
             onClick={onClose}
-            className="w-7 h-7 flex items-center justify-center rounded-lg text-[#71717a] hover:text-[#fafafa] hover:bg-[#27272a] transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-[#71717a] hover:text-[#fafafa] hover:bg-[#27272a] transition-colors"
           >
-            <X size={14} />
+            <X size={15} />
           </button>
         </div>
 
         {/* Fields */}
-        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+        <div className="flex-1 overflow-y-auto px-7 py-6 space-y-5">
           {game.serverSettings.map((setting) => (
             <Field
               key={setting.key}
@@ -68,10 +68,10 @@ export default function ConfigModal({ game, instance, onClose }: Props) {
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-[#27272a] flex items-center justify-between shrink-0">
+        <div className="px-7 py-5 border-t border-[#27272a] flex items-center justify-between shrink-0">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm text-[#a1a1aa] hover:text-[#fafafa] transition-colors"
+            className="px-5 py-2.5 text-sm text-[#a1a1aa] hover:text-[#fafafa] rounded-lg hover:bg-[#18181b] transition-colors"
           >
             Cancel
           </button>
@@ -79,8 +79,7 @@ export default function ConfigModal({ game, instance, onClose }: Props) {
             onClick={save}
             disabled={saving}
             className={cn(
-              'px-5 py-2 rounded-lg text-sm font-medium text-white transition-all',
-              saved ? 'bg-emerald-600' : ''
+              'px-6 py-2.5 rounded-lg text-sm font-medium text-white transition-all disabled:opacity-50'
             )}
             style={!saved ? { backgroundColor: game.accentColor } : undefined}
           >
@@ -104,14 +103,14 @@ function Field({
   accentColor: string
 }) {
   const inputClass = cn(
-    'w-full px-3 py-2 rounded-lg bg-[#18181b] border border-[#27272a]',
+    'w-full px-4 py-2.5 rounded-lg bg-[#18181b] border border-[#27272a]',
     'text-sm text-[#fafafa] placeholder-[#52525b]',
     'focus:outline-none focus:border-[#3f3f46] transition-colors'
   )
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-1.5">
+      <div className="flex items-center justify-between mb-2">
         <label className="text-sm font-medium text-[#e4e4e7]">
           {setting.label}
           {setting.required && <span className="text-red-400 ml-1">*</span>}
@@ -124,16 +123,16 @@ function Field({
             className="flex items-center gap-1 text-xs hover:underline"
             style={{ color: accentColor }}
           >
-            Get token <ExternalLink size={10} />
+            Get token <ExternalLink size={11} />
           </a>
         )}
       </div>
 
       {setting.tooltip && (
-        <p className="text-xs text-[#71717a] mb-1.5">{setting.tooltip}</p>
+        <p className="text-sm text-[#71717a] mb-2">{setting.tooltip}</p>
       )}
 
-      {(setting.type === 'string') && (
+      {setting.type === 'string' && (
         <input
           type="text"
           className={inputClass}
@@ -168,13 +167,13 @@ function Field({
         <button
           onClick={() => onChange(!value)}
           className={cn(
-            'relative inline-flex h-6 w-11 rounded-full transition-colors',
+            'relative inline-flex h-7 w-12 rounded-full transition-colors',
             value ? 'bg-emerald-600' : 'bg-[#3f3f46]'
           )}
         >
           <span
             className={cn(
-              'absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform',
+              'absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow transition-transform',
               value ? 'translate-x-5' : 'translate-x-0'
             )}
           />

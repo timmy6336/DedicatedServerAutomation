@@ -33,6 +33,7 @@ const api = {
   // Install
   startInstall: (gameId: string, instanceId: string, steamAppId: string, installMode: string) =>
     ipcRenderer.invoke('install:start', gameId, instanceId, steamAppId, installMode),
+  cancelInstall: () => ipcRenderer.invoke('install:cancel'),
 
   // Server lifecycle
   startServer: (instanceId: string, gameId: string, launchMode: string, exeRelPath: string, args: string[]) =>

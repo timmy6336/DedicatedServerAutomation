@@ -31,3 +31,7 @@ xref-*.html
 *.tmp
 *.temp
 temp/
+
+markdowns/
+
+.claude/

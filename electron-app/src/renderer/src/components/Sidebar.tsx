@@ -27,7 +27,6 @@ export default function Sidebar({ games, selectedInstance, onSelectInstance }: P
     }))
     setInstances(results)
 
-    // Auto-select first instance if nothing selected
     if (!selectedInstance) {
       for (const g of games) {
         if (results[g.id]?.length) {
@@ -57,14 +56,14 @@ export default function Sidebar({ games, selectedInstance, onSelectInstance }: P
 
   return (
     <>
-      <aside className="w-56 shrink-0 bg-[#111113] border-r border-[#27272a] flex flex-col overflow-hidden">
-        <div className="px-3 pt-4 pb-2">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-[#52525b] px-2">
+      <aside className="w-64 shrink-0 bg-[#111113] border-r border-[#27272a] flex flex-col overflow-hidden">
+        <div className="px-4 pt-5 pb-3">
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-[#52525b] px-2">
             Servers
           </p>
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-2 pb-4 space-y-0.5">
+        <nav className="flex-1 overflow-y-auto px-3 pb-4 space-y-1">
           {games.map(game => {
             const isOpen = expanded.has(game.id)
             const gameInstances = instances[game.id] ?? []
@@ -74,52 +73,51 @@ export default function Sidebar({ games, selectedInstance, onSelectInstance }: P
                 {/* Game row */}
                 <button
                   onClick={() => toggle(game.id)}
-                  className="w-full flex items-center gap-2 px-2 py-2 rounded-lg text-left text-[#71717a] hover:text-[#a1a1aa] hover:bg-[#18181b] transition-all group"
+                  className="w-full flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg text-left text-[#71717a] hover:text-[#a1a1aa] hover:bg-[#18181b] transition-all group"
                 >
                   {isOpen
-                    ? <ChevronDown size={12} className="shrink-0" />
-                    : <ChevronRight size={12} className="shrink-0" />
+                    ? <ChevronDown size={13} className="shrink-0" />
+                    : <ChevronRight size={13} className="shrink-0" />
                   }
                   <div
-                    className="w-5 h-5 rounded flex items-center justify-center shrink-0"
+                    className="w-6 h-6 rounded-md flex items-center justify-center shrink-0"
                     style={{ backgroundColor: game.accentColor + '22', color: game.accentColor }}
                   >
-                    <Server size={11} />
+                    <Server size={13} />
                   </div>
                   <span className="text-xs font-semibold tracking-wide uppercase flex-1 truncate">
                     {game.name}
                   </span>
-                  <span className="text-[10px] text-[#3f3f46]">{gameInstances.length}</span>
+                  <span className="text-xs text-[#3f3f46] tabular-nums">{gameInstances.length}</span>
                 </button>
 
                 {/* Instances */}
                 {isOpen && (
-                  <div className="pl-5 space-y-0.5 mt-0.5">
+                  <div className="pl-6 space-y-0.5 mt-1 mb-1">
                     {gameInstances.map(inst => (
                       <button
                         key={inst.id}
                         onClick={() => onSelectInstance(inst, game)}
                         className={cn(
-                          'w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm transition-all',
+                          'w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left transition-all',
                           selectedInstance?.id === inst.id
                             ? 'bg-[#18181b] text-white'
                             : 'text-[#a1a1aa] hover:bg-[#18181b] hover:text-white'
                         )}
                       >
                         <span
-                          className="w-1.5 h-1.5 rounded-full shrink-0"
+                          className="w-2 h-2 rounded-full shrink-0"
                           style={{ backgroundColor: selectedInstance?.id === inst.id ? game.accentColor : '#3f3f46' }}
                         />
-                        <span className="truncate flex-1">{inst.name}</span>
+                        <span className="truncate flex-1 text-sm">{inst.name}</span>
                       </button>
                     ))}
 
-                    {/* New server button */}
                     <button
                       onClick={() => { setCreating(game); setExpanded(prev => new Set([...prev, game.id])) }}
-                      className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-left text-xs text-[#52525b] hover:text-[#a1a1aa] hover:bg-[#18181b] transition-all"
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left text-sm text-[#52525b] hover:text-[#a1a1aa] hover:bg-[#18181b] transition-all"
                     >
-                      <Plus size={11} />
+                      <Plus size={13} />
                       New server
                     </button>
                   </div>
@@ -129,8 +127,8 @@ export default function Sidebar({ games, selectedInstance, onSelectInstance }: P
           })}
         </nav>
 
-        <div className="border-t border-[#27272a] px-4 py-3">
-          <p className="text-[11px] text-[#52525b]">v2.0.0</p>
+        <div className="border-t border-[#27272a] px-5 py-4">
+          <p className="text-xs text-[#52525b]">v2.0.0</p>
         </div>
       </aside>
 

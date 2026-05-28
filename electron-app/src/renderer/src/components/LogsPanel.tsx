@@ -56,12 +56,12 @@ export default function LogsPanel({ instanceId, serverRunning }: Props) {
   }
 
   return (
-    <div className="h-full flex flex-col px-8 py-6 gap-4">
+    <div className="h-full flex flex-col px-8 py-7 gap-5">
       {/* Header */}
       <div className="flex items-center justify-between shrink-0">
         <div>
-          <h2 className="text-base font-semibold">Server Log</h2>
-          <p className="text-xs text-[#71717a] mt-0.5">
+          <h2 className="text-lg font-semibold">Server Log</h2>
+          <p className="text-sm text-[#71717a] mt-0.5">
             {serverRunning
               ? `Live output · ${lines.length} line${lines.length !== 1 ? 's' : ''}`
               : 'Start the server to see live output'}
@@ -70,9 +70,9 @@ export default function LogsPanel({ instanceId, serverRunning }: Props) {
         <button
           onClick={() => setLines([])}
           disabled={lines.length === 0}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#18181b] border border-[#27272a] text-sm text-[#71717a] hover:text-white hover:border-[#3f3f46] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#18181b] border border-[#27272a] text-sm text-[#71717a] hover:text-white hover:border-[#3f3f46] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
         >
-          <Trash2 size={12} />
+          <Trash2 size={13} />
           Clear
         </button>
       </div>
@@ -81,11 +81,11 @@ export default function LogsPanel({ instanceId, serverRunning }: Props) {
       <div
         ref={logRef}
         onScroll={onScroll}
-        className="flex-1 overflow-y-auto rounded-xl bg-[#09090b] border border-[#27272a] p-4 font-mono text-[11px] leading-relaxed"
+        className="flex-1 overflow-y-auto rounded-xl bg-[#09090b] border border-[#27272a] p-5 font-mono text-xs leading-relaxed"
       >
         {lines.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center">
-            <p className="text-[#3f3f46] text-xs">
+            <p className="text-[#3f3f46] text-sm">
               {serverRunning
                 ? 'Waiting for output…'
                 : 'No log output yet. Start the server to begin streaming.'}
@@ -108,7 +108,7 @@ export default function LogsPanel({ instanceId, serverRunning }: Props) {
             setAutoScroll(true)
             if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight
           }}
-          className="shrink-0 text-xs text-center py-1.5 rounded-lg bg-[#18181b] border border-[#27272a] text-[#71717a] hover:text-white transition-colors"
+          className="shrink-0 text-sm text-center py-2 rounded-lg bg-[#18181b] border border-[#27272a] text-[#71717a] hover:text-white transition-colors"
         >
           ↓ Scroll to bottom
         </button>

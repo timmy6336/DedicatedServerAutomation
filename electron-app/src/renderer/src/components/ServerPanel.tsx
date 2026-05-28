@@ -49,7 +49,6 @@ export default function ServerPanel({ game, instance, onInstanceUpdated }: Props
     return () => clearInterval(id)
   }, [refresh])
 
-  // Listen for unexpected exits so the panel status updates promptly
   useEffect(() => {
     const unsub = window.api.on('server:exit', (data: unknown) => {
       const { instanceId } = data as { instanceId: string }
@@ -79,26 +78,26 @@ export default function ServerPanel({ game, instance, onInstanceUpdated }: Props
   const hasMods = GAMES_WITH_MODS.includes(game.id)
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode; badge?: number }[] = [
-    { id: 'overview', label: 'Overview', icon: <Monitor size={13} /> },
-    ...(hasMods ? [{ id: 'mods' as Tab, label: 'Mods', icon: <Package size={13} />, badge: instance.enabledMods.length || undefined }] : []),
-    { id: 'logs', label: 'Logs', icon: <ScrollText size={13} /> },
-    { id: 'backups', label: 'Backups', icon: <HardDrive size={13} /> },
+    { id: 'overview', label: 'Overview', icon: <Monitor size={14} /> },
+    ...(hasMods ? [{ id: 'mods' as Tab, label: 'Mods', icon: <Package size={14} />, badge: instance.enabledMods.length || undefined }] : []),
+    { id: 'logs', label: 'Logs', icon: <ScrollText size={14} /> },
+    { id: 'backups', label: 'Backups', icon: <HardDrive size={14} /> },
   ]
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
       {/* Hero header */}
-      <div className={cn('relative px-8 pt-7 pb-5 bg-gradient-to-br shrink-0', game.bannerColor)}>
+      <div className={cn('relative px-8 pt-8 pb-6 bg-gradient-to-br shrink-0', game.bannerColor)}>
         <div className="absolute inset-0 bg-[#09090b]/60" />
         <div className="relative z-10">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-widest mb-0.5"
+              <p className="text-xs font-semibold uppercase tracking-widest mb-1"
                  style={{ color: game.accentColor }}>
                 {game.genre}
               </p>
-              <h1 className="text-2xl font-bold text-white">{instance.name}</h1>
-              <p className="text-xs text-[#71717a] mt-0.5">{game.name}</p>
+              <h1 className="text-3xl font-bold text-white">{instance.name}</h1>
+              <p className="text-sm text-[#71717a] mt-1">{game.name}</p>
             </div>
             <StatusBadge state={state} />
           </div>
@@ -106,13 +105,13 @@ export default function ServerPanel({ game, instance, onInstanceUpdated }: Props
       </div>
 
       {/* Tab bar */}
-      <div className="flex items-center gap-0 px-8 border-b border-[#27272a] bg-[#09090b] shrink-0">
+      <div className="flex items-center gap-1 px-8 border-b border-[#27272a] bg-[#09090b] shrink-0">
         {tabs.map(t => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
             className={cn(
-              'flex items-center gap-1.5 px-4 py-3 text-sm border-b-2 -mb-px transition-colors',
+              'flex items-center gap-2 px-4 py-3.5 text-sm border-b-2 -mb-px transition-colors',
               tab === t.id
                 ? 'border-current font-medium text-white'
                 : 'border-transparent text-[#71717a] hover:text-[#a1a1aa]'
@@ -123,7 +122,7 @@ export default function ServerPanel({ game, instance, onInstanceUpdated }: Props
             {t.label}
             {t.badge !== undefined && t.badge > 0 && (
               <span
-                className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
+                className="text-xs px-1.5 py-0.5 rounded-full font-medium"
                 style={{ backgroundColor: game.accentColor + '22', color: game.accentColor }}
               >
                 {t.badge}
@@ -135,23 +134,23 @@ export default function ServerPanel({ game, instance, onInstanceUpdated }: Props
 
       {/* Tab content */}
       {tab === 'overview' && (
-        <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6">
+        <div className="flex-1 overflow-y-auto px-8 py-7 space-y-8">
           {/* Actions */}
           <div className="flex gap-3">
             {state === 'not_installed' && (
-              <Button variant="primary" icon={<Download size={15} />}
+              <Button variant="primary" icon={<Download size={16} />}
                 onClick={() => setShowInstall(true)} style={{ backgroundColor: game.accentColor }}>
                 Install Server
               </Button>
             )}
             {state === 'stopped' && (
               <>
-                <Button variant="primary" icon={<Play size={15} />}
+                <Button variant="primary" icon={<Play size={16} />}
                   onClick={handleStart} loading={actionPending}
                   style={{ backgroundColor: game.accentColor }}>
                   Start Server
                 </Button>
-                <Button variant="secondary" icon={<Settings size={15} />}
+                <Button variant="secondary" icon={<Settings size={16} />}
                   onClick={() => setShowConfig(true)}>
                   Configure
                 </Button>
@@ -159,42 +158,42 @@ export default function ServerPanel({ game, instance, onInstanceUpdated }: Props
             )}
             {state === 'running' && (
               <>
-                <Button variant="danger" icon={<Square size={15} />}
+                <Button variant="danger" icon={<Square size={16} />}
                   onClick={handleStop} loading={actionPending}>
                   Stop Server
                 </Button>
-                <Button variant="secondary" icon={<Settings size={15} />}
+                <Button variant="secondary" icon={<Settings size={16} />}
                   onClick={() => setShowConfig(true)}>
                   Configure
                 </Button>
               </>
             )}
             {state === 'checking' && (
-              <div className="h-9 w-32 rounded-lg bg-[#18181b] animate-pulse" />
+              <div className="h-10 w-36 rounded-lg bg-[#18181b] animate-pulse" />
             )}
           </div>
 
           {/* Connection info */}
           {state === 'running' && (
             <div className="grid grid-cols-2 gap-4 max-w-lg">
-              <InfoCard icon={<Monitor size={14} />} label="Local IP"
+              <InfoCard icon={<Monitor size={15} />} label="Local IP"
                 value={`${localIp}:${game.defaultPort}`} />
-              <InfoCard icon={<Globe size={14} />} label="Game Port"
+              <InfoCard icon={<Globe size={15} />} label="Game Port"
                 value={String(game.defaultPort)} />
             </div>
           )}
 
           {/* Ports */}
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-widest text-[#52525b] mb-3">
+            <h3 className="text-xs font-semibold uppercase tracking-widest text-[#52525b] mb-4">
               Required Ports
             </h3>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2.5">
               {game.ports.map(p => (
                 <div key={`${p.port}-${p.protocol}`}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-[#18181b] border border-[#27272a] text-sm">
-                  <span className="font-mono font-medium">{p.port}</span>
-                  <span className="text-[#71717a]">{p.protocol}</span>
+                  className="flex items-center gap-2.5 px-4 py-2 rounded-lg bg-[#18181b] border border-[#27272a]">
+                  <span className="font-mono font-semibold text-sm">{p.port}</span>
+                  <span className="text-[#71717a] text-sm">{p.protocol}</span>
                   {p.description && <span className="text-[#52525b] text-xs">{p.description}</span>}
                 </div>
               ))}
@@ -204,7 +203,7 @@ export default function ServerPanel({ game, instance, onInstanceUpdated }: Props
           {/* Platforms */}
           <div className="flex gap-2">
             {game.platforms.map(p => (
-              <span key={p} className="px-2 py-1 text-xs rounded bg-[#18181b] border border-[#27272a] text-[#a1a1aa]">
+              <span key={p} className="px-3 py-1.5 text-sm rounded-lg bg-[#18181b] border border-[#27272a] text-[#a1a1aa]">
                 {p}
               </span>
             ))}
@@ -259,8 +258,8 @@ function StatusBadge({ state }: { state: ServerState }) {
   }
   const { label, cls, dot } = cfg[state]
   return (
-    <div className={cn('flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium', cls)}>
-      <span className={cn('w-1.5 h-1.5 rounded-full', dot)} />
+    <div className={cn('flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium', cls)}>
+      <span className={cn('w-2 h-2 rounded-full', dot)} />
       {label}
     </div>
   )
@@ -268,9 +267,9 @@ function StatusBadge({ state }: { state: ServerState }) {
 
 function InfoCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
-    <div className="bg-[#111113] border border-[#27272a] rounded-lg px-4 py-3">
-      <div className="flex items-center gap-1.5 text-[#71717a] text-xs mb-1">{icon}<span>{label}</span></div>
-      <p className="font-mono text-sm text-white">{value}</p>
+    <div className="bg-[#111113] border border-[#27272a] rounded-xl px-5 py-4">
+      <div className="flex items-center gap-2 text-[#71717a] text-sm mb-1.5">{icon}<span>{label}</span></div>
+      <p className="font-mono text-base text-white font-medium">{value}</p>
     </div>
   )
 }
@@ -285,7 +284,7 @@ interface ButtonProps {
 }
 
 function Button({ variant, icon, onClick, loading, style, children }: ButtonProps) {
-  const base = 'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all disabled:opacity-50'
+  const base = 'flex items-center gap-2.5 px-5 py-2.5 rounded-lg text-sm font-medium transition-all disabled:opacity-50'
   const variants = {
     primary:   'text-white',
     secondary: 'bg-[#18181b] border border-[#27272a] text-[#a1a1aa] hover:text-white hover:border-[#3f3f46]',
