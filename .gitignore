@@ -35,3 +35,6 @@ temp/
 markdowns/
 
 .claude/
+
+# Node
+node_modules/
