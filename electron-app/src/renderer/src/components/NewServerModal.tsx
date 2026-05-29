@@ -23,29 +23,29 @@ export default function NewServerModal({ game, onCreated, onClose }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xl">
-      <div className="w-[420px] bg-[#0f0f18] border border-[#1c1c2e] rounded-2xl shadow-[0_32px_64px_rgba(0,0,0,0.6)] overflow-hidden">
+      <div className="w-[420px] bg-[#0d0d14] border border-[#22223a] rounded-2xl shadow-2xl overflow-hidden">
 
-        <div className="flex items-center justify-between px-6 py-5 border-b border-[#1c1c2e]">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-[#22223a]">
           <div>
-            <h2 className="text-base font-semibold text-[#e2e2ef]">New {game.name} Server</h2>
-            <p className="text-xs text-[#575770] mt-0.5">Creates a separate install directory</p>
+            <h2 className="text-base font-semibold text-[#e8e8ff]">New {game.name} Server</h2>
+            <p className="text-xs text-[#7070a0] mt-0.5">Creates a separate install directory</p>
           </div>
           <button
             onClick={onClose}
-            className="w-7 h-7 flex items-center justify-center rounded-lg text-[#575770] hover:text-[#e2e2ef] hover:bg-[#1c1c2e] transition-all"
+            className="w-7 h-7 flex items-center justify-center rounded-lg text-[#7070a0] hover:text-[#e8e8ff] hover:bg-[#18182a] transition-all"
           >
             <X size={14} />
           </button>
         </div>
 
         <div className="px-6 py-5">
-          <label className="block text-xs font-semibold text-[#8e8ea8] uppercase tracking-wider mb-2">
+          <label className="block text-xs font-semibold text-[#7070a0] uppercase tracking-wider mb-2">
             Server name
           </label>
           <input
             autoFocus
             type="text"
-            className="w-full px-4 py-2.5 rounded-xl bg-[#151521] border border-[#1c1c2e] text-sm text-[#e2e2ef] placeholder-[#383854] focus:outline-none focus:border-[#28283f] focus:ring-1 focus:ring-[#28283f] transition-all"
+            className="w-full px-4 py-2.5 rounded-xl bg-[#12121a] border border-[#22223a] text-sm text-[#e8e8ff] placeholder-[#404065] focus:outline-none focus:border-[#34345a] focus:ring-1 focus:ring-[#34345a] transition-all"
             placeholder={`My ${game.name} Server`}
             value={name}
             onChange={e => setName(e.target.value)}
@@ -53,10 +53,10 @@ export default function NewServerModal({ game, onCreated, onClose }: Props) {
           />
         </div>
 
-        <div className="px-6 py-4 border-t border-[#1c1c2e] flex justify-end gap-2.5">
+        <div className="px-6 py-4 border-t border-[#22223a] flex justify-end gap-2.5">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm text-[#575770] hover:text-[#e2e2ef] rounded-lg hover:bg-[#151521] transition-all"
+            className="px-4 py-2 text-sm text-[#7070a0] hover:text-[#e8e8ff] rounded-xl hover:bg-[#18182a] transition-all"
           >
             Cancel
           </button>

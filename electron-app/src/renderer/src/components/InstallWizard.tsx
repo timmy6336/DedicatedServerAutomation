@@ -91,18 +91,18 @@ export default function InstallWizard({ game, instance, onClose }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xl p-6">
-      <div className="w-full max-w-2xl bg-[#0f0f18] border border-[#1c1c2e] rounded-2xl shadow-[0_32px_64px_rgba(0,0,0,0.6)] overflow-hidden">
+      <div className="w-full max-w-2xl bg-[#0d0d14] border border-[#22223a] rounded-2xl shadow-2xl overflow-hidden">
 
         {/* Header */}
-        <div className="flex items-start justify-between px-7 py-5 border-b border-[#1c1c2e]">
+        <div className="flex items-start justify-between px-7 py-5 border-b border-[#22223a]">
           <div>
-            <h2 className="text-lg font-semibold text-[#e2e2ef]">Install {game.name} Server</h2>
-            <p className="text-xs text-[#575770] mt-1">Instance: <span className="text-[#8e8ea8]">{instance.name}</span></p>
+            <h2 className="text-lg font-semibold text-[#e8e8ff]">Install {game.name} Server</h2>
+            <p className="text-xs text-[#7070a0] mt-1">Instance: <span className="text-[#e8e8ff]">{instance.name}</span></p>
           </div>
           {!started && (
             <button
               onClick={onClose}
-              className="w-8 h-8 flex items-center justify-center rounded-lg text-[#575770] hover:text-[#e2e2ef] hover:bg-[#1c1c2e] transition-all ml-4 shrink-0"
+              className="w-8 h-8 flex items-center justify-center rounded-lg text-[#7070a0] hover:text-[#e8e8ff] hover:bg-[#18182a] transition-all ml-4 shrink-0"
             >
               <X size={15} />
             </button>
@@ -119,7 +119,7 @@ export default function InstallWizard({ game, instance, onClose }: Props) {
                   <StepIcon status={step.status} icon={<Icon size={15} />} accentColor={game.accentColor} />
                   <span className={cn(
                     'text-sm font-medium flex-1',
-                    step.status === 'waiting' ? 'text-[#383854]' : 'text-[#e2e2ef]'
+                    step.status === 'waiting' ? 'text-[#404065]' : 'text-[#e8e8ff]'
                   )}>
                     {step.label}
                   </span>
@@ -134,7 +134,7 @@ export default function InstallWizard({ game, instance, onClose }: Props) {
                 </div>
 
                 {(step.status === 'active' || step.status === 'done') && (
-                  <div className="ml-11 h-1.5 rounded-full bg-[#1c1c2e] overflow-hidden">
+                  <div className="ml-11 h-1.5 rounded-full bg-[#22223a] overflow-hidden">
                     <div
                       className="h-full rounded-full transition-all duration-300"
                       style={{
@@ -154,10 +154,10 @@ export default function InstallWizard({ game, instance, onClose }: Props) {
           <div className="px-7 pb-5">
             <div
               ref={logRef}
-              className="h-44 rounded-xl bg-[#080810] border border-[#1c1c2e] p-4 overflow-y-auto font-mono text-[11px] text-[#575770] space-y-0.5 leading-relaxed"
+              className="h-44 rounded-xl bg-[#080810] border border-[#22223a] p-4 overflow-y-auto font-mono text-[11px] text-[#7070a0] space-y-0.5 leading-relaxed"
             >
               {logs.length === 0
-                ? <span className="text-[#2e2e48]">Waiting for output…</span>
+                ? <span className="text-[#404065]">Waiting for output…</span>
                 : logs.map((line, i) => <div key={i}>{line}</div>)
               }
             </div>
@@ -173,19 +173,19 @@ export default function InstallWizard({ game, instance, onClose }: Props) {
 
         {/* Cancelled banner */}
         {cancelled && (
-          <div className="mx-7 mb-5 px-4 py-3.5 rounded-xl bg-[#1c1c2e] border border-[#28283f] text-sm text-[#8e8ea8]">
+          <div className="mx-7 mb-5 px-4 py-3.5 rounded-xl bg-[#18182a] border border-[#22223a] text-sm text-[#7070a0]">
             Installation was cancelled.
           </div>
         )}
 
         {/* Footer */}
-        <div className="px-7 py-4 border-t border-[#1c1c2e] flex items-center justify-between gap-4">
+        <div className="px-7 py-4 border-t border-[#22223a] flex items-center justify-between gap-4">
           <div className="flex-1">
             {isInProgress && !cancelling && (
-              <p className="text-xs text-[#383854]">This may take a while depending on your connection speed…</p>
+              <p className="text-xs text-[#404065]">This may take a while depending on your connection speed…</p>
             )}
             {cancelling && (
-              <p className="text-xs text-[#575770]">Cancelling installation…</p>
+              <p className="text-xs text-[#7070a0]">Cancelling installation…</p>
             )}
           </div>
 
@@ -194,7 +194,7 @@ export default function InstallWizard({ game, instance, onClose }: Props) {
               <>
                 <button
                   onClick={onClose}
-                  className="px-5 py-2.5 text-sm font-medium text-[#575770] hover:text-[#e2e2ef] transition-all rounded-xl hover:bg-[#151521]"
+                  className="px-5 py-2.5 text-sm font-semibold text-[#7070a0] hover:text-[#e8e8ff] transition-all rounded-xl hover:bg-[#18182a]"
                 >
                   Cancel
                 </button>
@@ -212,7 +212,7 @@ export default function InstallWizard({ game, instance, onClose }: Props) {
               <button
                 onClick={handleCancel}
                 disabled={cancelling}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium bg-[#151521] border border-[#1c1c2e] text-[#8e8ea8] hover:text-red-400 hover:border-red-900/40 transition-all disabled:opacity-50"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-[#18182a] border border-[#22223a] text-[#7070a0] hover:text-red-400 hover:border-red-900/40 transition-all disabled:opacity-50"
               >
                 <Ban size={13} />
                 {cancelling ? 'Cancelling…' : 'Cancel'}
@@ -231,7 +231,7 @@ export default function InstallWizard({ game, instance, onClose }: Props) {
             {(error || cancelled) && (
               <button
                 onClick={onClose}
-                className="px-5 py-2.5 rounded-xl text-sm font-medium bg-[#151521] border border-[#1c1c2e] text-[#8e8ea8] hover:text-[#e2e2ef] transition-all"
+                className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-[#18182a] border border-[#22223a] text-[#7070a0] hover:text-[#e8e8ff] transition-all"
               >
                 Close
               </button>
@@ -269,7 +269,7 @@ function StepIcon({ status, icon, accentColor }: { status: StepState['status']; 
     )
   }
   return (
-    <div className="w-9 h-9 rounded-full bg-[#151521] border border-[#1c1c2e] flex items-center justify-center text-[#383854] shrink-0">
+    <div className="w-9 h-9 rounded-full bg-[#18182a] border border-[#22223a] flex items-center justify-center text-[#404065] shrink-0">
       {icon}
     </div>
   )
