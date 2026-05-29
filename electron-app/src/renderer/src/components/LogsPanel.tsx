@@ -51,8 +51,8 @@ export default function LogsPanel({ instanceId, serverRunning }: Props) {
     if (lower.includes('warn'))
       return 'text-yellow-400/80'
     if (lower.includes('info') || lower.includes('[server]'))
-      return 'text-[#8e8ea8]'
-    return 'text-[#575770]'
+      return 'text-white/50'
+    return 'text-white/30'
   }
 
   return (
@@ -60,8 +60,8 @@ export default function LogsPanel({ instanceId, serverRunning }: Props) {
       {/* Header */}
       <div className="flex items-center justify-between shrink-0">
         <div>
-          <h2 className="text-base font-semibold text-[#e2e2ef]">Server Log</h2>
-          <p className="text-xs text-[#575770] mt-0.5">
+          <h2 className="text-base font-semibold text-white/90">Server Log</h2>
+          <p className="text-xs text-white/30 mt-0.5">
             {serverRunning
               ? `Live output · ${lines.length} line${lines.length !== 1 ? 's' : ''}`
               : 'Start the server to see live output'}
@@ -70,7 +70,18 @@ export default function LogsPanel({ instanceId, serverRunning }: Props) {
         <button
           onClick={() => setLines([])}
           disabled={lines.length === 0}
-          className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#151521] border border-[#1c1c2e] text-sm text-[#575770] hover:text-[#e2e2ef] hover:border-[#28283f] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+          className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm text-white/30 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+          style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)' }}
+          onMouseEnter={e => {
+            if (lines.length > 0) {
+              (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.10)'
+              ;(e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.18)'
+            }
+          }}
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.06)'
+            ;(e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.10)'
+          }}
         >
           <Trash2 size={13} />
           Clear
@@ -81,11 +92,12 @@ export default function LogsPanel({ instanceId, serverRunning }: Props) {
       <div
         ref={logRef}
         onScroll={onScroll}
-        className="flex-1 overflow-y-auto rounded-xl bg-[#080810] border border-[#1c1c2e] p-5 font-mono text-[11px] leading-relaxed"
+        className="flex-1 overflow-y-auto rounded-xl p-5 font-mono text-[11px] leading-relaxed"
+        style={{ background: 'rgba(0,0,0,0.50)', border: '1px solid rgba(255,255,255,0.07)', backdropFilter: 'blur(8px)' }}
       >
         {lines.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center">
-            <p className="text-[#2e2e48]">
+            <p className="text-white/15">
               {serverRunning
                 ? 'Waiting for output…'
                 : 'No log output yet. Start the server to begin streaming.'}
@@ -108,7 +120,16 @@ export default function LogsPanel({ instanceId, serverRunning }: Props) {
             setAutoScroll(true)
             if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight
           }}
-          className="shrink-0 flex items-center justify-center gap-2 text-xs py-2.5 rounded-xl bg-[#151521] border border-[#1c1c2e] text-[#8e8ea8] hover:text-[#e2e2ef] hover:border-[#28283f] transition-all"
+          className="shrink-0 flex items-center justify-center gap-2 text-xs py-2.5 rounded-xl text-white/50 hover:text-white transition-all"
+          style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)' }}
+          onMouseEnter={e => {
+            (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.10)'
+            ;(e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.18)'
+          }}
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.06)'
+            ;(e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.10)'
+          }}
         >
           <ArrowDown size={12} />
           Scroll to bottom

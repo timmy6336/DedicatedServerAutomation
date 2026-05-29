@@ -90,19 +90,31 @@ export default function InstallWizard({ game, instance, onClose }: Props) {
   const isInProgress = started && !finished && !error && !cancelled
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xl p-6">
-      <div className="w-full max-w-2xl bg-[#0f0f18] border border-[#1c1c2e] rounded-2xl shadow-[0_32px_64px_rgba(0,0,0,0.6)] overflow-hidden">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-6"
+      style={{ background: 'rgba(0,0,0,0.80)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)' }}
+    >
+      <div
+        className="w-full max-w-2xl rounded-2xl shadow-[0_32px_64px_rgba(0,0,0,0.6)] overflow-hidden"
+        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', backdropFilter: 'blur(40px)', WebkitBackdropFilter: 'blur(40px)' }}
+      >
 
         {/* Header */}
-        <div className="flex items-start justify-between px-7 py-5 border-b border-[#1c1c2e]">
+        <div
+          className="flex items-start justify-between px-7 py-5"
+          style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}
+        >
           <div>
-            <h2 className="text-lg font-semibold text-[#e2e2ef]">Install {game.name} Server</h2>
-            <p className="text-xs text-[#575770] mt-1">Instance: <span className="text-[#8e8ea8]">{instance.name}</span></p>
+            <h2 className="text-lg font-semibold text-white/90">Install {game.name} Server</h2>
+            <p className="text-xs text-white/30 mt-1">Instance: <span className="text-white/50">{instance.name}</span></p>
           </div>
           {!started && (
             <button
               onClick={onClose}
-              className="w-8 h-8 flex items-center justify-center rounded-lg text-[#575770] hover:text-[#e2e2ef] hover:bg-[#1c1c2e] transition-all ml-4 shrink-0"
+              className="w-8 h-8 flex items-center justify-center rounded-lg text-white/30 hover:text-white transition-all ml-4 shrink-0"
+              style={{ background: 'rgba(255,255,255,0.04)' }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.10)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.04)')}
             >
               <X size={15} />
             </button>
@@ -119,7 +131,7 @@ export default function InstallWizard({ game, instance, onClose }: Props) {
                   <StepIcon status={step.status} icon={<Icon size={15} />} accentColor={game.accentColor} />
                   <span className={cn(
                     'text-sm font-medium flex-1',
-                    step.status === 'waiting' ? 'text-[#383854]' : 'text-[#e2e2ef]'
+                    step.status === 'waiting' ? 'text-white/20' : 'text-white/90'
                   )}>
                     {step.label}
                   </span>
@@ -134,7 +146,10 @@ export default function InstallWizard({ game, instance, onClose }: Props) {
                 </div>
 
                 {(step.status === 'active' || step.status === 'done') && (
-                  <div className="ml-11 h-1.5 rounded-full bg-[#1c1c2e] overflow-hidden">
+                  <div
+                    className="ml-11 h-1.5 rounded-full overflow-hidden"
+                    style={{ background: 'rgba(255,255,255,0.08)' }}
+                  >
                     <div
                       className="h-full rounded-full transition-all duration-300"
                       style={{
@@ -154,10 +169,11 @@ export default function InstallWizard({ game, instance, onClose }: Props) {
           <div className="px-7 pb-5">
             <div
               ref={logRef}
-              className="h-44 rounded-xl bg-[#080810] border border-[#1c1c2e] p-4 overflow-y-auto font-mono text-[11px] text-[#575770] space-y-0.5 leading-relaxed"
+              className="h-44 rounded-xl p-4 overflow-y-auto font-mono text-[11px] text-white/30 space-y-0.5 leading-relaxed"
+              style={{ background: 'rgba(0,0,0,0.40)', border: '1px solid rgba(255,255,255,0.07)' }}
             >
               {logs.length === 0
-                ? <span className="text-[#2e2e48]">Waiting for output…</span>
+                ? <span className="text-white/15">Waiting for output…</span>
                 : logs.map((line, i) => <div key={i}>{line}</div>)
               }
             </div>
@@ -166,26 +182,35 @@ export default function InstallWizard({ game, instance, onClose }: Props) {
 
         {/* Error banner */}
         {error && (
-          <div className="mx-7 mb-5 px-4 py-3.5 rounded-xl bg-red-950/30 border border-red-900/40 text-sm text-red-400 leading-relaxed">
+          <div
+            className="mx-7 mb-5 px-4 py-3.5 rounded-xl text-sm text-red-300 leading-relaxed"
+            style={{ background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.20)' }}
+          >
             {error}
           </div>
         )}
 
         {/* Cancelled banner */}
         {cancelled && (
-          <div className="mx-7 mb-5 px-4 py-3.5 rounded-xl bg-[#1c1c2e] border border-[#28283f] text-sm text-[#8e8ea8]">
+          <div
+            className="mx-7 mb-5 px-4 py-3.5 rounded-xl text-sm text-white/50"
+            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.10)' }}
+          >
             Installation was cancelled.
           </div>
         )}
 
         {/* Footer */}
-        <div className="px-7 py-4 border-t border-[#1c1c2e] flex items-center justify-between gap-4">
+        <div
+          className="px-7 py-4 flex items-center justify-between gap-4"
+          style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}
+        >
           <div className="flex-1">
             {isInProgress && !cancelling && (
-              <p className="text-xs text-[#383854]">This may take a while depending on your connection speed…</p>
+              <p className="text-xs text-white/20">This may take a while depending on your connection speed…</p>
             )}
             {cancelling && (
-              <p className="text-xs text-[#575770]">Cancelling installation…</p>
+              <p className="text-xs text-white/30">Cancelling installation…</p>
             )}
           </div>
 
@@ -194,7 +219,9 @@ export default function InstallWizard({ game, instance, onClose }: Props) {
               <>
                 <button
                   onClick={onClose}
-                  className="px-5 py-2.5 text-sm font-medium text-[#575770] hover:text-[#e2e2ef] transition-all rounded-xl hover:bg-[#151521]"
+                  className="px-5 py-2.5 text-sm font-medium text-white/30 hover:text-white transition-all rounded-xl"
+                  onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                 >
                   Cancel
                 </button>
@@ -212,7 +239,14 @@ export default function InstallWizard({ game, instance, onClose }: Props) {
               <button
                 onClick={handleCancel}
                 disabled={cancelling}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium bg-[#151521] border border-[#1c1c2e] text-[#8e8ea8] hover:text-red-400 hover:border-red-900/40 transition-all disabled:opacity-50"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium text-white/50 hover:text-red-300 transition-all disabled:opacity-50"
+                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)' }}
+                onMouseEnter={e => {
+                  (e.currentTarget as HTMLButtonElement).style.border = '1px solid rgba(239,68,68,0.30)'
+                }}
+                onMouseLeave={e => {
+                  (e.currentTarget as HTMLButtonElement).style.border = '1px solid rgba(255,255,255,0.10)'
+                }}
               >
                 <Ban size={13} />
                 {cancelling ? 'Cancelling…' : 'Cancel'}
@@ -231,7 +265,10 @@ export default function InstallWizard({ game, instance, onClose }: Props) {
             {(error || cancelled) && (
               <button
                 onClick={onClose}
-                className="px-5 py-2.5 rounded-xl text-sm font-medium bg-[#151521] border border-[#1c1c2e] text-[#8e8ea8] hover:text-[#e2e2ef] transition-all"
+                className="px-5 py-2.5 rounded-xl text-sm font-medium text-white/50 hover:text-white transition-all"
+                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)' }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.10)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}
               >
                 Close
               </button>
@@ -246,7 +283,10 @@ export default function InstallWizard({ game, instance, onClose }: Props) {
 function StepIcon({ status, icon, accentColor }: { status: StepState['status']; icon: React.ReactNode; accentColor: string }) {
   if (status === 'done') {
     return (
-      <div className="w-9 h-9 rounded-full bg-emerald-900/30 border border-emerald-700/40 flex items-center justify-center text-emerald-400 shrink-0">
+      <div
+        className="w-9 h-9 rounded-full flex items-center justify-center text-emerald-400 shrink-0"
+        style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.30)' }}
+      >
         <Check size={15} />
       </div>
     )
@@ -254,8 +294,8 @@ function StepIcon({ status, icon, accentColor }: { status: StepState['status']; 
   if (status === 'active') {
     return (
       <div
-        className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 border"
-        style={{ backgroundColor: accentColor + '1e', borderColor: accentColor + '50', color: accentColor }}
+        className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+        style={{ backgroundColor: accentColor + '1e', border: `1px solid ${accentColor}50`, color: accentColor }}
       >
         {icon}
       </div>
@@ -263,13 +303,19 @@ function StepIcon({ status, icon, accentColor }: { status: StepState['status']; 
   }
   if (status === 'error') {
     return (
-      <div className="w-9 h-9 rounded-full bg-red-950/30 border border-red-800/40 flex items-center justify-center text-red-400 shrink-0">
+      <div
+        className="w-9 h-9 rounded-full flex items-center justify-center text-red-300 shrink-0"
+        style={{ background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.20)' }}
+      >
         <X size={15} />
       </div>
     )
   }
   return (
-    <div className="w-9 h-9 rounded-full bg-[#151521] border border-[#1c1c2e] flex items-center justify-center text-[#383854] shrink-0">
+    <div
+      className="w-9 h-9 rounded-full flex items-center justify-center text-white/20 shrink-0"
+      style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
+    >
       {icon}
     </div>
   )

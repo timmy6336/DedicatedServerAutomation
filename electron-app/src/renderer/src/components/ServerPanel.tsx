@@ -98,11 +98,18 @@ export default function ServerPanel({ game, instance, onInstanceUpdated }: Props
     <div className="h-full flex flex-col overflow-hidden">
 
       {/* Hero header */}
-      <div className={cn('relative overflow-hidden px-10 pt-12 pb-9 bg-gradient-to-br shrink-0', game.bannerColor)}>
-        <div className="absolute inset-0 bg-[#09090e]/75" />
+      <div
+        className={cn('relative overflow-hidden px-10 pt-12 pb-9 bg-gradient-to-br shrink-0', game.bannerColor)}
+      >
+        <div className="absolute inset-0" style={{ background: 'rgba(0,1,10,0.30)' }} />
+        {/* Ambient blobs */}
         <div
-          className="absolute -top-20 -right-20 w-72 h-72 rounded-full blur-3xl opacity-15 pointer-events-none"
-          style={{ backgroundColor: game.accentColor }}
+          className="absolute top-0 right-0 w-80 h-80 rounded-full pointer-events-none"
+          style={{ backgroundColor: game.accentColor, filter: 'blur(100px)', opacity: 0.20 }}
+        />
+        <div
+          className="absolute bottom-0 left-16 w-48 h-48 rounded-full pointer-events-none"
+          style={{ backgroundColor: game.accentColor, filter: 'blur(80px)', opacity: 0.10 }}
         />
         <div className="relative z-10 flex items-start justify-between gap-6">
           <div>
@@ -110,16 +117,17 @@ export default function ServerPanel({ game, instance, onInstanceUpdated }: Props
               <span
                 className="inline-flex items-center text-[10px] font-bold uppercase tracking-[0.14em] px-2.5 py-1 rounded-full"
                 style={{
-                  backgroundColor: game.accentColor + '1e',
+                  background: 'rgba(255,255,255,0.08)',
                   color: game.accentColor,
-                  border: `1px solid ${game.accentColor}35`
+                  border: `1px solid rgba(255,255,255,0.12)`,
+                  backdropFilter: 'blur(8px)'
                 }}
               >
                 {game.genre}
               </span>
             </div>
-            <h1 className="text-3xl font-bold text-white leading-tight tracking-tight">{instance.name}</h1>
-            <p className="text-sm text-[#8e8ea8] mt-2 font-medium">{game.name}</p>
+            <h1 className="text-4xl font-bold text-white leading-tight tracking-tight">{instance.name}</h1>
+            <p className="text-sm text-white/50 mt-2 font-medium">{game.name}</p>
           </div>
           <StatusBadge state={state} />
         </div>
@@ -130,7 +138,10 @@ export default function ServerPanel({ game, instance, onInstanceUpdated }: Props
       </div>
 
       {/* Tab bar */}
-      <div className="flex items-center gap-1 px-6 py-2 bg-[#09090e] border-b border-[#1c1c2e] shrink-0">
+      <div
+        className="flex items-center gap-1 px-6 py-2 shrink-0"
+        style={{ background: 'rgba(0,0,0,0.20)', backdropFilter: 'blur(8px)', borderBottom: '1px solid rgba(255,255,255,0.07)' }}
+      >
         {tabs.map(t => (
           <button
             key={t.id}
@@ -138,9 +149,16 @@ export default function ServerPanel({ game, instance, onInstanceUpdated }: Props
             className={cn(
               'flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm transition-all',
               tab === t.id
-                ? 'bg-[#151521] text-[#e2e2ef] font-medium'
-                : 'text-[#575770] hover:text-[#8e8ea8] hover:bg-[#111120]'
+                ? 'text-white font-medium'
+                : 'text-white/40 hover:text-white/70'
             )}
+            style={tab === t.id ? { background: 'rgba(255,255,255,0.08)' } : undefined}
+            onMouseEnter={e => {
+              if (tab !== t.id) e.currentTarget.style.background = 'rgba(255,255,255,0.04)'
+            }}
+            onMouseLeave={e => {
+              if (tab !== t.id) e.currentTarget.style.background = 'transparent'
+            }}
           >
             {t.icon}
             {t.label}
@@ -181,20 +199,26 @@ export default function ServerPanel({ game, instance, onInstanceUpdated }: Props
                 <div className="flex-1" />
                 {confirmUninstall ? (
                   <div className="flex items-center gap-3">
-                    <span className="text-sm text-red-400/90">
+                    <span className="text-sm text-red-300/90">
                       {game.installOnce
                         ? 'Remove shared game files for all instances?'
                         : 'Remove all server files for this instance?'}
                     </span>
                     <button
                       onClick={handleUninstall}
-                      className="px-4 py-2 rounded-lg text-sm font-medium bg-red-700/80 hover:bg-red-600 text-white transition-colors"
+                      className="px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors"
+                      style={{ background: 'rgba(239,68,68,0.75)' }}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(239,68,68,0.90)')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'rgba(239,68,68,0.75)')}
                     >
                       Yes, uninstall
                     </button>
                     <button
                       onClick={() => setConfirmUninstall(false)}
-                      className="px-4 py-2 rounded-lg text-sm text-[#575770] hover:text-[#e2e2ef] hover:bg-[#151521] transition-colors"
+                      className="px-4 py-2 rounded-lg text-sm text-white/50 hover:text-white transition-colors"
+                      style={{ background: 'rgba(255,255,255,0.04)' }}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.08)')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.04)')}
                     >
                       Cancel
                     </button>
@@ -220,7 +244,7 @@ export default function ServerPanel({ game, instance, onInstanceUpdated }: Props
               </>
             )}
             {state === 'checking' && (
-              <div className="h-10 w-36 rounded-xl bg-[#151521] animate-pulse" />
+              <div className="h-10 w-36 rounded-xl animate-pulse" style={{ background: 'rgba(255,255,255,0.06)' }} />
             )}
           </div>
 
@@ -237,7 +261,7 @@ export default function ServerPanel({ game, instance, onInstanceUpdated }: Props
           {/* About */}
           <div>
             <SectionLabel>About</SectionLabel>
-            <p className="mt-3.5 text-sm text-[#8e8ea8] leading-relaxed">{game.description}</p>
+            <p className="mt-3.5 text-sm text-white/50 leading-relaxed">{game.description}</p>
           </div>
 
           {/* Required Ports */}
@@ -245,13 +269,18 @@ export default function ServerPanel({ game, instance, onInstanceUpdated }: Props
             <SectionLabel>Required Ports</SectionLabel>
             <div className="mt-3.5 grid grid-cols-2 gap-2.5">
               {game.ports.map(p => (
-                <div key={`${p.port}-${p.protocol}`}
-                  className="px-5 py-4 rounded-xl bg-[#0f0f18] border border-[#1c1c2e] hover:border-[#28283f] transition-colors">
-                  <span className="font-mono font-bold text-2xl text-[#e2e2ef] tabular-nums">{p.port}</span>
+                <div
+                  key={`${p.port}-${p.protocol}`}
+                  className="px-5 py-4 rounded-xl transition-all"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', backdropFilter: 'blur(24px)' }}
+                  onMouseEnter={e => ((e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(255,255,255,0.18)')}
+                  onMouseLeave={e => ((e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(255,255,255,0.07)')}
+                >
+                  <span className="font-mono font-bold text-2xl text-white tabular-nums">{p.port}</span>
                   <div className="flex items-center gap-2 mt-2">
-                    <span className="text-xs font-bold uppercase tracking-wider text-[#575770]">{p.protocol}</span>
+                    <span className="text-xs font-bold uppercase tracking-wider text-white/30">{p.protocol}</span>
                     {p.description && (
-                      <span className="text-xs text-[#383854]">· {p.description}</span>
+                      <span className="text-xs text-white/20">· {p.description}</span>
                     )}
                   </div>
                 </div>
@@ -264,8 +293,11 @@ export default function ServerPanel({ game, instance, onInstanceUpdated }: Props
             <SectionLabel>Platforms</SectionLabel>
             <div className="mt-3.5 flex gap-2 flex-wrap">
               {game.platforms.map(p => (
-                <span key={p}
-                  className="px-4 py-2 text-xs font-medium rounded-lg bg-[#0f0f18] border border-[#1c1c2e] text-[#8e8ea8]">
+                <span
+                  key={p}
+                  className="px-4 py-2 text-xs font-medium rounded-lg text-white/50"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
+                >
                   {p}
                 </span>
               ))}
@@ -315,21 +347,27 @@ export default function ServerPanel({ game, instance, onInstanceUpdated }: Props
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#383854]">{children}</h3>
+    <h3 className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/20">{children}</h3>
   )
 }
 
 function StatusBadge({ state }: { state: ServerState }) {
   const cfg = {
-    checking:      { label: 'Checking',      cls: 'bg-[#1c1c2e]/70 text-[#575770] border border-[#28283f]/50',             dot: 'bg-[#383854]' },
-    not_installed: { label: 'Not Installed', cls: 'bg-[#1c1c2e]/70 text-[#575770] border border-[#28283f]/50',             dot: 'bg-[#28283f]' },
-    stopped:       { label: 'Offline',       cls: 'bg-red-950/50 text-red-400 border border-red-900/40',                   dot: 'bg-red-500' },
-    running:       { label: 'Online',        cls: 'bg-emerald-950/50 text-emerald-400 border border-emerald-900/40',       dot: 'bg-emerald-400 animate-pulse' }
+    checking:      { label: 'Checking',      bg: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.40)', border: 'rgba(255,255,255,0.10)', dot: 'rgba(255,255,255,0.20)' },
+    not_installed: { label: 'Not Installed', bg: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.30)', border: 'rgba(255,255,255,0.08)', dot: 'rgba(255,255,255,0.15)' },
+    stopped:       { label: 'Offline',       bg: 'rgba(239,68,68,0.10)',   color: 'rgb(252,165,165)',        border: 'rgba(239,68,68,0.20)',   dot: 'rgb(248,113,113)' },
+    running:       { label: 'Online',        bg: 'rgba(16,185,129,0.12)',  color: 'rgb(110,231,183)',        border: 'rgba(16,185,129,0.25)',  dot: 'rgb(52,211,153)' }
   }
-  const { label, cls, dot } = cfg[state]
+  const { label, bg, color, border, dot } = cfg[state]
   return (
-    <div className={cn('flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold backdrop-blur-sm', cls)}>
-      <span className={cn('w-2 h-2 rounded-full shrink-0', dot)} />
+    <div
+      className="flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold"
+      style={{ background: bg, color, border: `1px solid ${border}`, backdropFilter: 'blur(8px)' }}
+    >
+      <span
+        className={cn('w-2 h-2 rounded-full shrink-0', state === 'running' && 'animate-pulse')}
+        style={{ backgroundColor: dot }}
+      />
       {label}
     </div>
   )
@@ -337,12 +375,17 @@ function StatusBadge({ state }: { state: ServerState }) {
 
 function InfoCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
-    <div className="bg-[#0f0f18] border border-[#1c1c2e] rounded-xl px-5 py-4 hover:border-[#28283f] transition-colors">
-      <div className="flex items-center gap-2 text-[#575770] text-xs mb-2.5 font-semibold uppercase tracking-wider">
+    <div
+      className="rounded-xl px-5 py-4 transition-all"
+      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', backdropFilter: 'blur(24px)' }}
+      onMouseEnter={e => ((e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(255,255,255,0.18)')}
+      onMouseLeave={e => ((e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(255,255,255,0.07)')}
+    >
+      <div className="flex items-center gap-2 text-white/30 text-xs mb-2.5 font-semibold uppercase tracking-wider">
         {icon}
         <span>{label}</span>
       </div>
-      <p className="font-mono text-xl text-[#e2e2ef] font-bold tabular-nums">{value}</p>
+      <p className="font-mono text-xl text-white font-bold tabular-nums">{value}</p>
     </div>
   )
 }
@@ -358,17 +401,40 @@ interface PanelButtonProps {
 
 function PanelButton({ variant, icon, onClick, loading, accentColor, children }: PanelButtonProps) {
   const base = 'flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all disabled:opacity-50 active:scale-[0.98]'
-  const variants = {
-    primary:   'text-white hover:opacity-90',
-    secondary: 'bg-[#151521] border border-[#1c1c2e] text-[#8e8ea8] hover:text-[#e2e2ef] hover:border-[#28283f]',
-    danger:    'bg-red-950/30 border border-red-900/40 text-red-400 hover:bg-red-950/50 hover:border-red-800/60'
+
+  function getStyle(hovered: boolean) {
+    if (variant === 'primary') {
+      return {
+        backgroundColor: accentColor,
+        boxShadow: hovered
+          ? `0 0 30px ${accentColor}80`
+          : `0 0 20px ${accentColor}66`,
+        color: '#fff'
+      }
+    }
+    if (variant === 'secondary') {
+      return {
+        background: hovered ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.06)',
+        border: `1px solid ${hovered ? 'rgba(255,255,255,0.20)' : 'rgba(255,255,255,0.12)'}`,
+        color: hovered ? '#fff' : 'rgba(255,255,255,0.80)'
+      }
+    }
+    // danger
+    return {
+      background: hovered ? 'rgba(239,68,68,0.20)' : 'rgba(239,68,68,0.10)',
+      border: `1px solid rgba(239,68,68,0.20)`,
+      color: 'rgb(252,165,165)'
+    }
   }
+
   return (
     <button
-      className={cn(base, variants[variant])}
+      className={base}
       onClick={onClick}
       disabled={loading}
-      style={variant === 'primary' ? { backgroundColor: accentColor } : undefined}
+      style={getStyle(false)}
+      onMouseEnter={e => Object.assign((e.currentTarget as HTMLButtonElement).style, getStyle(true))}
+      onMouseLeave={e => Object.assign((e.currentTarget as HTMLButtonElement).style, getStyle(false))}
     >
       {loading
         ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

@@ -22,41 +22,67 @@ export default function NewServerModal({ game, onCreated, onClose }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xl">
-      <div className="w-[420px] bg-[#0f0f18] border border-[#1c1c2e] rounded-2xl shadow-[0_32px_64px_rgba(0,0,0,0.6)] overflow-hidden">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      style={{ background: 'rgba(0,0,0,0.80)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)' }}
+    >
+      <div
+        className="w-[420px] rounded-2xl shadow-[0_32px_64px_rgba(0,0,0,0.6)] overflow-hidden"
+        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', backdropFilter: 'blur(40px)', WebkitBackdropFilter: 'blur(40px)' }}
+      >
 
-        <div className="flex items-center justify-between px-6 py-5 border-b border-[#1c1c2e]">
+        <div
+          className="flex items-center justify-between px-6 py-5"
+          style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}
+        >
           <div>
-            <h2 className="text-base font-semibold text-[#e2e2ef]">New {game.name} Server</h2>
-            <p className="text-xs text-[#575770] mt-0.5">Creates a separate install directory</p>
+            <h2 className="text-base font-semibold text-white/90">New {game.name} Server</h2>
+            <p className="text-xs text-white/30 mt-0.5">Creates a separate install directory</p>
           </div>
           <button
             onClick={onClose}
-            className="w-7 h-7 flex items-center justify-center rounded-lg text-[#575770] hover:text-[#e2e2ef] hover:bg-[#1c1c2e] transition-all"
+            className="w-7 h-7 flex items-center justify-center rounded-lg text-white/30 hover:text-white transition-all"
+            style={{ background: 'rgba(255,255,255,0.04)' }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.10)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.04)')}
           >
             <X size={14} />
           </button>
         </div>
 
         <div className="px-6 py-5">
-          <label className="block text-xs font-semibold text-[#8e8ea8] uppercase tracking-wider mb-2">
+          <label className="block text-xs font-semibold text-white/40 uppercase tracking-wider mb-2">
             Server name
           </label>
           <input
             autoFocus
             type="text"
-            className="w-full px-4 py-2.5 rounded-xl bg-[#151521] border border-[#1c1c2e] text-sm text-[#e2e2ef] placeholder-[#383854] focus:outline-none focus:border-[#28283f] focus:ring-1 focus:ring-[#28283f] transition-all"
+            className="w-full px-4 py-2.5 rounded-xl text-sm text-white placeholder-white/20 focus:outline-none transition-all"
+            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.10)', backdropFilter: 'blur(8px)' }}
             placeholder={`My ${game.name} Server`}
             value={name}
             onChange={e => setName(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') handleCreate() }}
+            onFocus={e => {
+              e.currentTarget.style.border = '1px solid rgba(255,255,255,0.30)'
+              e.currentTarget.style.boxShadow = '0 0 0 1px rgba(255,255,255,0.15)'
+            }}
+            onBlur={e => {
+              e.currentTarget.style.border = '1px solid rgba(255,255,255,0.10)'
+              e.currentTarget.style.boxShadow = 'none'
+            }}
           />
         </div>
 
-        <div className="px-6 py-4 border-t border-[#1c1c2e] flex justify-end gap-2.5">
+        <div
+          className="px-6 py-4 flex justify-end gap-2.5"
+          style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}
+        >
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm text-[#575770] hover:text-[#e2e2ef] rounded-lg hover:bg-[#151521] transition-all"
+            className="px-4 py-2 text-sm text-white/30 hover:text-white rounded-lg transition-all"
+            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
           >
             Cancel
           </button>

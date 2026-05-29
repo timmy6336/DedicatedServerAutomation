@@ -20,7 +20,7 @@ export default function App() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-[#09090e] text-[#e2e2ef]">
+    <div className="flex flex-col h-screen text-white" style={{ background: '#00010a' }}>
       <TitleBar />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar
@@ -29,7 +29,7 @@ export default function App() {
           onSelectInstance={handleSelectInstance}
         />
 
-        <main className="flex-1 overflow-hidden bg-[#09090e]">
+        <main className="flex-1 overflow-hidden" style={{ background: '#00010a' }}>
           {selectedInstance && selectedGame ? (
             <ServerPanel
               key={selectedInstance.id}
@@ -48,15 +48,17 @@ export default function App() {
 
 function EmptyState() {
   return (
-    <div className="h-full flex flex-col items-center justify-center text-center px-8">
+    <div className="h-full flex flex-col items-center justify-center text-center px-8 relative overflow-hidden">
+      {/* Ambient glow */}
+      <div className="absolute w-96 h-96 rounded-full pointer-events-none" style={{ background: 'rgba(99,102,241,0.10)', filter: 'blur(120px)', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} />
+
       <div className="relative mb-5">
-        <div className="absolute inset-0 rounded-2xl bg-indigo-500/5 blur-2xl scale-150" />
-        <div className="relative w-16 h-16 rounded-2xl bg-[#151521] border border-[#1c1c2e] flex items-center justify-center">
-          <Server size={24} className="text-[#383854]" />
+        <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', backdropFilter: 'blur(24px)' }}>
+          <Server size={24} className="text-white/20" />
         </div>
       </div>
-      <p className="text-base font-semibold text-[#575770]">No server selected</p>
-      <p className="text-sm text-[#383854] mt-1.5 max-w-xs leading-relaxed">
+      <p className="text-base font-semibold text-white/30">No server selected</p>
+      <p className="text-sm text-white/20 mt-1.5 max-w-xs leading-relaxed">
         Expand a game in the sidebar and create your first server instance
       </p>
     </div>
