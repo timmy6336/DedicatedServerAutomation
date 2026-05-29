@@ -37,25 +37,25 @@ export default function ConfigModal({ game, instance, onClose }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-      <div className="w-[560px] max-h-[85vh] bg-[#111113] border border-[#27272a] rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-6">
+      <div className="w-full max-w-2xl max-h-[90vh] bg-[#111113] border border-[#27272a] rounded-2xl shadow-2xl flex flex-col overflow-hidden">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-7 py-5 border-b border-[#27272a] shrink-0">
+        <div className="flex items-start justify-between px-8 py-6 border-b border-[#27272a] shrink-0">
           <div>
-            <h2 className="text-lg font-semibold">{game.name} Configuration</h2>
-            <p className="text-sm text-[#71717a] mt-0.5">Settings saved locally for {instance.name}</p>
+            <h2 className="text-xl font-semibold text-white">{game.name} Configuration</h2>
+            <p className="text-sm text-[#71717a] mt-1">Settings saved locally for {instance.name}</p>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-[#71717a] hover:text-[#fafafa] hover:bg-[#27272a] transition-colors"
+            className="w-9 h-9 flex items-center justify-center rounded-lg text-[#71717a] hover:text-white hover:bg-[#27272a] transition-colors ml-4 shrink-0"
           >
-            <X size={15} />
+            <X size={16} />
           </button>
         </div>
 
         {/* Fields */}
-        <div className="flex-1 overflow-y-auto px-7 py-6 space-y-5">
+        <div className="flex-1 overflow-y-auto px-8 py-7 space-y-7">
           {game.serverSettings.map((setting) => (
             <Field
               key={setting.key}
@@ -68,20 +68,18 @@ export default function ConfigModal({ game, instance, onClose }: Props) {
         </div>
 
         {/* Footer */}
-        <div className="px-7 py-5 border-t border-[#27272a] flex items-center justify-between shrink-0">
+        <div className="px-8 py-5 border-t border-[#27272a] flex items-center justify-between gap-4 shrink-0">
           <button
             onClick={onClose}
-            className="px-5 py-2.5 text-sm text-[#a1a1aa] hover:text-[#fafafa] rounded-lg hover:bg-[#18181b] transition-colors"
+            className="px-6 py-3 text-sm font-medium text-[#a1a1aa] hover:text-white rounded-lg hover:bg-[#18181b] transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={save}
             disabled={saving}
-            className={cn(
-              'px-6 py-2.5 rounded-lg text-sm font-medium text-white transition-all disabled:opacity-50'
-            )}
-            style={!saved ? { backgroundColor: game.accentColor } : undefined}
+            className="px-8 py-3 rounded-lg text-sm font-semibold text-white transition-all disabled:opacity-50 min-w-[140px]"
+            style={!saved ? { backgroundColor: game.accentColor } : { backgroundColor: '#16a34a' }}
           >
             {saving ? 'Saving…' : saved ? 'Saved ✓' : 'Save Changes'}
           </button>
@@ -103,15 +101,16 @@ function Field({
   accentColor: string
 }) {
   const inputClass = cn(
-    'w-full px-4 py-2.5 rounded-lg bg-[#18181b] border border-[#27272a]',
-    'text-sm text-[#fafafa] placeholder-[#52525b]',
-    'focus:outline-none focus:border-[#3f3f46] transition-colors'
+    'w-full px-4 py-3 rounded-xl bg-[#18181b] border border-[#27272a]',
+    'text-sm text-white placeholder-[#52525b]',
+    'focus:outline-none focus:border-[#52525b] transition-colors'
   )
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-2">
-        <label className="text-sm font-medium text-[#e4e4e7]">
+      {/* Label row */}
+      <div className="flex items-center justify-between mb-2.5">
+        <label className="text-sm font-semibold text-[#e4e4e7]">
           {setting.label}
           {setting.required && <span className="text-red-400 ml-1">*</span>}
         </label>
@@ -120,7 +119,7 @@ function Field({
             href={setting.helpUrl}
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-1 text-xs hover:underline"
+            className="flex items-center gap-1.5 text-xs font-medium hover:underline"
             style={{ color: accentColor }}
           >
             Get token <ExternalLink size={11} />
@@ -129,7 +128,7 @@ function Field({
       </div>
 
       {setting.tooltip && (
-        <p className="text-sm text-[#71717a] mb-2">{setting.tooltip}</p>
+        <p className="text-sm text-[#71717a] mb-2.5 leading-relaxed">{setting.tooltip}</p>
       )}
 
       {setting.type === 'string' && (
@@ -167,14 +166,14 @@ function Field({
         <button
           onClick={() => onChange(!value)}
           className={cn(
-            'relative inline-flex h-7 w-12 rounded-full transition-colors',
+            'relative inline-flex h-8 w-14 rounded-full transition-colors focus:outline-none',
             value ? 'bg-emerald-600' : 'bg-[#3f3f46]'
           )}
         >
           <span
             className={cn(
-              'absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow transition-transform',
-              value ? 'translate-x-5' : 'translate-x-0'
+              'absolute top-1 left-1 w-6 h-6 rounded-full bg-white shadow-md transition-transform',
+              value ? 'translate-x-6' : 'translate-x-0'
             )}
           />
         </button>

@@ -23,21 +23,23 @@ const api = {
     ipcRenderer.invoke('instance:setEnabledMods', instanceId, gameId, enabledMods),
 
   // Server state
-  isInstalled: (gameId: string, instanceId: string, subdir: string, exe: string) =>
-    ipcRenderer.invoke('server:isInstalled', gameId, instanceId, subdir, exe),
+  isInstalled: (gameId: string, instanceId: string, installOnce: boolean, subdir: string, exe: string) =>
+    ipcRenderer.invoke('server:isInstalled', gameId, instanceId, installOnce, subdir, exe),
   isRunning:   (instanceId: string, processNames: string[]) =>
     ipcRenderer.invoke('server:isRunning', instanceId, processNames),
   getLocalIp:  () => ipcRenderer.invoke('server:localIp'),
   checkJava:   (): Promise<string | null> => ipcRenderer.invoke('server:checkJava'),
 
   // Install
-  startInstall: (gameId: string, instanceId: string, steamAppId: string, installMode: string) =>
-    ipcRenderer.invoke('install:start', gameId, instanceId, steamAppId, installMode),
+  uninstallServer: (gameId: string, instanceId: string, installOnce: boolean) =>
+    ipcRenderer.invoke('server:uninstall', gameId, instanceId, installOnce),
+  startInstall: (gameId: string, instanceId: string, steamAppId: string, installMode: string, installOnce: boolean) =>
+    ipcRenderer.invoke('install:start', gameId, instanceId, steamAppId, installMode, installOnce),
   cancelInstall: () => ipcRenderer.invoke('install:cancel'),
 
   // Server lifecycle
-  startServer: (instanceId: string, gameId: string, launchMode: string, exeRelPath: string, args: string[]) =>
-    ipcRenderer.invoke('server:start', instanceId, gameId, launchMode, exeRelPath, args),
+  startServer: (instanceId: string, gameId: string, launchMode: string, exeRelPath: string, args: string[], installOnce: boolean) =>
+    ipcRenderer.invoke('server:start', instanceId, gameId, launchMode, exeRelPath, args, installOnce),
   stopServer:  (instanceId: string, processNames: string[]) =>
     ipcRenderer.invoke('server:stop', instanceId, processNames),
 

@@ -26,6 +26,7 @@ export interface Game {
   platforms: string[]
   steamAppId: string
   installMode: 'steam' | 'mojang'
+  installOnce: boolean
   launchMode: 'steam' | 'java' | 'dst_dual_shard'
   serverDirName: string
   executable: string
@@ -62,6 +63,7 @@ export const GAMES: Game[] = [
     platforms: ['Windows'],
     steamAppId: '2394010',
     installMode: 'steam',
+    installOnce: true,
     launchMode: 'steam',
     serverDirName: 'PalServer',
     executable: 'PalServer.exe',
@@ -94,6 +96,7 @@ export const GAMES: Game[] = [
     platforms: ['Windows', 'Linux'],
     steamAppId: '896660',
     installMode: 'steam',
+    installOnce: true,
     launchMode: 'steam',
     serverDirName: 'valheim_dedicated_server',
     executable: 'valheim_dedicated_server.exe',
@@ -128,6 +131,7 @@ export const GAMES: Game[] = [
     platforms: ['Windows', 'Linux'],
     steamAppId: '258550',
     installMode: 'steam',
+    installOnce: true,
     launchMode: 'steam',
     serverDirName: 'rust_dedicated_server',
     executable: 'RustDedicated.exe',
@@ -163,6 +167,7 @@ export const GAMES: Game[] = [
     platforms: ['Windows', 'Linux'],
     steamAppId: '343050',
     installMode: 'steam',
+    installOnce: true,
     launchMode: 'dst_dual_shard',
     serverDirName: 'DST_Dedicated',
     executable: 'dontstarve_dedicated_server_nullrenderer_x64.exe',
@@ -195,6 +200,7 @@ export const GAMES: Game[] = [
     platforms: ['Windows', 'Linux', 'macOS'],
     steamAppId: '',
     installMode: 'mojang',
+    installOnce: false,
     launchMode: 'java',
     serverDirName: 'minecraft_server',
     executable: 'server.jar',
@@ -235,6 +241,7 @@ export const GAMES: Game[] = [
     platforms: ['Windows', 'Linux'],
     steamAppId: '376030',
     installMode: 'steam',
+    installOnce: true,
     launchMode: 'steam',
     serverDirName: 'ark_server',
     executable: 'ShooterGameServer.exe',
@@ -267,6 +274,7 @@ export const GAMES: Game[] = [
     platforms: ['Windows', 'Linux'],
     steamAppId: '294420',
     installMode: 'steam',
+    installOnce: true,
     launchMode: 'steam',
     serverDirName: '7dtd_server',
     executable: '7DaysToDieServer.exe',
@@ -305,6 +313,7 @@ export const GAMES: Game[] = [
     platforms: ['Windows', 'Linux'],
     steamAppId: '380870',
     installMode: 'steam',
+    installOnce: true,
     launchMode: 'steam',
     serverDirName: 'zomboid_server',
     executable: 'ProjectZomboidServer.exe',
@@ -338,6 +347,7 @@ export const GAMES: Game[] = [
     platforms: ['Windows'],
     steamAppId: '1829350',
     installMode: 'steam',
+    installOnce: true,
     launchMode: 'steam',
     serverDirName: 'vrising_server',
     executable: 'VRisingServer.exe',
@@ -371,6 +381,7 @@ export const GAMES: Game[] = [
     platforms: ['Windows'],
     steamAppId: '2278520',
     installMode: 'steam',
+    installOnce: true,
     launchMode: 'steam',
     serverDirName: 'enshrouded_server',
     executable: 'enshrouded_server.exe',

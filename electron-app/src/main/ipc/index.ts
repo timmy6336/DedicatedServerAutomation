@@ -1,7 +1,7 @@
 import { ipcMain, BrowserWindow, app, dialog } from 'electron'
 import { spawnSync, spawn, ChildProcess } from 'child_process'
 import {
-  existsSync, mkdirSync, createWriteStream, writeFileSync,
+  existsSync, mkdirSync, createWriteStream, writeFileSync, readFileSync,
   copyFileSync, readdirSync, unlinkSync, statSync, rmSync
 } from 'fs'
 import { join, basename } from 'path'
@@ -44,10 +44,15 @@ const instancesPath = () => join(userData(), 'instances.json')
 const modsRegistryPath = () => join(userData(), 'mods-registry.json')
 const instanceDir = (gameId: string, instanceId: string) =>
   join(userData(), 'servers', gameId, instanceId)
+// Shared game binary dir — one install per game, shared across all instances
+const gameBinaryDir = (gameId: string) =>
+  join(userData(), 'game-installs', gameId)
 const modLibDir = (gameId: string) =>
   join(userData(), 'mod-library', gameId)
 const backupBase = (gameId: string, instanceId: string) =>
   join(userData(), 'backups', gameId, instanceId)
+const pidFile = (instanceId: string) =>
+  join(userData(), 'server-pids', `${instanceId}.pid`)
 
 async function readJson<T>(path: string, fallback: T): Promise<T> {
   try { return JSON.parse(await readFile(path, 'utf-8')) }
@@ -124,6 +129,36 @@ function broadcast(channel: string, ...args: unknown[]): void {
   BrowserWindow.getAllWindows().forEach(w => w.webContents.send(channel, ...args))
 }
 
+// ── PID tracking helpers ──────────────────────────────────────────────────────
+function writePid(instanceId: string, pid: number): void {
+  const dir = join(userData(), 'server-pids')
+  if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
+  writeFileSync(pidFile(instanceId), String(pid), 'utf-8')
+}
+
+function readPid(instanceId: string): number | null {
+  try {
+    const n = parseInt(readFileSync(pidFile(instanceId), 'utf-8').trim(), 10)
+    return isNaN(n) ? null : n
+  } catch { return null }
+}
+
+function isPidAlive(pid: number): boolean {
+  try {
+    if (process.platform === 'win32') {
+      const r = spawnSync('tasklist', ['/FI', `PID eq ${pid}`, '/FO', 'CSV', '/NH'], { encoding: 'utf-8' })
+      return (r.stdout || '').includes(`"${pid}"`)
+    } else {
+      process.kill(pid, 0)
+      return true
+    }
+  } catch { return false }
+}
+
+function clearPid(instanceId: string): void {
+  try { unlinkSync(pidFile(instanceId)) } catch { /* already gone */ }
+}
+
 // ── Discord webhook ───────────────────────────────────────────────────────────
 function fireDiscordWebhook(url: string, content: string): void {
   if (!url?.startsWith('https://')) return
@@ -178,10 +213,10 @@ const MODS_CONFIG: Record<string, { subdir: string; extensions: string[] }> = {
 }
 
 // ── copy enabled mods into the game's correct mod directory ──────────────────
-function applyMods(gameId: string, instanceId: string, enabledMods: string[]): void {
+// binaryBase: gameBinaryDir for steam games, instanceDir for mojang (Minecraft)
+function applyMods(gameId: string, instanceId: string, enabledMods: string[], binaryBase: string): void {
   const modsSubdir = MODS_CONFIG[gameId]?.subdir ?? 'mods'
-  const instDir = instanceDir(gameId, instanceId)
-  const modsDir = join(instDir, modsSubdir)
+  const modsDir = join(binaryBase, modsSubdir)
   const libDir = modLibDir(gameId)
 
   if (!existsSync(modsDir)) mkdirSync(modsDir, { recursive: true })
@@ -253,7 +288,7 @@ async function installMinecraft(instDir: string): Promise<boolean> {
 }
 
 // ── SteamCMD install ──────────────────────────────────────────────────────────
-async function installViaSteam(instDir: string, steamAppId: string): Promise<boolean> {
+async function installViaSteam(binaryDir: string, steamAppId: string): Promise<boolean> {
   const steamCmdDir = join(userData(), 'steamcmd')
   const exe = process.platform === 'win32' ? 'steamcmd.exe' : 'steamcmd.sh'
   const steamCmdPath = join(steamCmdDir, exe)
@@ -292,7 +327,7 @@ async function installViaSteam(instDir: string, steamAppId: string): Promise<boo
   installCancelled = false
   return new Promise<boolean>((resolve) => {
     const proc = spawn(steamCmdPath, [
-      '+force_install_dir', instDir, '+login', 'anonymous',
+      '+force_install_dir', binaryDir, '+login', 'anonymous',
       '+app_update', steamAppId, 'validate', '+quit'
     ])
     activeInstallProc = proc
@@ -388,30 +423,30 @@ export function registerIpcHandlers(): void {
     if (!inst) return false
     inst.enabledMods = enabledMods
     await writeInstances(all)
-    applyMods(gameId, instanceId, enabledMods)
+    // We don't know launchMode here, so just stage mods into the right dir
+    const binaryBase = existsSync(gameBinaryDir(gameId)) ? gameBinaryDir(gameId) : instanceDir(gameId, instanceId)
+    applyMods(gameId, instanceId, enabledMods, binaryBase)
     return true
   })
 
   // ── Server state ─────────────────────────────────────────────────────────
 
-  ipcMain.handle('server:isInstalled', (_, gameId: string, instanceId: string, executableSubdir: string, executable: string) => {
-    const base = instanceDir(gameId, instanceId)
+  ipcMain.handle('server:isInstalled', (_, gameId: string, instanceId: string, installOnce: boolean, executableSubdir: string, executable: string) => {
+    const base = installOnce ? gameBinaryDir(gameId) : instanceDir(gameId, instanceId)
     const exePath = executableSubdir ? join(base, executableSubdir, executable) : join(base, executable)
     return existsSync(exePath)
   })
 
-  ipcMain.handle('server:isRunning', (_, instanceId: string, processNames: string[]) => {
+  ipcMain.handle('server:isRunning', (_, instanceId: string, _processNames: string[]) => {
     const proc = runningProcesses.get(instanceId)
     if (proc && !proc.killed) return true
-    try {
-      if (process.platform === 'win32') {
-        const r = spawnSync('tasklist', ['/FO', 'CSV', '/NH'], { encoding: 'utf-8' })
-        const lower = (r.stdout || '').toLowerCase()
-        return processNames.some(n => lower.includes(n.toLowerCase()))
-      } else {
-        return spawnSync('pgrep', ['-f', processNames[0]], { encoding: 'utf-8' }).status === 0
-      }
-    } catch { return false }
+    // Fall back to PID file — avoids false positives from generic process names like 'java'
+    const pid = readPid(instanceId)
+    if (pid !== null) {
+      if (isPidAlive(pid)) return true
+      clearPid(instanceId) // stale PID file
+    }
+    return false
   })
 
   ipcMain.handle('server:localIp', () => {
@@ -430,6 +465,17 @@ export function registerIpcHandlers(): void {
 
   // ── Install ───────────────────────────────────────────────────────────────
 
+  ipcMain.handle('server:uninstall', (_, gameId: string, instanceId: string, installOnce: boolean) => {
+    const dir = installOnce ? gameBinaryDir(gameId) : instanceDir(gameId, instanceId)
+    try {
+      if (existsSync(dir)) rmSync(dir, { recursive: true, force: true })
+      return true
+    } catch (e) {
+      broadcast('server:error', `Uninstall failed: ${e}`)
+      return false
+    }
+  })
+
   ipcMain.handle('install:cancel', () => {
     if (activeInstallProc && !activeInstallProc.killed) {
       installCancelled = true
@@ -439,38 +485,50 @@ export function registerIpcHandlers(): void {
     return false
   })
 
-  ipcMain.handle('install:start', async (_, gameId: string, instanceId: string, steamAppId: string, installMode: string) => {
+  ipcMain.handle('install:start', async (_, gameId: string, instanceId: string, steamAppId: string, installMode: string, installOnce: boolean) => {
+    // Always create the instance dir — config, backups, and per-instance save data live here
     const instDir = instanceDir(gameId, instanceId)
     if (!existsSync(instDir)) mkdirSync(instDir, { recursive: true })
 
     if (installMode === 'mojang') {
+      // Minecraft: each instance owns its own server.jar + world directory
       const ok = await installMinecraft(instDir)
       broadcast('install:done', ok)
       return ok
     }
-    return installViaSteam(instDir, steamAppId)
+
+    if (installOnce) {
+      // Shared binary: install once, all instances share the same game files
+      const binaryDir = gameBinaryDir(gameId)
+      if (!existsSync(binaryDir)) mkdirSync(binaryDir, { recursive: true })
+      return installViaSteam(binaryDir, steamAppId)
+    } else {
+      // Per-instance: each instance gets its own full game installation
+      return installViaSteam(instDir, steamAppId)
+    }
   })
 
   // ── Start / Stop ──────────────────────────────────────────────────────────
 
-  ipcMain.handle('server:start', async (_, instanceId: string, gameId: string, launchMode: string, exeRelPath: string, args: string[]) => {
+  ipcMain.handle('server:start', async (_, instanceId: string, gameId: string, launchMode: string, exeRelPath: string, args: string[], installOnce: boolean) => {
     const existing = runningProcesses.get(instanceId)
     if (existing && !existing.killed) return true
 
     const instDir = instanceDir(gameId, instanceId)
+    const binaryBase = installOnce ? gameBinaryDir(gameId) : instDir
 
-    // Apply mods and read instance config before launch
+    // Apply this instance's mods into the binary dir before launch
     const allInst = await readInstances()
     const inst = allInst.find(i => i.id === instanceId)
-    if (inst?.enabledMods.length) applyMods(gameId, instanceId, inst.enabledMods)
+    if (inst?.enabledMods.length) applyMods(gameId, instanceId, inst.enabledMods, binaryBase)
 
     try {
       let cmd: string, cmdArgs: string[], cwd: string
       if (launchMode === 'java') {
-        cmd = 'java'; cmdArgs = args; cwd = instDir
+        cmd = 'java'; cmdArgs = args; cwd = binaryBase
       } else {
-        const exePath = join(instDir, exeRelPath)
-        cmd = exePath; cmdArgs = args; cwd = join(exePath, '..')
+        const exePath = join(binaryBase, exeRelPath)
+        cmd = exePath; cmdArgs = args; cwd = binaryBase
       }
 
       const proc = spawn(cmd, cmdArgs, {
@@ -495,6 +553,7 @@ export function registerIpcHandlers(): void {
       proc.on('exit', (code) => {
         broadcast('server:exit', { instanceId, code })
         runningProcesses.delete(instanceId)
+        clearPid(instanceId)
         const webhookUrl = inst?.config?.discord_webhook as string
         if (webhookUrl && code !== 0) {
           fireDiscordWebhook(webhookUrl, `⚠️ **${inst?.name}** crashed (exit code ${code}).`)
@@ -503,6 +562,7 @@ export function registerIpcHandlers(): void {
 
       proc.unref()
       runningProcesses.set(instanceId, proc)
+      if (proc.pid) writePid(instanceId, proc.pid)
 
       // Fire start webhook
       const webhookUrl = inst?.config?.discord_webhook as string
@@ -517,19 +577,22 @@ export function registerIpcHandlers(): void {
     }
   })
 
-  ipcMain.handle('server:stop', async (_, instanceId: string, processNames: string[]) => {
+  ipcMain.handle('server:stop', async (_, instanceId: string, _processNames: string[]) => {
     const proc = runningProcesses.get(instanceId)
     if (proc && !proc.killed) {
       proc.kill()
       runningProcesses.delete(instanceId)
     } else {
-      try {
-        if (process.platform === 'win32')
-          for (const n of processNames) spawnSync('taskkill', ['/F', '/IM', n])
-        else
-          for (const n of processNames) spawnSync('pkill', ['-f', n])
-      } catch { /* ignore */ }
+      // Fall back to PID file — avoids killing unrelated processes with the same name
+      const pid = readPid(instanceId)
+      if (pid !== null) {
+        try {
+          if (process.platform === 'win32') spawnSync('taskkill', ['/F', '/PID', String(pid)])
+          else process.kill(pid, 'SIGTERM')
+        } catch { /* process may have already exited */ }
+      }
     }
+    clearPid(instanceId)
 
     // Fire stop webhook
     const allInst = await readInstances()
