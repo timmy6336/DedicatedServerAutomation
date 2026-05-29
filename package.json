@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "scripts": {
+    "prepare": "husky",
+    "test": "npm --prefix electron-app test"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7"
+  }
+}

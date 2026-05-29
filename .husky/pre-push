@@ -1,0 +1,5 @@
+#!/bin/sh
+# Run the full test suite before every push.
+# If any test fails the push is aborted.
+echo "Running test suite before push…"
+npm --prefix electron-app test
