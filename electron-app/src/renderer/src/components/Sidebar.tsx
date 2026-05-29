@@ -56,9 +56,9 @@ export default function Sidebar({ games, selectedInstance, onSelectInstance }: P
 
   return (
     <>
-      <aside className="w-64 shrink-0 bg-[#0d0d18] border-r border-[#1c1c2e] flex flex-col overflow-hidden">
+      <aside className="w-64 shrink-0 bg-[#0c0c0c] border-r-2 border-[#2e2e2e] flex flex-col overflow-hidden">
         <div className="px-4 pt-5 pb-2.5">
-          <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#2e2e48] px-2">
+          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#333333] px-2">
             Servers
           </p>
         </div>
@@ -72,26 +72,26 @@ export default function Sidebar({ games, selectedInstance, onSelectInstance }: P
               <div key={game.id}>
                 <button
                   onClick={() => toggle(game.id)}
-                  className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-left group hover:bg-[#131320] transition-all"
+                  className="w-full flex items-center gap-2 px-2.5 py-2 text-left group hover:bg-[#151515] transition-all"
                 >
                   <ChevronRight
                     size={11}
                     className={cn(
-                      'shrink-0 text-[#2e2e48] transition-transform duration-200',
+                      'shrink-0 text-[#404040] transition-transform duration-200',
                       isOpen && 'rotate-90'
                     )}
                   />
                   <div
-                    className="w-5 h-5 rounded-md flex items-center justify-center shrink-0"
-                    style={{ backgroundColor: game.accentColor + '1a', color: game.accentColor }}
+                    className="w-5 h-5 flex items-center justify-center shrink-0 border border-[#2e2e2e]"
+                    style={{ color: game.accentColor }}
                   >
                     <Server size={10} />
                   </div>
-                  <span className="text-xs font-medium text-[#4e4e6a] group-hover:text-[#8e8ea8] flex-1 truncate transition-colors">
+                  <span className="text-xs font-black uppercase tracking-wider text-[#555555] group-hover:text-[#888888] flex-1 truncate transition-colors">
                     {game.name}
                   </span>
                   {gameInstances.length > 0 && (
-                    <span className="text-[10px] text-[#2e2e48] font-mono tabular-nums">
+                    <span className="text-[10px] text-[#404040] font-bold tabular-nums">
                       {gameInstances.length}
                     </span>
                   )}
@@ -106,24 +106,21 @@ export default function Sidebar({ games, selectedInstance, onSelectInstance }: P
                           key={inst.id}
                           onClick={() => onSelectInstance(inst, game)}
                           className={cn(
-                            'w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-all',
+                            'w-full flex items-center gap-2 px-3 py-2 text-left transition-all',
                             isSelected
-                              ? 'bg-[#151521] text-[#e2e2ef]'
-                              : 'text-[#4e4e6a] hover:bg-[#111120] hover:text-[#8e8ea8]'
+                              ? 'bg-[#1c1c1c] text-[#f0f0f0] border-l-[3px]'
+                              : 'text-[#555555] hover:bg-[#151515] hover:text-[#888888] border-l-[3px] border-transparent'
                           )}
+                          style={isSelected ? { borderLeftColor: game.accentColor } : undefined}
                         >
-                          <span
-                            className="w-1.5 h-1.5 rounded-full shrink-0 transition-colors"
-                            style={{ backgroundColor: isSelected ? game.accentColor : '#28283f' }}
-                          />
-                          <span className="truncate flex-1 text-xs">{inst.name}</span>
+                          <span className="truncate flex-1 text-xs font-bold">{inst.name}</span>
                         </button>
                       )
                     })}
 
                     <button
                       onClick={() => { setCreating(game); setExpanded(prev => new Set([...prev, game.id])) }}
-                      className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-xs text-[#2e2e48] hover:text-[#5a5a78] hover:bg-[#111120] transition-all"
+                      className="w-full flex items-center gap-2 px-3 py-2 text-left text-xs font-bold uppercase text-[#555555] hover:text-[#888888] hover:bg-[#151515] transition-all"
                     >
                       <Plus size={11} />
                       New server
@@ -135,8 +132,8 @@ export default function Sidebar({ games, selectedInstance, onSelectInstance }: P
           })}
         </nav>
 
-        <div className="border-t border-[#1c1c2e] px-5 py-3">
-          <p className="text-[10px] text-[#2e2e48] font-mono">v2.0.0</p>
+        <div className="border-t-2 border-[#2e2e2e] px-5 py-3">
+          <p className="text-[10px] text-[#333333] font-black uppercase tracking-widest">v2.0.0</p>
         </div>
       </aside>
 

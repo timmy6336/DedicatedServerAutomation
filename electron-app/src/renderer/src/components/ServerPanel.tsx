@@ -98,56 +98,56 @@ export default function ServerPanel({ game, instance, onInstanceUpdated }: Props
     <div className="h-full flex flex-col overflow-hidden">
 
       {/* Hero header */}
-      <div className={cn('relative overflow-hidden px-10 pt-12 pb-9 bg-gradient-to-br shrink-0', game.bannerColor)}>
-        <div className="absolute inset-0 bg-[#09090e]/75" />
-        <div
-          className="absolute -top-20 -right-20 w-72 h-72 rounded-full blur-3xl opacity-15 pointer-events-none"
-          style={{ backgroundColor: game.accentColor }}
-        />
-        <div className="relative z-10 flex items-start justify-between gap-6">
-          <div>
-            <div className="mb-3">
-              <span
-                className="inline-flex items-center text-[10px] font-bold uppercase tracking-[0.14em] px-2.5 py-1 rounded-full"
-                style={{
-                  backgroundColor: game.accentColor + '1e',
-                  color: game.accentColor,
-                  border: `1px solid ${game.accentColor}35`
-                }}
-              >
-                {game.genre}
-              </span>
+      <div className={cn('relative overflow-hidden shrink-0 bg-gradient-to-br', game.bannerColor)}
+        style={{ borderLeft: `4px solid ${game.accentColor}` }}
+      >
+        <div className="absolute inset-0 bg-[#0c0c0c]/80" />
+        <div className="relative z-10 px-10 pt-10 pb-8">
+          <div className="flex items-start justify-between gap-6">
+            <div>
+              <div className="mb-3">
+                <span
+                  className="inline-flex items-center text-[10px] font-black uppercase tracking-[0.25em] px-3 py-1 border-2 rounded-none"
+                  style={{
+                    color: game.accentColor,
+                    borderColor: game.accentColor
+                  }}
+                >
+                  {game.genre}
+                </span>
+              </div>
+              <h1 className="text-3xl font-black uppercase tracking-tight text-white leading-tight">{instance.name}</h1>
+              <p className="font-bold text-sm text-[#888888] mt-2">{game.name}</p>
             </div>
-            <h1 className="text-3xl font-bold text-white leading-tight tracking-tight">{instance.name}</h1>
-            <p className="text-sm text-[#8e8ea8] mt-2 font-medium">{game.name}</p>
+            <StatusBadge state={state} />
           </div>
-          <StatusBadge state={state} />
         </div>
         <div
-          className="absolute bottom-0 left-0 right-0 h-px opacity-50"
-          style={{ background: `linear-gradient(90deg, transparent, ${game.accentColor}80, transparent)` }}
+          className="absolute bottom-0 left-0 right-0 h-[3px]"
+          style={{ backgroundColor: game.accentColor }}
         />
       </div>
 
       {/* Tab bar */}
-      <div className="flex items-center gap-1 px-6 py-2 bg-[#09090e] border-b border-[#1c1c2e] shrink-0">
+      <div className="flex items-center gap-0 px-6 bg-[#0c0c0c] border-b-2 border-[#2e2e2e] shrink-0">
         {tabs.map(t => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
             className={cn(
-              'flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm transition-all',
+              'flex items-center gap-1.5 px-4 py-3 text-xs font-bold uppercase tracking-wider transition-all',
               tab === t.id
-                ? 'bg-[#151521] text-[#e2e2ef] font-medium'
-                : 'text-[#575770] hover:text-[#8e8ea8] hover:bg-[#111120]'
+                ? 'text-white -mb-[3px]'
+                : 'text-[#555555] hover:text-[#888888]'
             )}
+            style={tab === t.id ? { borderBottom: `3px solid ${game.accentColor}` } : undefined}
           >
             {t.icon}
             {t.label}
             {t.badge !== undefined && t.badge > 0 && (
               <span
-                className="text-[10px] px-1.5 py-0.5 rounded-full font-medium tabular-nums"
-                style={{ backgroundColor: game.accentColor + '22', color: game.accentColor }}
+                className="text-[10px] px-1.5 py-0.5 border-2 font-black tabular-nums"
+                style={{ borderColor: game.accentColor + '80', color: game.accentColor }}
               >
                 {t.badge}
               </span>
@@ -181,20 +181,20 @@ export default function ServerPanel({ game, instance, onInstanceUpdated }: Props
                 <div className="flex-1" />
                 {confirmUninstall ? (
                   <div className="flex items-center gap-3">
-                    <span className="text-sm text-red-400/90">
+                    <span className="text-sm text-red-400 font-bold">
                       {game.installOnce
                         ? 'Remove shared game files for all instances?'
                         : 'Remove all server files for this instance?'}
                     </span>
                     <button
                       onClick={handleUninstall}
-                      className="px-4 py-2 rounded-lg text-sm font-medium bg-red-700/80 hover:bg-red-600 text-white transition-colors"
+                      className="px-4 py-2 text-sm font-bold bg-[#1c0808] border-2 border-red-900 text-red-400 shadow-[2px_2px_0_#000] hover:-translate-x-px hover:-translate-y-px transition-all"
                     >
                       Yes, uninstall
                     </button>
                     <button
                       onClick={() => setConfirmUninstall(false)}
-                      className="px-4 py-2 rounded-lg text-sm text-[#575770] hover:text-[#e2e2ef] hover:bg-[#151521] transition-colors"
+                      className="px-4 py-2 text-sm font-bold bg-[#1c1c1c] border-2 border-[#2e2e2e] text-[#888888] shadow-[2px_2px_0_#000] hover:-translate-x-px hover:-translate-y-px transition-all"
                     >
                       Cancel
                     </button>
@@ -220,7 +220,7 @@ export default function ServerPanel({ game, instance, onInstanceUpdated }: Props
               </>
             )}
             {state === 'checking' && (
-              <div className="h-10 w-36 rounded-xl bg-[#151521] animate-pulse" />
+              <div className="h-10 w-36 bg-[#151515] border-2 border-[#2e2e2e] animate-pulse" />
             )}
           </div>
 
@@ -237,7 +237,7 @@ export default function ServerPanel({ game, instance, onInstanceUpdated }: Props
           {/* About */}
           <div>
             <SectionLabel>About</SectionLabel>
-            <p className="mt-3.5 text-sm text-[#8e8ea8] leading-relaxed">{game.description}</p>
+            <p className="mt-3.5 text-sm text-[#888888] leading-relaxed font-medium">{game.description}</p>
           </div>
 
           {/* Required Ports */}
@@ -246,12 +246,12 @@ export default function ServerPanel({ game, instance, onInstanceUpdated }: Props
             <div className="mt-3.5 grid grid-cols-2 gap-2.5">
               {game.ports.map(p => (
                 <div key={`${p.port}-${p.protocol}`}
-                  className="px-5 py-4 rounded-xl bg-[#0f0f18] border border-[#1c1c2e] hover:border-[#28283f] transition-colors">
-                  <span className="font-mono font-bold text-2xl text-[#e2e2ef] tabular-nums">{p.port}</span>
+                  className="px-5 py-4 bg-[#151515] border-2 border-[#2e2e2e] hover:border-[#444444] shadow-[3px_3px_0_#1a1a1a] transition-all">
+                  <span className="font-mono font-black text-2xl text-[#f0f0f0] tabular-nums">{p.port}</span>
                   <div className="flex items-center gap-2 mt-2">
-                    <span className="text-xs font-bold uppercase tracking-wider text-[#575770]">{p.protocol}</span>
+                    <span className="text-xs font-black uppercase tracking-wider text-[#555555]">{p.protocol}</span>
                     {p.description && (
-                      <span className="text-xs text-[#383854]">· {p.description}</span>
+                      <span className="text-xs text-[#404040] font-bold">· {p.description}</span>
                     )}
                   </div>
                 </div>
@@ -265,7 +265,7 @@ export default function ServerPanel({ game, instance, onInstanceUpdated }: Props
             <div className="mt-3.5 flex gap-2 flex-wrap">
               {game.platforms.map(p => (
                 <span key={p}
-                  className="px-4 py-2 text-xs font-medium rounded-lg bg-[#0f0f18] border border-[#1c1c2e] text-[#8e8ea8]">
+                  className="px-4 py-2 text-xs font-bold bg-[#151515] border-2 border-[#2e2e2e] text-[#888888] uppercase tracking-wider">
                   {p}
                 </span>
               ))}
@@ -315,20 +315,20 @@ export default function ServerPanel({ game, instance, onInstanceUpdated }: Props
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#383854]">{children}</h3>
+    <h3 className="text-[10px] font-black uppercase tracking-[0.25em] text-[#404040]">{children}</h3>
   )
 }
 
 function StatusBadge({ state }: { state: ServerState }) {
   const cfg = {
-    checking:      { label: 'Checking',      cls: 'bg-[#1c1c2e]/70 text-[#575770] border border-[#28283f]/50',             dot: 'bg-[#383854]' },
-    not_installed: { label: 'Not Installed', cls: 'bg-[#1c1c2e]/70 text-[#575770] border border-[#28283f]/50',             dot: 'bg-[#28283f]' },
-    stopped:       { label: 'Offline',       cls: 'bg-red-950/50 text-red-400 border border-red-900/40',                   dot: 'bg-red-500' },
-    running:       { label: 'Online',        cls: 'bg-emerald-950/50 text-emerald-400 border border-emerald-900/40',       dot: 'bg-emerald-400 animate-pulse' }
+    checking:      { label: 'Checking',      cls: 'border-2 border-[#2e2e2e] text-[#555555]',                dot: 'bg-[#404040]' },
+    not_installed: { label: 'Not Installed', cls: 'border-2 border-[#222222] text-[#444444]',                dot: 'bg-[#333333]' },
+    stopped:       { label: 'Offline',       cls: 'border-2 border-red-900 text-red-400 bg-[#1a0808]',       dot: 'bg-red-500' },
+    running:       { label: 'Online',        cls: 'border-2 border-emerald-800 text-emerald-400 bg-[#081a0d]', dot: 'bg-emerald-400 animate-pulse' }
   }
   const { label, cls, dot } = cfg[state]
   return (
-    <div className={cn('flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold backdrop-blur-sm', cls)}>
+    <div className={cn('flex items-center gap-2 px-3.5 py-1.5 text-xs font-black uppercase rounded-none', cls)}>
       <span className={cn('w-2 h-2 rounded-full shrink-0', dot)} />
       {label}
     </div>
@@ -337,12 +337,12 @@ function StatusBadge({ state }: { state: ServerState }) {
 
 function InfoCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
-    <div className="bg-[#0f0f18] border border-[#1c1c2e] rounded-xl px-5 py-4 hover:border-[#28283f] transition-colors">
-      <div className="flex items-center gap-2 text-[#575770] text-xs mb-2.5 font-semibold uppercase tracking-wider">
+    <div className="bg-[#151515] border-2 border-[#2e2e2e] px-5 py-4 shadow-[3px_3px_0_#1a1a1a] hover:border-[#444444] hover:shadow-[4px_4px_0_#222222] transition-all">
+      <div className="flex items-center gap-2 text-[#555555] text-xs mb-2.5 font-black uppercase tracking-wider">
         {icon}
         <span>{label}</span>
       </div>
-      <p className="font-mono text-xl text-[#e2e2ef] font-bold tabular-nums">{value}</p>
+      <p className="font-mono text-xl text-[#f0f0f0] font-black tabular-nums">{value}</p>
     </div>
   )
 }
@@ -357,11 +357,11 @@ interface PanelButtonProps {
 }
 
 function PanelButton({ variant, icon, onClick, loading, accentColor, children }: PanelButtonProps) {
-  const base = 'flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all disabled:opacity-50 active:scale-[0.98]'
+  const base = 'flex items-center gap-2 px-5 py-2.5 text-sm font-bold transition-all disabled:opacity-50 rounded-lg'
   const variants = {
-    primary:   'text-white hover:opacity-90',
-    secondary: 'bg-[#151521] border border-[#1c1c2e] text-[#8e8ea8] hover:text-[#e2e2ef] hover:border-[#28283f]',
-    danger:    'bg-red-950/30 border border-red-900/40 text-red-400 hover:bg-red-950/50 hover:border-red-800/60'
+    primary:   'text-white border-2 border-black shadow-[3px_3px_0_black] hover:shadow-[4px_4px_0_black] hover:-translate-x-px hover:-translate-y-px',
+    secondary: 'bg-[#1c1c1c] border-2 border-[#2e2e2e] text-[#888888] hover:text-white hover:border-[#555555] shadow-[2px_2px_0_#000] hover:shadow-[3px_3px_0_#000] hover:-translate-x-px hover:-translate-y-px',
+    danger:    'bg-[#1c0808] border-2 border-red-900 text-red-400 shadow-[2px_2px_0_#000] hover:-translate-x-px hover:-translate-y-px'
   }
   return (
     <button

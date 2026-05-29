@@ -22,30 +22,30 @@ export default function NewServerModal({ game, onCreated, onClose }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xl">
-      <div className="w-[420px] bg-[#0f0f18] border border-[#1c1c2e] rounded-2xl shadow-[0_32px_64px_rgba(0,0,0,0.6)] overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90">
+      <div className="w-[420px] bg-[#0c0c0c] border-2 border-[#333333] rounded-xl shadow-[6px_6px_0_#111111] overflow-hidden">
 
-        <div className="flex items-center justify-between px-6 py-5 border-b border-[#1c1c2e]">
+        <div className="flex items-center justify-between px-6 py-5 border-b-2 border-[#2e2e2e]">
           <div>
-            <h2 className="text-base font-semibold text-[#e2e2ef]">New {game.name} Server</h2>
-            <p className="text-xs text-[#575770] mt-0.5">Creates a separate install directory</p>
+            <h2 className="text-base font-black uppercase tracking-tight text-[#f0f0f0]">New {game.name} Server</h2>
+            <p className="text-xs text-[#555555] mt-0.5 font-bold">Creates a separate install directory</p>
           </div>
           <button
             onClick={onClose}
-            className="w-7 h-7 flex items-center justify-center rounded-lg text-[#575770] hover:text-[#e2e2ef] hover:bg-[#1c1c2e] transition-all"
+            className="w-7 h-7 flex items-center justify-center border-2 border-[#2e2e2e] text-[#555555] hover:text-[#f0f0f0] hover:border-[#555555] shadow-[2px_2px_0_#000] transition-all"
           >
             <X size={14} />
           </button>
         </div>
 
         <div className="px-6 py-5">
-          <label className="block text-xs font-semibold text-[#8e8ea8] uppercase tracking-wider mb-2">
+          <label className="block text-xs font-black text-[#888888] uppercase tracking-widest mb-2">
             Server name
           </label>
           <input
             autoFocus
             type="text"
-            className="w-full px-4 py-2.5 rounded-xl bg-[#151521] border border-[#1c1c2e] text-sm text-[#e2e2ef] placeholder-[#383854] focus:outline-none focus:border-[#28283f] focus:ring-1 focus:ring-[#28283f] transition-all"
+            className="w-full px-4 py-2.5 rounded-lg bg-[#0c0c0c] border-2 border-[#2e2e2e] text-sm text-[#f0f0f0] font-medium placeholder-[#404040] focus:outline-none focus:border-[#555555] shadow-[2px_2px_0_#000] focus:shadow-[3px_3px_0_#111111] transition-all"
             placeholder={`My ${game.name} Server`}
             value={name}
             onChange={e => setName(e.target.value)}
@@ -53,17 +53,17 @@ export default function NewServerModal({ game, onCreated, onClose }: Props) {
           />
         </div>
 
-        <div className="px-6 py-4 border-t border-[#1c1c2e] flex justify-end gap-2.5">
+        <div className="px-6 py-4 border-t-2 border-[#2e2e2e] flex justify-end gap-2.5">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm text-[#575770] hover:text-[#e2e2ef] rounded-lg hover:bg-[#151521] transition-all"
+            className="px-4 py-2 text-sm font-bold text-[#555555] hover:text-[#f0f0f0] bg-[#1c1c1c] border-2 border-[#2e2e2e] hover:border-[#555555] shadow-[2px_2px_0_#000] hover:shadow-[3px_3px_0_#000] hover:-translate-x-px hover:-translate-y-px transition-all rounded-lg"
           >
             Cancel
           </button>
           <button
             onClick={handleCreate}
             disabled={!name.trim() || creating}
-            className="px-5 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-40 hover:opacity-90 transition-all active:scale-[0.98]"
+            className="px-5 py-2 text-sm font-bold text-white border-2 border-black shadow-[3px_3px_0_black] hover:shadow-[4px_4px_0_black] hover:-translate-x-px hover:-translate-y-px transition-all disabled:opacity-40 rounded-lg uppercase tracking-wider"
             style={{ backgroundColor: game.accentColor }}
           >
             {creating ? 'Creating…' : 'Create Server'}

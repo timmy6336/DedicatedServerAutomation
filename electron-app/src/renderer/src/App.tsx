@@ -20,7 +20,7 @@ export default function App() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-[#09090e] text-[#e2e2ef]">
+    <div className="flex flex-col h-screen bg-[#0c0c0c] text-[#f0f0f0]">
       <TitleBar />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar
@@ -29,7 +29,7 @@ export default function App() {
           onSelectInstance={handleSelectInstance}
         />
 
-        <main className="flex-1 overflow-hidden bg-[#09090e]">
+        <main className="flex-1 overflow-hidden bg-[#0c0c0c]">
           {selectedInstance && selectedGame ? (
             <ServerPanel
               key={selectedInstance.id}
@@ -49,14 +49,13 @@ export default function App() {
 function EmptyState() {
   return (
     <div className="h-full flex flex-col items-center justify-center text-center px-8">
-      <div className="relative mb-5">
-        <div className="absolute inset-0 rounded-2xl bg-indigo-500/5 blur-2xl scale-150" />
-        <div className="relative w-16 h-16 rounded-2xl bg-[#151521] border border-[#1c1c2e] flex items-center justify-center">
-          <Server size={24} className="text-[#383854]" />
+      <div className="relative mb-6">
+        <div className="w-16 h-16 bg-[#151515] border-2 border-[#2e2e2e] flex items-center justify-center shadow-[4px_4px_0_#1a1a1a]">
+          <Server size={24} className="text-[#404040]" />
         </div>
       </div>
-      <p className="text-base font-semibold text-[#575770]">No server selected</p>
-      <p className="text-sm text-[#383854] mt-1.5 max-w-xs leading-relaxed">
+      <p className="text-base font-black uppercase tracking-wider text-[#555555]">No server selected</p>
+      <p className="text-sm text-[#404040] mt-2 max-w-xs leading-relaxed font-bold">
         Expand a game in the sidebar and create your first server instance
       </p>
     </div>
