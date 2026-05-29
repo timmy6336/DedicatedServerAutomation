@@ -88,50 +88,65 @@ export default function ServerPanel({ game, instance, onInstanceUpdated }: Props
   const hasMods = GAMES_WITH_MODS.includes(game.id)
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode; badge?: number }[] = [
-    { id: 'overview', label: 'Overview', icon: <Monitor size={15} /> },
-    ...(hasMods ? [{ id: 'mods' as Tab, label: 'Mods', icon: <Package size={15} />, badge: instance.enabledMods.length || undefined }] : []),
-    { id: 'logs', label: 'Logs', icon: <ScrollText size={15} /> },
-    { id: 'backups', label: 'Backups', icon: <HardDrive size={15} /> },
+    { id: 'overview', label: 'Overview', icon: <Monitor size={14} /> },
+    ...(hasMods ? [{ id: 'mods' as Tab, label: 'Mods', icon: <Package size={14} />, badge: instance.enabledMods.length || undefined }] : []),
+    { id: 'logs', label: 'Logs', icon: <ScrollText size={14} /> },
+    { id: 'backups', label: 'Backups', icon: <HardDrive size={14} /> },
   ]
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
 
       {/* Hero header */}
-      <div className={cn('relative px-10 pt-12 pb-10 bg-gradient-to-br shrink-0', game.bannerColor)}>
-        <div className="absolute inset-0 bg-[#09090b]/65" />
-        <div className="relative z-10 flex items-start justify-between">
+      <div className={cn('relative overflow-hidden px-10 pt-12 pb-9 bg-gradient-to-br shrink-0', game.bannerColor)}>
+        <div className="absolute inset-0 bg-[#09090e]/75" />
+        <div
+          className="absolute -top-20 -right-20 w-72 h-72 rounded-full blur-3xl opacity-15 pointer-events-none"
+          style={{ backgroundColor: game.accentColor }}
+        />
+        <div className="relative z-10 flex items-start justify-between gap-6">
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest mb-2.5"
-               style={{ color: game.accentColor }}>
-              {game.genre}
-            </p>
-            <h1 className="text-4xl font-bold text-white leading-tight">{instance.name}</h1>
-            <p className="text-base text-[#a1a1aa] mt-2">{game.name}</p>
+            <div className="mb-3">
+              <span
+                className="inline-flex items-center text-[10px] font-bold uppercase tracking-[0.14em] px-2.5 py-1 rounded-full"
+                style={{
+                  backgroundColor: game.accentColor + '1e',
+                  color: game.accentColor,
+                  border: `1px solid ${game.accentColor}35`
+                }}
+              >
+                {game.genre}
+              </span>
+            </div>
+            <h1 className="text-3xl font-bold text-white leading-tight tracking-tight">{instance.name}</h1>
+            <p className="text-sm text-[#8e8ea8] mt-2 font-medium">{game.name}</p>
           </div>
           <StatusBadge state={state} />
         </div>
+        <div
+          className="absolute bottom-0 left-0 right-0 h-px opacity-50"
+          style={{ background: `linear-gradient(90deg, transparent, ${game.accentColor}80, transparent)` }}
+        />
       </div>
 
       {/* Tab bar */}
-      <div className="flex items-center gap-1 px-8 border-b border-[#27272a] bg-[#09090b] shrink-0">
+      <div className="flex items-center gap-1 px-6 py-2 bg-[#09090e] border-b border-[#1c1c2e] shrink-0">
         {tabs.map(t => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
             className={cn(
-              'flex items-center gap-2 px-4 py-4 text-sm border-b-2 -mb-px transition-colors',
+              'flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm transition-all',
               tab === t.id
-                ? 'border-current font-medium'
-                : 'border-transparent text-[#71717a] hover:text-[#a1a1aa]'
+                ? 'bg-[#151521] text-[#e2e2ef] font-medium'
+                : 'text-[#575770] hover:text-[#8e8ea8] hover:bg-[#111120]'
             )}
-            style={tab === t.id ? { borderColor: game.accentColor, color: game.accentColor } : undefined}
           >
             {t.icon}
             {t.label}
             {t.badge !== undefined && t.badge > 0 && (
               <span
-                className="text-xs px-1.5 py-0.5 rounded-full font-medium"
+                className="text-[10px] px-1.5 py-0.5 rounded-full font-medium tabular-nums"
                 style={{ backgroundColor: game.accentColor + '22', color: game.accentColor }}
               >
                 {t.badge}
@@ -143,79 +158,78 @@ export default function ServerPanel({ game, instance, onInstanceUpdated }: Props
 
       {/* Overview tab */}
       {tab === 'overview' && (
-        <div className="flex-1 overflow-y-auto px-10 py-10 space-y-10">
+        <div className="flex-1 overflow-y-auto px-10 py-8 space-y-8">
 
           {/* Actions row */}
-          <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2.5 flex-wrap">
             {state === 'not_installed' && (
-              <Button variant="primary" icon={<Download size={16} />}
-                onClick={() => setShowInstall(true)} style={{ backgroundColor: game.accentColor }}>
+              <PanelButton variant="primary" icon={<Download size={15} />}
+                onClick={() => setShowInstall(true)} accentColor={game.accentColor}>
                 Install Server
-              </Button>
+              </PanelButton>
             )}
             {state === 'stopped' && (
               <>
-                <Button variant="primary" icon={<Play size={16} />}
-                  onClick={handleStart} loading={actionPending}
-                  style={{ backgroundColor: game.accentColor }}>
+                <PanelButton variant="primary" icon={<Play size={15} />}
+                  onClick={handleStart} loading={actionPending} accentColor={game.accentColor}>
                   Start Server
-                </Button>
-                <Button variant="secondary" icon={<Settings size={16} />}
+                </PanelButton>
+                <PanelButton variant="secondary" icon={<Settings size={15} />}
                   onClick={() => setShowConfig(true)}>
                   Configure
-                </Button>
+                </PanelButton>
                 <div className="flex-1" />
                 {confirmUninstall ? (
                   <div className="flex items-center gap-3">
-                    <span className="text-sm text-red-400">
+                    <span className="text-sm text-red-400/90">
                       {game.installOnce
                         ? 'Remove shared game files for all instances?'
                         : 'Remove all server files for this instance?'}
                     </span>
                     <button
                       onClick={handleUninstall}
-                      className="px-4 py-2.5 rounded-lg text-sm font-medium bg-red-700 hover:bg-red-600 text-white transition-colors"
+                      className="px-4 py-2 rounded-lg text-sm font-medium bg-red-700/80 hover:bg-red-600 text-white transition-colors"
                     >
                       Yes, uninstall
                     </button>
                     <button
                       onClick={() => setConfirmUninstall(false)}
-                      className="px-4 py-2.5 rounded-lg text-sm text-[#71717a] hover:text-white hover:bg-[#18181b] transition-colors"
+                      className="px-4 py-2 rounded-lg text-sm text-[#575770] hover:text-[#e2e2ef] hover:bg-[#151521] transition-colors"
                     >
                       Cancel
                     </button>
                   </div>
                 ) : (
-                  <Button variant="danger" icon={<Trash2 size={16} />}
+                  <PanelButton variant="danger" icon={<Trash2 size={15} />}
                     onClick={() => setConfirmUninstall(true)} loading={actionPending}>
                     Uninstall
-                  </Button>
+                  </PanelButton>
                 )}
               </>
             )}
             {state === 'running' && (
               <>
-                <Button variant="danger" icon={<Square size={16} />}
+                <PanelButton variant="danger" icon={<Square size={15} />}
                   onClick={handleStop} loading={actionPending}>
                   Stop Server
-                </Button>
-                <Button variant="secondary" icon={<Settings size={16} />}
+                </PanelButton>
+                <PanelButton variant="secondary" icon={<Settings size={15} />}
                   onClick={() => setShowConfig(true)}>
                   Configure
-                </Button>
+                </PanelButton>
               </>
             )}
             {state === 'checking' && (
-              <div className="h-11 w-40 rounded-lg bg-[#18181b] animate-pulse" />
+              <div className="h-10 w-36 rounded-xl bg-[#151521] animate-pulse" />
             )}
           </div>
 
           {/* Connection info — only when running */}
           {state === 'running' && (
-            <div className="grid grid-cols-2 gap-4">
-              <InfoCard icon={<Monitor size={16} />} label="Local IP"
+            <div className="grid grid-cols-2 gap-3">
+              <InfoCard icon={<Monitor size={14} />} label="Local IP"
                 value={`${localIp}:${game.defaultPort}`} />
-              <InfoCard icon={<Globe size={16} />} label="Game Port"
+              <InfoCard icon={<Globe size={14} />} label="Game Port"
                 value={String(game.defaultPort)} />
             </div>
           )}
@@ -223,21 +237,21 @@ export default function ServerPanel({ game, instance, onInstanceUpdated }: Props
           {/* About */}
           <div>
             <SectionLabel>About</SectionLabel>
-            <p className="mt-4 text-base text-[#a1a1aa] leading-relaxed">{game.description}</p>
+            <p className="mt-3.5 text-sm text-[#8e8ea8] leading-relaxed">{game.description}</p>
           </div>
 
           {/* Required Ports */}
           <div>
             <SectionLabel>Required Ports</SectionLabel>
-            <div className="mt-4 grid grid-cols-2 gap-3">
+            <div className="mt-3.5 grid grid-cols-2 gap-2.5">
               {game.ports.map(p => (
                 <div key={`${p.port}-${p.protocol}`}
-                  className="px-6 py-5 rounded-xl bg-[#111113] border border-[#27272a] hover:border-[#3f3f46] transition-colors">
-                  <span className="font-mono font-bold text-2xl text-white">{p.port}</span>
+                  className="px-5 py-4 rounded-xl bg-[#0f0f18] border border-[#1c1c2e] hover:border-[#28283f] transition-colors">
+                  <span className="font-mono font-bold text-2xl text-[#e2e2ef] tabular-nums">{p.port}</span>
                   <div className="flex items-center gap-2 mt-2">
-                    <span className="text-sm font-medium text-[#71717a]">{p.protocol}</span>
+                    <span className="text-xs font-bold uppercase tracking-wider text-[#575770]">{p.protocol}</span>
                     {p.description && (
-                      <span className="text-sm text-[#52525b]">· {p.description}</span>
+                      <span className="text-xs text-[#383854]">· {p.description}</span>
                     )}
                   </div>
                 </div>
@@ -248,10 +262,10 @@ export default function ServerPanel({ game, instance, onInstanceUpdated }: Props
           {/* Platforms */}
           <div>
             <SectionLabel>Platforms</SectionLabel>
-            <div className="mt-4 flex gap-3 flex-wrap">
+            <div className="mt-3.5 flex gap-2 flex-wrap">
               {game.platforms.map(p => (
                 <span key={p}
-                  className="px-5 py-2.5 text-sm font-medium rounded-xl bg-[#111113] border border-[#27272a] text-[#a1a1aa]">
+                  className="px-4 py-2 text-xs font-medium rounded-lg bg-[#0f0f18] border border-[#1c1c2e] text-[#8e8ea8]">
                   {p}
                 </span>
               ))}
@@ -301,21 +315,21 @@ export default function ServerPanel({ game, instance, onInstanceUpdated }: Props
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className="text-xs font-bold uppercase tracking-widest text-[#52525b]">{children}</h3>
+    <h3 className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#383854]">{children}</h3>
   )
 }
 
 function StatusBadge({ state }: { state: ServerState }) {
   const cfg = {
-    checking:      { label: 'Checking…',    cls: 'bg-[#3f3f46] text-[#a1a1aa]',       dot: 'bg-[#71717a]' },
-    not_installed: { label: 'Not Installed', cls: 'bg-[#27272a] text-[#71717a]',       dot: 'bg-[#3f3f46]' },
-    stopped:       { label: 'Offline',       cls: 'bg-red-950/60 text-red-400',         dot: 'bg-red-500' },
-    running:       { label: 'Online',        cls: 'bg-emerald-950/60 text-emerald-400', dot: 'bg-emerald-500 animate-pulse' }
+    checking:      { label: 'Checking',      cls: 'bg-[#1c1c2e]/70 text-[#575770] border border-[#28283f]/50',             dot: 'bg-[#383854]' },
+    not_installed: { label: 'Not Installed', cls: 'bg-[#1c1c2e]/70 text-[#575770] border border-[#28283f]/50',             dot: 'bg-[#28283f]' },
+    stopped:       { label: 'Offline',       cls: 'bg-red-950/50 text-red-400 border border-red-900/40',                   dot: 'bg-red-500' },
+    running:       { label: 'Online',        cls: 'bg-emerald-950/50 text-emerald-400 border border-emerald-900/40',       dot: 'bg-emerald-400 animate-pulse' }
   }
   const { label, cls, dot } = cfg[state]
   return (
-    <div className={cn('flex items-center gap-2.5 px-5 py-2.5 rounded-full text-sm font-semibold', cls)}>
-      <span className={cn('w-2.5 h-2.5 rounded-full shrink-0', dot)} />
+    <div className={cn('flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold backdrop-blur-sm', cls)}>
+      <span className={cn('w-2 h-2 rounded-full shrink-0', dot)} />
       {label}
     </div>
   )
@@ -323,32 +337,39 @@ function StatusBadge({ state }: { state: ServerState }) {
 
 function InfoCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
-    <div className="bg-[#111113] border border-[#27272a] rounded-xl px-6 py-5">
-      <div className="flex items-center gap-2 text-[#71717a] text-sm mb-2">{icon}<span>{label}</span></div>
-      <p className="font-mono text-xl text-white font-semibold">{value}</p>
+    <div className="bg-[#0f0f18] border border-[#1c1c2e] rounded-xl px-5 py-4 hover:border-[#28283f] transition-colors">
+      <div className="flex items-center gap-2 text-[#575770] text-xs mb-2.5 font-semibold uppercase tracking-wider">
+        {icon}
+        <span>{label}</span>
+      </div>
+      <p className="font-mono text-xl text-[#e2e2ef] font-bold tabular-nums">{value}</p>
     </div>
   )
 }
 
-interface ButtonProps {
+interface PanelButtonProps {
   variant: 'primary' | 'secondary' | 'danger'
   icon?: React.ReactNode
   onClick?: () => void
   loading?: boolean
-  style?: React.CSSProperties
+  accentColor?: string
   children: React.ReactNode
 }
 
-function Button({ variant, icon, onClick, loading, style, children }: ButtonProps) {
-  const base = 'flex items-center gap-2.5 px-6 py-3 rounded-lg text-sm font-medium transition-all disabled:opacity-50'
+function PanelButton({ variant, icon, onClick, loading, accentColor, children }: PanelButtonProps) {
+  const base = 'flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all disabled:opacity-50 active:scale-[0.98]'
   const variants = {
-    primary:   'text-white',
-    secondary: 'bg-[#18181b] border border-[#27272a] text-[#a1a1aa] hover:text-white hover:border-[#3f3f46]',
-    danger:    'bg-red-950/40 border border-red-900/50 text-red-400 hover:bg-red-950/60'
+    primary:   'text-white hover:opacity-90',
+    secondary: 'bg-[#151521] border border-[#1c1c2e] text-[#8e8ea8] hover:text-[#e2e2ef] hover:border-[#28283f]',
+    danger:    'bg-red-950/30 border border-red-900/40 text-red-400 hover:bg-red-950/50 hover:border-red-800/60'
   }
   return (
-    <button className={cn(base, variants[variant])} onClick={onClick} disabled={loading}
-      style={variant === 'primary' ? style : undefined}>
+    <button
+      className={cn(base, variants[variant])}
+      onClick={onClick}
+      disabled={loading}
+      style={variant === 'primary' ? { backgroundColor: accentColor } : undefined}
+    >
       {loading
         ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
         : icon}

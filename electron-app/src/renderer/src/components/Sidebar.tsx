@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { type Game } from '../lib/games'
 import { type ServerInstance } from '../lib/instances'
 import { cn } from '../lib/utils'
-import { ChevronDown, ChevronRight, Plus, Server } from 'lucide-react'
+import { ChevronRight, Plus, Server } from 'lucide-react'
 import NewServerModal from './NewServerModal'
 
 interface Props {
@@ -56,68 +56,76 @@ export default function Sidebar({ games, selectedInstance, onSelectInstance }: P
 
   return (
     <>
-      <aside className="w-64 shrink-0 bg-[#111113] border-r border-[#27272a] flex flex-col overflow-hidden">
-        <div className="px-4 pt-5 pb-3">
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-[#52525b] px-2">
+      <aside className="w-64 shrink-0 bg-[#0d0d18] border-r border-[#1c1c2e] flex flex-col overflow-hidden">
+        <div className="px-4 pt-5 pb-2.5">
+          <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#2e2e48] px-2">
             Servers
           </p>
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-3 pb-4 space-y-1">
+        <nav className="flex-1 overflow-y-auto px-2 pb-4 space-y-px">
           {games.map(game => {
             const isOpen = expanded.has(game.id)
             const gameInstances = instances[game.id] ?? []
 
             return (
               <div key={game.id}>
-                {/* Game row */}
                 <button
                   onClick={() => toggle(game.id)}
-                  className="w-full flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg text-left text-[#71717a] hover:text-[#a1a1aa] hover:bg-[#18181b] transition-all group"
+                  className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-left group hover:bg-[#131320] transition-all"
                 >
-                  {isOpen
-                    ? <ChevronDown size={13} className="shrink-0" />
-                    : <ChevronRight size={13} className="shrink-0" />
-                  }
+                  <ChevronRight
+                    size={11}
+                    className={cn(
+                      'shrink-0 text-[#2e2e48] transition-transform duration-200',
+                      isOpen && 'rotate-90'
+                    )}
+                  />
                   <div
-                    className="w-6 h-6 rounded-md flex items-center justify-center shrink-0"
-                    style={{ backgroundColor: game.accentColor + '22', color: game.accentColor }}
+                    className="w-5 h-5 rounded-md flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: game.accentColor + '1a', color: game.accentColor }}
                   >
-                    <Server size={13} />
+                    <Server size={10} />
                   </div>
-                  <span className="text-xs font-semibold tracking-wide uppercase flex-1 truncate">
+                  <span className="text-xs font-medium text-[#4e4e6a] group-hover:text-[#8e8ea8] flex-1 truncate transition-colors">
                     {game.name}
                   </span>
-                  <span className="text-xs text-[#3f3f46] tabular-nums">{gameInstances.length}</span>
+                  {gameInstances.length > 0 && (
+                    <span className="text-[10px] text-[#2e2e48] font-mono tabular-nums">
+                      {gameInstances.length}
+                    </span>
+                  )}
                 </button>
 
-                {/* Instances */}
                 {isOpen && (
-                  <div className="pl-6 space-y-0.5 mt-1 mb-1">
-                    {gameInstances.map(inst => (
-                      <button
-                        key={inst.id}
-                        onClick={() => onSelectInstance(inst, game)}
-                        className={cn(
-                          'w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left transition-all',
-                          selectedInstance?.id === inst.id
-                            ? 'bg-[#18181b] text-white'
-                            : 'text-[#a1a1aa] hover:bg-[#18181b] hover:text-white'
-                        )}
-                      >
-                        <span
-                          className="w-2 h-2 rounded-full shrink-0"
-                          style={{ backgroundColor: selectedInstance?.id === inst.id ? game.accentColor : '#3f3f46' }}
-                        />
-                        <span className="truncate flex-1 text-sm">{inst.name}</span>
-                      </button>
-                    ))}
+                  <div className="pl-6 mt-0.5 mb-0.5 space-y-px">
+                    {gameInstances.map(inst => {
+                      const isSelected = selectedInstance?.id === inst.id
+                      return (
+                        <button
+                          key={inst.id}
+                          onClick={() => onSelectInstance(inst, game)}
+                          className={cn(
+                            'w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-all',
+                            isSelected
+                              ? 'bg-[#151521] text-[#e2e2ef]'
+                              : 'text-[#4e4e6a] hover:bg-[#111120] hover:text-[#8e8ea8]'
+                          )}
+                        >
+                          <span
+                            className="w-1.5 h-1.5 rounded-full shrink-0 transition-colors"
+                            style={{ backgroundColor: isSelected ? game.accentColor : '#28283f' }}
+                          />
+                          <span className="truncate flex-1 text-xs">{inst.name}</span>
+                        </button>
+                      )
+                    })}
 
                     <button
                       onClick={() => { setCreating(game); setExpanded(prev => new Set([...prev, game.id])) }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left text-sm text-[#52525b] hover:text-[#a1a1aa] hover:bg-[#18181b] transition-all"
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-xs text-[#2e2e48] hover:text-[#5a5a78] hover:bg-[#111120] transition-all"
                     >
-                      <Plus size={13} />
+                      <Plus size={11} />
                       New server
                     </button>
                   </div>
@@ -127,8 +135,8 @@ export default function Sidebar({ games, selectedInstance, onSelectInstance }: P
           })}
         </nav>
 
-        <div className="border-t border-[#27272a] px-5 py-4">
-          <p className="text-xs text-[#52525b]">v2.0.0</p>
+        <div className="border-t border-[#1c1c2e] px-5 py-3">
+          <p className="text-[10px] text-[#2e2e48] font-mono">v2.0.0</p>
         </div>
       </aside>
 

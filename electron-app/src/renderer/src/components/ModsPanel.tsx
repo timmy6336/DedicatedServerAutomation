@@ -92,47 +92,47 @@ export default function ModsPanel({ game, instance, onInstanceUpdated }: Props) 
   return (
     <div className="h-full flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="px-8 pt-7 pb-5 shrink-0 flex items-start justify-between">
+      <div className="px-8 pt-6 pb-4 shrink-0 flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold">Mod Library</h2>
-          <p className="text-sm text-[#71717a] mt-1">
+          <h2 className="text-base font-semibold text-[#e2e2ef]">Mod Library</h2>
+          <p className="text-xs text-[#575770] mt-0.5">
             {library.length} mod{library.length !== 1 ? 's' : ''} installed ·{' '}
-            {instance.enabledMods.length} enabled on <span className="text-[#a1a1aa]">{instance.name}</span>
+            {instance.enabledMods.length} enabled on <span className="text-[#8e8ea8]">{instance.name}</span>
           </p>
           {game.modsNote && (
-            <p className="text-sm text-yellow-500/80 mt-1">{game.modsNote}</p>
+            <p className="text-xs text-yellow-500/70 mt-1">{game.modsNote}</p>
           )}
         </div>
         <button
           onClick={handleBrowse}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#18181b] border border-[#27272a] text-sm text-[#a1a1aa] hover:text-white hover:border-[#3f3f46] transition-all"
+          className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#151521] border border-[#1c1c2e] text-sm text-[#8e8ea8] hover:text-[#e2e2ef] hover:border-[#28283f] transition-all"
         >
-          <FolderOpen size={14} />
+          <FolderOpen size={13} />
           Browse
         </button>
       </div>
 
       {/* BepInEx export card */}
       {game.modsSubdir === 'BepInEx/plugins' && (
-        <div className="px-8 pb-4 shrink-0">
-          <div className="rounded-xl bg-[#18181b] border border-[#27272a] px-5 py-4 flex items-start justify-between gap-4">
+        <div className="px-8 pb-3 shrink-0">
+          <div className="rounded-xl bg-[#0f0f18] border border-[#1c1c2e] px-4 py-3.5 flex items-start justify-between gap-4">
             <div className="min-w-0">
               <div className="flex items-center gap-2 mb-1">
-                <Archive size={14} className="text-[#71717a] shrink-0" />
-                <p className="text-sm font-medium">Share Mod Pack</p>
+                <Archive size={13} className="text-[#575770] shrink-0" />
+                <p className="text-sm font-semibold text-[#c0c0d8]">Share Mod Pack</p>
               </div>
-              <p className="text-sm text-[#71717a]">
-                Zip the BepInEx folder so players can install the same mods on their client.
-                They extract it directly into their {game.name} game directory.
+              <p className="text-xs text-[#575770] leading-relaxed">
+                Zip the BepInEx folder so players can install the same mods on their own client.
+                They extract the zip directly into their {game.name} game directory.
               </p>
               {exportState?.path && (
-                <div className="mt-2.5 flex items-start gap-2 text-sm text-emerald-400">
-                  <CheckCircle2 size={13} className="mt-0.5 shrink-0" />
+                <div className="mt-2.5 flex items-start gap-2 text-xs text-emerald-400">
+                  <CheckCircle2 size={12} className="mt-0.5 shrink-0" />
                   <span>
                     Saved to <span className="font-mono break-all">{exportState.path}</span>
                     <br />
-                    <span className="text-[#71717a]">
-                      Players: extract into their{' '}
+                    <span className="text-[#575770]">
+                      Players: extract the zip into their{' '}
                       {game.clientGamePath
                         ? <span className="font-mono">…\{game.clientGamePath}\</span>
                         : `${game.name} game folder`}{' '}
@@ -142,8 +142,8 @@ export default function ModsPanel({ game, instance, onInstanceUpdated }: Props) 
                 </div>
               )}
               {exportState?.error && (
-                <div className="mt-2.5 flex items-center gap-2 text-sm text-red-400">
-                  <AlertCircle size={13} className="shrink-0" />
+                <div className="mt-2.5 flex items-center gap-2 text-xs text-red-400">
+                  <AlertCircle size={12} className="shrink-0" />
                   {exportState.error}
                 </div>
               )}
@@ -151,9 +151,9 @@ export default function ModsPanel({ game, instance, onInstanceUpdated }: Props) 
             <button
               onClick={handleExportBepInEx}
               disabled={exporting}
-              className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-lg bg-[#111113] border border-[#27272a] text-sm text-[#a1a1aa] hover:text-white hover:border-[#3f3f46] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              className="shrink-0 flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#151521] border border-[#1c1c2e] text-sm text-[#8e8ea8] hover:text-[#e2e2ef] hover:border-[#28283f] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
-              <Archive size={14} />
+              <Archive size={13} />
               {exporting ? 'Zipping…' : 'Export .zip'}
             </button>
           </div>
@@ -161,7 +161,7 @@ export default function ModsPanel({ game, instance, onInstanceUpdated }: Props) 
       )}
 
       {/* Drop zone + mod list */}
-      <div className="flex-1 overflow-hidden flex flex-col px-8 pb-7 gap-4">
+      <div className="flex-1 overflow-hidden flex flex-col px-8 pb-6 gap-3">
         {/* Drop target */}
         <div
           ref={dropRef}
@@ -169,29 +169,31 @@ export default function ModsPanel({ game, instance, onInstanceUpdated }: Props) 
           onDragLeave={onDragLeave}
           onDrop={onDrop}
           className={cn(
-            'border-2 border-dashed rounded-xl px-6 py-5 text-center transition-all shrink-0',
+            'border-2 border-dashed rounded-xl px-6 py-4 text-center transition-all shrink-0',
             draggingOver
-              ? 'border-indigo-500 bg-indigo-950/20 text-indigo-300'
-              : 'border-[#27272a] text-[#52525b] hover:border-[#3f3f46]'
+              ? 'border-indigo-500/60 bg-indigo-950/20 text-indigo-300'
+              : 'border-[#1c1c2e] text-[#383854] hover:border-[#28283f] hover:text-[#575770]'
           )}
         >
-          <Plus size={18} className="mx-auto mb-1.5 opacity-60" />
-          <p className="text-sm">
+          <Plus size={15} className="mx-auto mb-1 opacity-50" />
+          <p className="text-xs">
             Drop {displayExtensions.join(', ')} files here to add to library
           </p>
         </div>
 
         {/* Mod list */}
-        <div className="flex-1 overflow-y-auto space-y-1.5">
+        <div className="flex-1 overflow-y-auto space-y-1">
           {loading && (
-            <div className="text-center py-10 text-[#52525b] text-sm">Adding mods…</div>
+            <div className="text-center py-8 text-[#383854] text-sm">Adding mods…</div>
           )}
 
           {!loading && library.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <Package size={36} className="text-[#3f3f46] mb-4" />
-              <p className="text-sm font-medium text-[#71717a]">No mods in library yet</p>
-              <p className="text-sm text-[#52525b] mt-1">
+            <div className="flex flex-col items-center justify-center py-14 text-center">
+              <div className="w-12 h-12 rounded-xl bg-[#151521] border border-[#1c1c2e] flex items-center justify-center mb-3">
+                <Package size={20} className="text-[#28283f]" />
+              </div>
+              <p className="text-sm text-[#575770]">No mods in library yet</p>
+              <p className="text-xs text-[#383854] mt-1">
                 Drop files above or click Browse to add mods
               </p>
             </div>
@@ -203,24 +205,24 @@ export default function ModsPanel({ game, instance, onInstanceUpdated }: Props) 
               <div
                 key={mod.filename}
                 className={cn(
-                  'flex items-center gap-4 px-4 py-3.5 rounded-xl border transition-all group',
+                  'flex items-center gap-3 px-4 py-3 rounded-xl border transition-all group',
                   isEnabled
-                    ? 'bg-[#18181b] border-[#27272a]'
-                    : 'bg-[#111113] border-transparent hover:border-[#27272a]'
+                    ? 'bg-[#0f0f18] border-[#1c1c2e]'
+                    : 'bg-[#09090e] border-transparent hover:border-[#1c1c2e]'
                 )}
               >
                 {/* Toggle */}
                 <button
                   onClick={() => toggleMod(mod.filename, !isEnabled)}
                   className={cn(
-                    'relative w-10 h-6 rounded-full transition-colors shrink-0',
-                    isEnabled ? '' : 'bg-[#3f3f46]'
+                    'relative w-9 h-5 rounded-full transition-colors shrink-0',
+                    isEnabled ? '' : 'bg-[#28283f]'
                   )}
                   style={isEnabled ? { backgroundColor: game.accentColor } : undefined}
                 >
                   <span
                     className={cn(
-                      'absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform',
+                      'absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform duration-150',
                       isEnabled ? 'left-[18px]' : 'left-0.5'
                     )}
                   />
@@ -228,10 +230,10 @@ export default function ModsPanel({ game, instance, onInstanceUpdated }: Props) 
 
                 {/* Info */}
                 <div className="flex-1 min-w-0">
-                  <p className={cn('text-sm font-medium truncate', isEnabled ? 'text-white' : 'text-[#a1a1aa]')}>
+                  <p className={cn('text-sm font-medium truncate', isEnabled ? 'text-[#e2e2ef]' : 'text-[#8e8ea8]')}>
                     {mod.name}
                   </p>
-                  <p className="text-xs text-[#52525b] mt-0.5">
+                  <p className="text-xs text-[#383854] mt-0.5 font-mono">
                     {mod.filename} · {(mod.size / 1024).toFixed(0)} KB
                   </p>
                 </div>
@@ -239,8 +241,8 @@ export default function ModsPanel({ game, instance, onInstanceUpdated }: Props) 
                 {/* Enabled badge */}
                 {isEnabled && (
                   <span
-                    className="text-xs font-medium px-2.5 py-1 rounded-full shrink-0"
-                    style={{ backgroundColor: game.accentColor + '22', color: game.accentColor }}
+                    className="text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0"
+                    style={{ backgroundColor: game.accentColor + '1e', color: game.accentColor }}
                   >
                     Enabled
                   </span>
@@ -249,9 +251,9 @@ export default function ModsPanel({ game, instance, onInstanceUpdated }: Props) 
                 {/* Remove */}
                 <button
                   onClick={() => handleRemoveMod(mod.filename)}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg text-[#52525b] hover:text-red-400 hover:bg-red-950/30 transition-all opacity-0 group-hover:opacity-100"
+                  className="w-7 h-7 flex items-center justify-center rounded-lg text-[#383854] hover:text-red-400 hover:bg-red-950/30 transition-all opacity-0 group-hover:opacity-100"
                 >
-                  <Trash2 size={14} />
+                  <Trash2 size={13} />
                 </button>
               </div>
             )
